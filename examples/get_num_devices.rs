@@ -1,5 +1,3 @@
-extern crate libftd2xx;
-
 use libftd2xx::get_num_devices;
 
 fn main() {

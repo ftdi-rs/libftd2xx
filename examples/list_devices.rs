@@ -1,5 +1,3 @@
-extern crate libftd2xx;
-
 use libftd2xx::list_devices;
 
 fn main() {

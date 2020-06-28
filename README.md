@@ -1,4 +1,4 @@
-# libftd2xx
+# libftd2xx-rs
 
 Work-in-progress libftd2xx rust library.
 

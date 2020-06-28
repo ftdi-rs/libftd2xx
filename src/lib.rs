@@ -18,23 +18,22 @@
 //! [Driver License Terms]: https://www.ftdichip.com/Drivers/FTDriverLicenceTermsSummary.htm
 #![deny(missing_docs, warnings)]
 
-extern crate libc;
-
 pub use libftd2xx_ffi::DWORD;
 use libftd2xx_ffi::{
-    FT_Close, FT_CreateDeviceInfoList, FT_GetDeviceInfoList, FT_GetQueueStatus, FT_ListDevices,
-    FT_OpenEx, FT_Read, FT_ResetDevice, FT_SetBitMode, FT_SetChars, FT_SetFlowControl,
-    FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_BITMODE_ASYNC_BITBANG,
-    FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL, FT_BITMODE_MCU_HOST, FT_BITMODE_MPSSE,
-    FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG, FT_BITMODE_SYNC_FIFO, FT_DEVICE_100AX,
-    FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H, FT_DEVICE_232R, FT_DEVICE_4222H_0,
-    FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG, FT_DEVICE_4232H, FT_DEVICE_AM,
-    FT_DEVICE_BM, FT_DEVICE_LIST_INFO_NODE, FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND,
-    FT_DEVICE_NOT_OPENED, FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE,
-    FT_DEVICE_X_SERIES, FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED,
-    FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE, FT_FLOW_DTR_DSR,
-    FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_INSUFFICIENT_RESOURCES,
-    FT_INVALID_ARGS, FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR,
+    FT_Close, FT_CreateDeviceInfoList, FT_GetDeviceInfoList, FT_GetLibraryVersion,
+    FT_GetQueueStatus, FT_ListDevices, FT_OpenEx, FT_Read, FT_ResetDevice, FT_SetBitMode,
+    FT_SetChars, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters,
+    FT_Write, FT_BITMODE_ASYNC_BITBANG, FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL,
+    FT_BITMODE_MCU_HOST, FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG,
+    FT_BITMODE_SYNC_FIFO, FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H,
+    FT_DEVICE_232R, FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
+    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_INFO_NODE,
+    FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
+    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_DEVICE_X_SERIES,
+    FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED, FT_EEPROM_READ_FAILED,
+    FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
+    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS,
+    FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR,
     FT_LIST_NUMBER_ONLY, FT_NOT_SUPPORTED, FT_OK, FT_OPEN_BY_SERIAL_NUMBER, FT_OTHER_ERROR,
     FT_STATUS, PVOID, UCHAR, ULONG, USHORT,
 };
@@ -148,6 +147,40 @@ pub fn get_num_devices() -> Result<DWORD, Ftd2xxError> {
         unsafe { FT_ListDevices(num_devs_ptr as *mut c_void, dummy, FT_LIST_NUMBER_ONLY) };
 
     ft_result!(num_devs, status)
+}
+
+/// D2xx library version.
+#[derive(Debug)]
+pub struct Version {
+    major: u8,
+    minor: u8,
+    build: u8,
+}
+
+/// Gets the version of the underlying library.
+///
+/// **Note**: The documentation says this function is only supported on Windows
+/// but it seems to correctly work on Linux.
+///
+/// # Example
+///
+/// ```
+/// use libftd2xx::get_library_version;
+///
+/// let version = get_library_version();
+/// println!("libftd2xx C library version: {:?}", version);
+/// ```
+pub fn get_library_version() -> Result<Version, Ftd2xxError> {
+    let mut version: DWORD = 0;
+    let status: FT_STATUS = unsafe { FT_GetLibraryVersion(&mut version) };
+    ft_result!(
+        Version {
+            major: ((version >> 16) & 0xFF) as u8,
+            minor: ((version >> 8) & 0xFF) as u8,
+            build: (version & 0xFF) as u8
+        },
+        status
+    )
 }
 
 /// USB device speed.
@@ -361,10 +394,12 @@ impl FTDI {
     /// This function can be used to change the transfer sizes from the default
     /// transfer size of 4096 bytes to better suit the application requirements.
     /// Transfer sizes must be set to a multiple of 64 bytes between 64 bytes
-    /// and 64k bytes.When FT_SetUSBParameters is called, the change comes into
-    /// effect immediately and any data that was held in the driver at the time
-    /// of the change is lost.Note that, at present, only dwInTransferSize is
-    /// supported.
+    /// and 64k bytes.
+    /// When FT_SetUSBParameters is called, the change comes into effect
+    /// immediately and any data that was held in the driver at the time of the
+    /// change is lost.
+    ///
+    /// Note that, at present, only `in_transfer_size` is supported.
     ///
     /// # Example
     ///
@@ -648,6 +683,32 @@ impl FTDI {
         };
 
         ft_result!(bytes_returned, status)
+    }
+
+    /// Write data to the device.
+    ///
+    /// Returns the number of bytes written.
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let buf: [u8; 256] = [0; 256];
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
+    /// ft.write(&buf).unwrap();
+    /// ```
+    pub fn write(&mut self, buf: &[u8]) -> Result<DWORD, Ftd2xxError> {
+        let mut bytes_written: DWORD = 0;
+        let len = buf.len();
+        debug_assert!(len < DWORD::max_value() as usize, "buffer is too large");
+        let status: FT_STATUS = unsafe {
+            FT_Write(
+                self.handle,
+                buf.as_ptr() as *mut c_void,
+                len as u32,
+                &mut bytes_written,
+            )
+        };
+        ft_result!(bytes_written, status)
     }
 }
 
