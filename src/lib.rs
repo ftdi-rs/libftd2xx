@@ -70,10 +70,14 @@ pub enum BitMode {
     SyncFifo = FT_BITMODE_SYNC_FIFO as isize,
 }
 
-/// FTD2XX C API errors.
+/// FTD2XX API errors.
+///
+/// This is the equivalent of `FT_STATUS` in the C API.
 #[derive(Debug)]
 pub struct Ftd2xxError {
+    /// Error name.
     name: String,
+    /// Error value.
     value: usize,
 }
 
@@ -155,8 +159,11 @@ pub fn num_devices() -> Result<DWORD, Ftd2xxError> {
 /// D2xx library version.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Version {
+    /// Major version.
     major: u8,
+    /// Minor version.
     minor: u8,
+    /// Build number.
     build: u8,
 }
 
@@ -207,21 +214,34 @@ impl From<ULONG> for Speed {
 }
 
 /// FTDI device types.
-#[allow(missing_docs, non_camel_case_types)]
+#[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DeviceType {
+    /// FTDI BM device.
     FT_BM,
+    /// FTDI AM device.
     FT_AM,
+    /// FTDI 100AX device.
     FT_100AX,
+    /// FTDI 2232C device.
     FT_2232C,
+    /// FTDI 232R device.
     FT_232R,
+    /// FT2232H device.
     FT_2232H,
+    /// FT4232H device.
     FT_4232H,
+    /// FT232H device.
     FT_232H,
+    /// FTDI x series device.
     FT_X_SERIES,
+    /// FT4222H device.
     FT_4222H_0,
+    /// FT4222H device.
     FT_4222H_1_2,
+    /// FT4222H device.
     FT_4222H_3,
+    /// FT4222H device.
     FT_4222_PROG,
 }
 
@@ -247,7 +267,6 @@ impl From<ULONG> for DeviceType {
 }
 
 /// FTDI device information.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
