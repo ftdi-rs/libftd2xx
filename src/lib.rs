@@ -641,21 +641,21 @@ impl FTDI {
     ///
     /// This function does not return until the the buffer has been filled.
     /// The number of bytes in the receive queue can be determined by calling
-    /// `get_queue_status`, and then an buffer equal to the length of that value
-    /// can be passed to `read` so that the function reads the device and
-    /// returns immediately.
+    /// [`get_queue_status`], and then an buffer equal to the length of that
+    /// value can be passed to [`read`] so that the function reads the device
+    /// and returns immediately.
     ///
     /// When a read timeout value has been specified in a previous call to
-    /// `set_timesouts`, `read` returns when the timer expires or when the
+    /// [`set_timeouts`], [`read`] returns when the timer expires or when the
     /// buffer has been filled, whichever occurs first.
-    /// If the timeout occurred, `read` reads available data into the buffer and
-    /// returns the number of bytes read.
+    /// If the timeout occurred, [`read`] reads available data into the buffer
+    /// and returns the number of bytes read.
     ///
-    /// If the return value of `read` is equal to the length of the buffer then
-    /// `read` has completed normally.
+    /// If the return value of [`read`] is equal to the length of the buffer
+    /// then [`read`] has completed normally.
     ///
-    /// If the return value of `read` is less than the length of the buffer then
-    /// a timeout has occurred and the read has been partially completed.
+    /// If the return value of [`read`] is less than the length of the buffer
+    /// then a timeout has occurred and the read has been partially completed.
     ///
     /// # Examples
     ///
@@ -694,6 +694,10 @@ impl FTDI {
     /// }
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
+    ///
+    /// [`read`]: #method.read
+    /// [`get_queue_status`]: #method.get_queue_status
+    /// [`set_timeouts`]: #method.set_timeouts
     pub fn read(&mut self, buf: &mut [u8]) -> Result<DWORD, Ftd2xxError> {
         let mut bytes_returned: DWORD = 0;
         let len = buf.len();
