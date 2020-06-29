@@ -210,31 +210,31 @@ impl From<ULONG> for Speed {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DeviceType {
     /// FTDI BM device.
-    FT_BM,
+    FT_BM = 0,
     /// FTDI AM device.
-    FT_AM,
+    FT_AM = 1,
     /// FTDI 100AX device.
-    FT_100AX,
+    FT_100AX = 2,
     /// FTDI 2232C device.
-    FT_2232C,
+    FT_2232C = 4,
     /// FTDI 232R device.
-    FT_232R,
+    FT_232R = 5,
     /// FT2232H device.
-    FT_2232H,
+    FT_2232H = 6,
     /// FT4232H device.
-    FT_4232H,
+    FT_4232H = 7,
     /// FT232H device.
-    FT_232H,
+    FT_232H = 8,
     /// FTDI x series device.
-    FT_X_SERIES,
+    FT_X_SERIES = 9,
     /// FT4222H device.
-    FT_4222H_0,
+    FT_4222H_0 = 10,
     /// FT4222H device.
-    FT_4222H_1_2,
+    FT_4222H_1_2 = 11,
     /// FT4222H device.
-    FT_4222H_3,
+    FT_4222H_3 = 12,
     /// FT4222H device.
-    FT_4222_PROG,
+    FT_4222_PROG = 13,
 }
 
 impl From<ULONG> for DeviceType {
@@ -243,16 +243,16 @@ impl From<ULONG> for DeviceType {
             0 => DeviceType::FT_BM,
             1 => DeviceType::FT_AM,
             2 => DeviceType::FT_100AX,
-            3 => DeviceType::FT_2232C,
-            4 => DeviceType::FT_232R,
-            5 => DeviceType::FT_2232H,
-            6 => DeviceType::FT_4232H,
-            7 => DeviceType::FT_232H,
-            8 => DeviceType::FT_X_SERIES,
-            9 => DeviceType::FT_4222H_0,
-            10 => DeviceType::FT_4222H_1_2,
-            11 => DeviceType::FT_4222H_3,
-            12 => DeviceType::FT_4222_PROG,
+            4 => DeviceType::FT_2232C,
+            5 => DeviceType::FT_232R,
+            6 => DeviceType::FT_2232H,
+            7 => DeviceType::FT_4232H,
+            8 => DeviceType::FT_232H,
+            9 => DeviceType::FT_X_SERIES,
+            10 => DeviceType::FT_4222H_0,
+            11 => DeviceType::FT_4222H_1_2,
+            12 => DeviceType::FT_4222H_3,
+            13 => DeviceType::FT_4222_PROG,
             _ => panic!("unknown device"),
         }
     }
