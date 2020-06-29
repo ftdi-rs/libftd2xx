@@ -131,18 +131,18 @@ macro_rules! ft_result {
     };
 }
 
-/// Gets the number of FTDI devices connected to the system.
+/// Returns the number of FTDI devices connected to the system.
 ///
 /// # Example
 ///
 /// ```no_run
-/// use libftd2xx::get_num_devices;
+/// use libftd2xx::num_devices;
 ///
-/// let num_devices = get_num_devices()?;
+/// let num_devices = num_devices()?;
 /// println!("Number of devices: {}", num_devices);
 /// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
-pub fn get_num_devices() -> Result<DWORD, Ftd2xxError> {
+pub fn num_devices() -> Result<DWORD, Ftd2xxError> {
     let mut num_devs: DWORD = 0;
     let num_devs_ptr: *mut DWORD = &mut num_devs;
     let dummy: PVOID = std::ptr::null_mut();
@@ -160,7 +160,7 @@ pub struct Version {
     build: u8,
 }
 
-/// Gets the version of the underlying library.
+/// Returns the version of the underlying library.
 ///
 /// **Note**: The documentation says this function is only supported on Windows
 /// but it seems to correctly work on Linux.
@@ -168,13 +168,13 @@ pub struct Version {
 /// # Example
 ///
 /// ```
-/// use libftd2xx::get_library_version;
+/// use libftd2xx::library_version;
 ///
-/// let version = get_library_version()?;
+/// let version = library_version()?;
 /// println!("libftd2xx C library version: {:?}", version);
 /// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
-pub fn get_library_version() -> Result<Version, Ftd2xxError> {
+pub fn library_version() -> Result<Version, Ftd2xxError> {
     let mut version: DWORD = 0;
     let status: FT_STATUS = unsafe { FT_GetLibraryVersion(&mut version) };
     ft_result!(
@@ -624,14 +624,14 @@ impl FTDI {
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
     /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
-    /// let rx_bytes = ft.get_queue_status()? as usize;
+    /// let rx_bytes = ft.queue_status()? as usize;
     ///
     /// if (rx_bytes > 0) {
     ///     ft.read(&mut buf[0..rx_bytes])?;
     /// }
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
-    pub fn get_queue_status(&mut self) -> Result<DWORD, Ftd2xxError> {
+    pub fn queue_status(&mut self) -> Result<DWORD, Ftd2xxError> {
         let mut queue_status: DWORD = 0;
         let status: FT_STATUS = unsafe { FT_GetQueueStatus(self.handle, &mut queue_status) };
 
@@ -642,7 +642,7 @@ impl FTDI {
     ///
     /// This function does not return until the the buffer has been filled.
     /// The number of bytes in the receive queue can be determined by calling
-    /// [`get_queue_status`], and then an buffer equal to the length of that
+    /// [`queue_status`], and then an buffer equal to the length of that
     /// value can be passed to [`read`] so that the function reads the device
     /// and returns immediately.
     ///
@@ -667,7 +667,7 @@ impl FTDI {
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
     /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
-    /// let rx_bytes = ft.get_queue_status()? as usize;
+    /// let rx_bytes = ft.queue_status()? as usize;
     ///
     /// if (rx_bytes > 0) {
     ///     ft.read(&mut buf[0..rx_bytes])?;
@@ -697,7 +697,7 @@ impl FTDI {
     /// ```
     ///
     /// [`read`]: #method.read
-    /// [`get_queue_status`]: #method.get_queue_status
+    /// [`queue_status`]: #method.queue_status
     /// [`set_timeouts`]: #method.set_timeouts
     pub fn read(&mut self, buf: &mut [u8]) -> Result<DWORD, Ftd2xxError> {
         let mut bytes_returned: DWORD = 0;
