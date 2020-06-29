@@ -26,17 +26,9 @@ use libftd2xx_ffi::{
     FT_SetChars, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters,
     FT_Write, FT_BITMODE_ASYNC_BITBANG, FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL,
     FT_BITMODE_MCU_HOST, FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG,
-    FT_BITMODE_SYNC_FIFO, FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H,
-    FT_DEVICE_232R, FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
-    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_INFO_NODE,
-    FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
-    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_DEVICE_X_SERIES,
-    FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED, FT_EEPROM_READ_FAILED,
-    FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
-    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS,
-    FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR,
-    FT_LIST_NUMBER_ONLY, FT_NOT_SUPPORTED, FT_OK, FT_OPEN_BY_SERIAL_NUMBER, FT_OTHER_ERROR,
-    FT_STATUS, PVOID, UCHAR, ULONG, USHORT,
+    FT_BITMODE_SYNC_FIFO, FT_DEVICE_LIST_INFO_NODE, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
+    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_STATUS, PVOID,
+    UCHAR, ULONG, USHORT,
 };
 use std::error::Error;
 use std::ffi::{c_void, CStr, CString};
@@ -76,34 +68,34 @@ pub enum BitMode {
 #[derive(Debug)]
 pub struct Ftd2xxError {
     /// Error name.
-    name: String,
+    pub name: String,
     /// Error value.
-    value: usize,
+    pub value: usize,
 }
 
 impl Ftd2xxError {
     fn new(status: FT_STATUS) -> Ftd2xxError {
         let name = match status {
-            FT_OK => panic!("OK is not an error"),
-            FT_INVALID_HANDLE => "INVALID_HANDLE",
-            FT_DEVICE_NOT_FOUND => "DEVICE_NOT_FOUND",
-            FT_DEVICE_NOT_OPENED => "DEVICE_NOT_OPENED",
-            FT_IO_ERROR => "IO_ERROR",
-            FT_INSUFFICIENT_RESOURCES => "INSUFFICIENT_RESOURCES",
-            FT_INVALID_PARAMETER => "INVALID_PARAMETER",
-            FT_INVALID_BAUD_RATE => "INVALID_BAUD_RATE",
-            FT_DEVICE_NOT_OPENED_FOR_ERASE => "DEVICE_NOT_OPENED_FOR_ERASE",
-            FT_DEVICE_NOT_OPENED_FOR_WRITE => "DEVICE_NOT_OPENED_FOR_WRITE",
-            FT_FAILED_TO_WRITE_DEVICE => "FAILED_TO_WRITE_DEVICE",
-            FT_EEPROM_READ_FAILED => "EEPROM_READ_FAILED",
-            FT_EEPROM_WRITE_FAILED => "EEPROM_WRITE_FAILED",
-            FT_EEPROM_ERASE_FAILED => "EEPROM_ERASE_FAILED",
-            FT_EEPROM_NOT_PRESENT => "EEPROM_NOT_PRESENT",
-            FT_EEPROM_NOT_PROGRAMMED => "EEPROM_NOT_PROGRAMMED",
-            FT_INVALID_ARGS => "INVALID_ARGS",
-            FT_NOT_SUPPORTED => "NOT_SUPPORTED",
-            FT_OTHER_ERROR => "OTHER_ERROR",
-            FT_DEVICE_LIST_NOT_READY => "DEVICE_LIST_NOT_READY",
+            0 => panic!("OK is not an error"),
+            1 => "INVALID_HANDLE",
+            2 => "DEVICE_NOT_FOUND",
+            3 => "DEVICE_NOT_OPENED",
+            4 => "IO_ERROR",
+            5 => "INSUFFICIENT_RESOURCES",
+            6 => "INVALID_PARAMETER",
+            7 => "INVALID_BAUD_RATE",
+            8 => "DEVICE_NOT_OPENED_FOR_ERASE",
+            9 => "DEVICE_NOT_OPENED_FOR_WRITE",
+            10 => "FAILED_TO_WRITE_DEVICE",
+            11 => "EEPROM_READ_FAILED",
+            12 => "EEPROM_WRITE_FAILED",
+            13 => "EEPROM_ERASE_FAILED",
+            14 => "EEPROM_NOT_PRESENT",
+            15 => "EEPROM_NOT_PROGRAMMED",
+            16 => "INVALID_ARGS",
+            17 => "NOT_SUPPORTED",
+            18 => "OTHER_ERROR",
+            19 => "DEVICE_LIST_NOT_READY",
             _ => panic!("unknown status"),
         };
         Ftd2xxError {
@@ -127,7 +119,7 @@ impl Error for Ftd2xxError {
 
 macro_rules! ft_result {
     ($value:expr, $status:expr) => {
-        if $status != FT_OK {
+        if $status != 0 {
             Err(Ftd2xxError::new($status))
         } else {
             Ok($value)
@@ -160,11 +152,11 @@ pub fn num_devices() -> Result<DWORD, Ftd2xxError> {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Version {
     /// Major version.
-    major: u8,
+    pub major: u8,
     /// Minor version.
-    minor: u8,
+    pub minor: u8,
     /// Build number.
-    build: u8,
+    pub build: u8,
 }
 
 /// Returns the version of the underlying library.
@@ -248,19 +240,19 @@ pub enum DeviceType {
 impl From<ULONG> for DeviceType {
     fn from(value: ULONG) -> DeviceType {
         match value {
-            FT_DEVICE_BM => DeviceType::FT_BM,
-            FT_DEVICE_AM => DeviceType::FT_AM,
-            FT_DEVICE_100AX => DeviceType::FT_100AX,
-            FT_DEVICE_2232C => DeviceType::FT_2232C,
-            FT_DEVICE_232R => DeviceType::FT_232R,
-            FT_DEVICE_2232H => DeviceType::FT_2232H,
-            FT_DEVICE_4232H => DeviceType::FT_4232H,
-            FT_DEVICE_232H => DeviceType::FT_232H,
-            FT_DEVICE_X_SERIES => DeviceType::FT_X_SERIES,
-            FT_DEVICE_4222H_0 => DeviceType::FT_4222H_0,
-            FT_DEVICE_4222H_1_2 => DeviceType::FT_4222H_1_2,
-            FT_DEVICE_4222H_3 => DeviceType::FT_4222H_3,
-            FT_DEVICE_4222_PROG => DeviceType::FT_4222_PROG,
+            0 => DeviceType::FT_BM,
+            1 => DeviceType::FT_AM,
+            2 => DeviceType::FT_100AX,
+            3 => DeviceType::FT_2232C,
+            4 => DeviceType::FT_232R,
+            5 => DeviceType::FT_2232H,
+            6 => DeviceType::FT_4232H,
+            7 => DeviceType::FT_232H,
+            8 => DeviceType::FT_X_SERIES,
+            9 => DeviceType::FT_4222H_0,
+            10 => DeviceType::FT_4222H_1_2,
+            11 => DeviceType::FT_4222H_3,
+            12 => DeviceType::FT_4222_PROG,
             _ => panic!("unknown device"),
         }
     }
@@ -270,19 +262,19 @@ impl From<ULONG> for DeviceType {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
-    port_open: bool,
+    pub port_open: bool,
     /// USB link speed.
-    speed: Speed,
+    pub speed: Speed,
     /// FTDI device type.
-    device_type: DeviceType,
+    pub device_type: DeviceType,
     /// FTDI vendor ID.
-    vendor_id: u16,
+    pub vendor_id: u16,
     /// FTDI product ID.
-    product_id: u16,
+    pub product_id: u16,
     /// Device serial number.
-    serial_number: String,
+    pub serial_number: String,
     /// Device description.
-    description: String,
+    pub description: String,
 }
 
 impl fmt::Display for DeviceInfo {
