@@ -134,10 +134,12 @@ macro_rules! ft_result {
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run
 /// use libftd2xx::get_num_devices;
-/// let num_devices = get_num_devices().unwrap();
+///
+/// let num_devices = get_num_devices()?;
 /// println!("Number of devices: {}", num_devices);
+/// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
 pub fn get_num_devices() -> Result<DWORD, Ftd2xxError> {
     let mut num_devs: DWORD = 0;
@@ -150,7 +152,7 @@ pub fn get_num_devices() -> Result<DWORD, Ftd2xxError> {
 }
 
 /// D2xx library version.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Version {
     major: u8,
     minor: u8,
@@ -167,8 +169,9 @@ pub struct Version {
 /// ```
 /// use libftd2xx::get_library_version;
 ///
-/// let version = get_library_version();
+/// let version = get_library_version()?;
 /// println!("libftd2xx C library version: {:?}", version);
+/// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
 pub fn get_library_version() -> Result<Version, Ftd2xxError> {
     let mut version: DWORD = 0;
@@ -184,7 +187,7 @@ pub fn get_library_version() -> Result<Version, Ftd2xxError> {
 }
 
 /// USB device speed.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Speed {
     /// High speed USB
     HighSpeed,
@@ -204,7 +207,7 @@ impl From<ULONG> for Speed {
 
 /// FTDI device types.
 #[allow(missing_docs, non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DeviceType {
     FT_BM,
     FT_AM,
@@ -244,7 +247,7 @@ impl From<ULONG> for DeviceType {
 
 /// FTDI device information.
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
     port_open: bool,
@@ -297,14 +300,15 @@ fn create_device_info_list() -> Result<DWORD, Ftd2xxError> {
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run
 /// use libftd2xx::list_devices;
 ///
-/// let mut devices = list_devices().unwrap();
+/// let mut devices = list_devices()?;
 ///
 /// while let Some(device) = devices.pop() {
 ///     println!("device: {}", device);
 /// }
+/// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
 pub fn list_devices() -> Result<Vec<DeviceInfo>, Ftd2xxError> {
     let mut devices = Vec::new();
@@ -381,8 +385,10 @@ impl FTDI {
     ///
     /// ```no_run
     /// use libftd2xx::FTDI;
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// ft.reset().unwrap();
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.reset()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn reset(&mut self) -> Result<(), Ftd2xxError> {
         let status: FT_STATUS = unsafe { FT_ResetDevice(self.handle) };
@@ -405,8 +411,10 @@ impl FTDI {
     ///
     /// ```no_run
     /// use libftd2xx::FTDI;
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// ft.set_usb_parameters(16384, 0).unwrap();
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.set_usb_parameters(16384, 0)?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn set_usb_parameters(
         &mut self,
@@ -449,10 +457,11 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     /// use std::time::Duration;
     ///
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
     ///
     /// // Set read timeout of 5sec, write timeout of 1sec
-    /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(1000)).unwrap();
+    /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(1000))?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn set_timeouts(
         &mut self,
@@ -495,10 +504,11 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     /// use std::time::Duration;
     ///
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
     ///
     /// // Set latency timer to 10 milliseconds
-    /// ft.set_latency_timer(Duration::from_millis(10)).unwrap();
+    /// ft.set_latency_timer(Duration::from_millis(10))?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn set_latency_timer(&mut self, timer: Duration) -> Result<(), Ftd2xxError> {
         debug_assert!(timer.as_millis() >= 2, "duration must be >= 2ms");
@@ -509,6 +519,16 @@ impl FTDI {
     }
 
     /// This function disables flow control for the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.set_flow_control_none()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
     pub fn set_flow_control_none(&mut self) -> Result<(), Ftd2xxError> {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle, FT_FLOW_NONE as USHORT, 0, 0) };
@@ -583,8 +603,10 @@ impl FTDI {
     ///
     /// ```no_run
     /// use libftd2xx::{FTDI, BitMode};
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// ft.set_bit_mode(0xFF, BitMode::AsyncBitbang).unwrap();
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.set_bit_mode(0xFF, BitMode::AsyncBitbang)?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn set_bit_mode(&mut self, mask: u8, mode: BitMode) -> Result<(), Ftd2xxError> {
         let status: FT_STATUS = unsafe { FT_SetBitMode(self.handle, mask, mode as u8) };
@@ -600,12 +622,13 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// let rx_bytes = ft.get_queue_status().unwrap() as usize;
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// let rx_bytes = ft.get_queue_status()? as usize;
     ///
     /// if (rx_bytes > 0) {
-    ///     ft.read(&mut buf[0..rx_bytes]).unwrap();
+    ///     ft.read(&mut buf[0..rx_bytes])?;
     /// }
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn get_queue_status(&mut self) -> Result<DWORD, Ftd2xxError> {
         let mut queue_status: DWORD = 0;
@@ -633,7 +656,7 @@ impl FTDI {
     ///
     /// If the return value of `read` is less than the length of the buffer then
     /// a timeout has occurred and the read has been partially completed.
-
+    ///
     /// # Examples
     ///
     /// ## Read all avliable data
@@ -642,12 +665,13 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// let rx_bytes = ft.get_queue_status().unwrap() as usize;
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// let rx_bytes = ft.get_queue_status()? as usize;
     ///
     /// if (rx_bytes > 0) {
-    ///     ft.read(&mut buf[0..rx_bytes]).unwrap();
+    ///     ft.read(&mut buf[0..rx_bytes])?;
     /// }
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     ///
     /// ## Read with a timeout of 5 seconds
@@ -658,16 +682,17 @@ impl FTDI {
     ///
     /// const BUF_LEN: usize = 4096;
     /// let mut buf: [u8; BUF_LEN] = [0; BUF_LEN];
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
     ///
-    /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(0)).unwrap();
+    /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(0))?;
     ///
-    /// let bytes_read = ft.read(&mut buf).unwrap() as usize;
+    /// let bytes_read = ft.read(&mut buf)? as usize;
     /// if bytes_read == BUF_LEN {
     ///     println!("no read timeout")
     /// } else {
     ///     println!("read timeout")
     /// }
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn read(&mut self, buf: &mut [u8]) -> Result<DWORD, Ftd2xxError> {
         let mut bytes_returned: DWORD = 0;
@@ -693,8 +718,9 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     ///
     /// let buf: [u8; 256] = [0; 256];
-    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C").unwrap();
-    /// ft.write(&buf).unwrap();
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.write(&buf)?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn write(&mut self, buf: &[u8]) -> Result<DWORD, Ftd2xxError> {
         let mut bytes_written: DWORD = 0;
