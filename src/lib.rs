@@ -16,6 +16,7 @@
 //! [D2xx Programmers Guide V1.4]: https://www.ftdichip.com/Support/Documents/ProgramGuides/D2XX_Programmer's_Guide(FT_000071).pdf
 //! [D2XX Drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [Driver License Terms]: https://www.ftdichip.com/Drivers/FTDriverLicenceTermsSummary.htm
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.1.0")]
 #![deny(missing_docs, warnings)]
 
 pub use libftd2xx_ffi::DWORD;
