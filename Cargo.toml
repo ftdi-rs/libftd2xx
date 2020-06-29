@@ -1,11 +1,20 @@
 [package]
 name = "libftd2xx"
 version = "0.1.0"
-authors = ["Alex M. <7845120+newAM@users.noreply.github.com>"]
+authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Rust safe wrapper around the libftd2xx-ffi crate."
+keywords = ["ftdi", "usb"]
+categories = ["api-bindings", "hardware-support"]
+readme = "README.md"
+repository = "https://github.com/newAM/libftd2xx-rs/"
+documentation = "https://docs.rs/libftd2xx"
+license = "MIT"
 
 [dependencies]
-libftd2xx_ffi = { path = "../libftd2xx-ffi-rs/" }
+libftd2xx-ffi = "0.1"
 libc = "0.2.71"
+
+[badges]
+travis-ci = { repository = "newAM/libftd2xx-rs" }
+maintenance = { status = "as-is" }

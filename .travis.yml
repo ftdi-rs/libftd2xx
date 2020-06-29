@@ -1,0 +1,33 @@
+language: rust
+os:
+  - linux
+  - windows
+rust:
+  - stable
+  - beta
+  - nightly
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+script:
+  - |
+    if [ "$TRAVIS_OS_NAME" = "windows" ]; then
+      export LIBCLANG_PATH="C:\\Program Files\\LLVM\\\\bin"
+      export TARGET="x86_64-pc-windows-msvc"
+    else
+      export TARGET="x86_64-unknown-linux-gnu"
+    fi
+  - rustup target add "$TARGET"
+  - cargo build --verbose --target "$TARGET" --all
+  - cargo test --verbose --target "$TARGET" --all
+  - cargo package --verbose --target "$TARGET"
+deploy:
+  skip_cleanup: true
+  provider: cargo
+  token:
+    secure: ZlvZoJsT+mB/QZPLd7bHd6Gt7Aqh2UY1DWI0iG4QyG5Tl7AN2wCuLBTld/sK89dBeYvl9Fb9CPtLTDM9o5LKKB3cvhbRLmhZd0TdkR41eYTxwqj7b8ZmluUpvBCP6jD/ehIHdTgSbyq4wwTUqKZHbQBmUqlai2Dne61YLl9crWZsvocz7agHK/iwK1oEUJqhF/GwBudmx6x08M1RmMmnLEdvX9u77x9z5vLAl7uNzLsAIcDv0iwekYfEqFA4q4M2CKnne/EA4+Zgzq9uTl9ELTvYNsh6x4d2erBFe5ckczqdRS/0aTeaxInoYJKIoki8lYHKiUefTEvCDC7cIvvV0ekSWgP7xP4JmLhAJ4k+oCzQ/Ewhxc5pUeRVLKNNBJwb46WXORR4vY74UuMJzzkEERJ3UelWpd7kzGOpL9kZ/scb7kct/GOfzVfksd5B8mghaR3UhJIIqbJZ7unIl+XmGsJS3Ik+e1uTa6QQrSKMATTBfMMptixw+WegYXFWicVn+gLdGz5N5nlH+DlrROidsnukC6PgA6jD2mH9ggD+DMZTTbHDekg2RahL01UVrHnY2TNa/EY9GNSe7m5VfFTV7nmEWlZeiI+5InvNG5fha0CGCs9NSPdlU2v9EeotvxwO9XI4TgeRvCvJ3hv0Ws2ZLkLZsmAY4D0ove1NlmrSZVI=
+  on:
+    branch: master
+    tags: true
+    condition: $TRAVIS_RUST_VERSION = stable
