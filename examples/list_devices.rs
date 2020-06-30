@@ -1,9 +1,12 @@
 use libftd2xx::list_devices;
+use std::error::Error;
 
-fn main() {
-    let mut devices = list_devices().unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut devices = list_devices()?;
 
     while let Some(device) = devices.pop() {
         println!("device: {}", device);
     }
+
+    Ok(())
 }
