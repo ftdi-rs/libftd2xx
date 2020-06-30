@@ -1,7 +1,7 @@
 //! libftd2xx rust library.
 //!
-//! This takes the [libftd2xx-ffi-rs] C bindings library and extends it with
-//! rust safe wrappers.
+//! This takes the [libftd2xx-ffi] C bindings crate and extends it with rust
+//! safe wrappers.
 //!
 //! Documentation for the underlying C API can be found here:
 //! [D2xx Programmers Guide V1.4].
@@ -12,23 +12,41 @@
 //! Licensing for the underlying driver can be found here:
 //! [Driver License Terms].
 //!
-//! [libftd2xx-ffi-rs]: https://github.com/newAM/libftd2xx-ffi-rs
+//! ## Common Problems
+//! ### Unknown Device on Linux
+//! Remove the VCP FTDI driver.
+//! ```bash
+//! sudo rmmod ftdi_sio
+//! sudo rmmod usbserial
+//! ```
+//! See [FTDI Drivers Installation Guide for Linux] for more details.
+//!
+//! ### Compilation Errors on Windows
+//! The [bindgen] dependency in the [libftd2xx-ffi] crate requires LLVM to be
+//! installed and the `LIBCLANG_PATH` environment variable.
+//!
+//! See [bindgen Windows install] for more details.
+//!
+//! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 //! [D2xx Programmers Guide V1.4]: https://www.ftdichip.com/Support/Documents/ProgramGuides/D2XX_Programmer's_Guide(FT_000071).pdf
 //! [D2XX Drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [Driver License Terms]: https://www.ftdichip.com/Drivers/FTDriverLicenceTermsSummary.htm
+//! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
+//! [bindgen]: https://rust-lang.github.io/rust-bindgen
+//! [bindgen Windows install]: https://rust-lang.github.io/rust-bindgen/requirements.html#windows
 #![doc(html_root_url = "https://docs.rs/libftd2xx/0.1.0")]
 #![deny(missing_docs, warnings)]
 
 pub use libftd2xx_ffi::DWORD;
 use libftd2xx_ffi::{
     FT_Close, FT_CreateDeviceInfoList, FT_GetDeviceInfoList, FT_GetLibraryVersion,
-    FT_GetQueueStatus, FT_ListDevices, FT_OpenEx, FT_Read, FT_ResetDevice, FT_SetBitMode,
+    FT_GetQueueStatus, FT_ListDevices, FT_OpenEx, FT_Purge, FT_Read, FT_ResetDevice, FT_SetBitMode,
     FT_SetChars, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters,
     FT_Write, FT_BITMODE_ASYNC_BITBANG, FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL,
     FT_BITMODE_MCU_HOST, FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG,
     FT_BITMODE_SYNC_FIFO, FT_DEVICE_LIST_INFO_NODE, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
-    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_STATUS, PVOID,
-    UCHAR, ULONG, USHORT,
+    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
+    FT_PURGE_TX, FT_STATUS, PVOID, UCHAR, ULONG, USHORT,
 };
 use std::error::Error;
 use std::ffi::{c_void, CStr, CString};
@@ -39,6 +57,7 @@ use std::time::Duration;
 use std::vec::Vec;
 
 /// BitModes for the FTDI ports.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum BitMode {
     /// Reset.
     Reset = FT_BITMODE_RESET as isize,
@@ -60,6 +79,18 @@ pub enum BitMode {
     /// Single Channel Synchronous 245 FIFO Mode
     /// (FT2232H and FT232H devices only)
     SyncFifo = FT_BITMODE_SYNC_FIFO as isize,
+}
+
+#[test]
+fn test_bit_mode_sanity() {
+    assert_eq!(BitMode::Reset as u8, 0x00);
+    assert_eq!(BitMode::AsyncBitbang as u8, 0x01);
+    assert_eq!(BitMode::Mpsse as u8, 0x02);
+    assert_eq!(BitMode::SyncBitbang as u8, 0x04);
+    assert_eq!(BitMode::McuHost as u8, 0x08);
+    assert_eq!(BitMode::FastSerial as u8, 0x10);
+    assert_eq!(BitMode::CbusBitbang as u8, 0x20);
+    assert_eq!(BitMode::SyncFifo as u8, 0x40);
 }
 
 /// FTD2XX API errors.
@@ -159,7 +190,7 @@ pub struct Version {
     pub build: u8,
 }
 
-/// Returns the version of the underlying library.
+/// Returns the version of the underlying C library.
 ///
 /// **Note**: The documentation says this function is only supported on Windows
 /// but it seems to correctly work on Linux.
@@ -370,13 +401,22 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, Ftd2xxError> {
     ft_result!(devices, status)
 }
 
-/// FTDI device.
+/// FTDI device. **Start here!**
 pub struct FTDI {
     handle: FT_HANDLE,
 }
 
 impl FTDI {
     /// Open the device by its serial number and initialize the handle.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// FTDI::open_by_serial_number("FT59UO4C")?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
     pub fn open_by_serial_number(serial_number: &str) -> Result<FTDI, Ftd2xxError> {
         let sn = CString::new(serial_number).unwrap();
         let mut handle: FT_HANDLE = std::ptr::null_mut();
@@ -413,11 +453,9 @@ impl FTDI {
     /// transfer size of 4096 bytes to better suit the application requirements.
     /// Transfer sizes must be set to a multiple of 64 bytes between 64 bytes
     /// and 64k bytes.
-    /// When FT_SetUSBParameters is called, the change comes into effect
+    /// When [`set_usb_parameters`] is called, the change comes into effect
     /// immediately and any data that was held in the driver at the time of the
     /// change is lost.
-    ///
-    /// Note that, at present, only `in_transfer_size` is supported.
     ///
     /// # Example
     ///
@@ -425,16 +463,14 @@ impl FTDI {
     /// use libftd2xx::FTDI;
     ///
     /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
-    /// ft.set_usb_parameters(16384, 0)?;
+    /// ft.set_usb_parameters(16384)?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
-    pub fn set_usb_parameters(
-        &mut self,
-        in_transfer_size: DWORD,
-        out_transfer_size: DWORD,
-    ) -> Result<(), Ftd2xxError> {
+    ///
+    /// [`set_usb_parameters`]: : #method.set_usb_parameters
+    pub fn set_usb_parameters(&mut self, in_transfer_size: DWORD) -> Result<(), Ftd2xxError> {
         let status: FT_STATUS =
-            unsafe { FT_SetUSBParameters(self.handle, in_transfer_size, out_transfer_size) };
+            unsafe { FT_SetUSBParameters(self.handle, in_transfer_size, in_transfer_size) };
         ft_result!((), status)
     }
 
@@ -680,7 +716,7 @@ impl FTDI {
     /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
     /// let rx_bytes = ft.queue_status()? as usize;
     ///
-    /// if (rx_bytes > 0) {
+    /// if rx_bytes > 0 {
     ///     ft.read(&mut buf[0..rx_bytes])?;
     /// }
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
@@ -730,12 +766,20 @@ impl FTDI {
     ///
     /// Returns the number of bytes written.
     ///
+    /// # Example
+    ///
     /// ```no_run
     /// use libftd2xx::FTDI;
     ///
-    /// let buf: [u8; 256] = [0; 256];
+    /// const BUF_SIZE: usize = 256;
+    /// let buf: [u8; BUF_SIZE] = [0; BUF_SIZE];
     /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
-    /// ft.write(&buf)?;
+    /// let num_bytes_written = ft.write(&buf)? as usize;
+    /// if num_bytes_written == BUF_SIZE {
+    ///     println!("no write timeout")
+    /// } else {
+    ///     println!("write timeout")
+    /// }
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn write(&mut self, buf: &[u8]) -> Result<DWORD, Ftd2xxError> {
@@ -751,6 +795,70 @@ impl FTDI {
             )
         };
         ft_result!(bytes_written, status)
+    }
+
+    /// This function purges the transmit buffers in the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.purge_tx()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    pub fn purge_tx(&mut self) -> Result<(), Ftd2xxError> {
+        let status: FT_STATUS = unsafe { FT_Purge(self.handle, FT_PURGE_TX) };
+        ft_result!((), status)
+    }
+
+    /// This function purges the receive buffers in the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.purge_rx()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    pub fn purge_rx(&mut self) -> Result<(), Ftd2xxError> {
+        let status: FT_STATUS = unsafe { FT_Purge(self.handle, FT_PURGE_RX) };
+        ft_result!((), status)
+    }
+
+    /// This function purges the transmit and receive buffers in the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.purge_all()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    pub fn purge_all(&mut self) -> Result<(), Ftd2xxError> {
+        let status: FT_STATUS = unsafe { FT_Purge(self.handle, FT_PURGE_TX | FT_PURGE_RX) };
+        ft_result!((), status)
+    }
+
+    /// Close an open device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::FTDI;
+    ///
+    /// let mut ft = FTDI::open_by_serial_number("FT59UO4C")?;
+    /// ft.close()?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    pub fn close(&mut self) -> Result<(), Ftd2xxError> {
+        let status: FT_STATUS = unsafe { FT_Close(self.handle) };
+        ft_result!((), status)
     }
 }
 

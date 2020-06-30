@@ -17,7 +17,7 @@ maintenance = { status = "as-is" }
 
 [dependencies]
 libftd2xx-ffi = "0.1"
-libc = "0.2.71"
+libc = "0.2"
 
 [dev-dependencies]
 version-sync = "0.9"
