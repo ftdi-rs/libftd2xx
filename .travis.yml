@@ -30,4 +30,4 @@ deploy:
   on:
     branch: master
     tags: true
-    condition: $TRAVIS_RUST_VERSION = stable
+    condition: $TRAVIS_RUST_VERSION = stable && $TRAVIS_OS_NAME = linux
