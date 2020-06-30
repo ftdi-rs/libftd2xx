@@ -96,7 +96,7 @@ impl Ftd2xxError {
             17 => "NOT_SUPPORTED",
             18 => "OTHER_ERROR",
             19 => "DEVICE_LIST_NOT_READY",
-            _ => panic!("unknown status"),
+            _ => panic!("unknown status: {}", status),
         };
         Ftd2xxError {
             name: name.to_string(),
@@ -253,7 +253,7 @@ impl From<ULONG> for DeviceType {
             11 => DeviceType::FT_4222H_1_2,
             12 => DeviceType::FT_4222H_3,
             13 => DeviceType::FT_4222_PROG,
-            _ => panic!("unknown device"),
+            _ => panic!("unknown device: {}", value),
         }
     }
 }
