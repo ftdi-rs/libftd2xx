@@ -34,7 +34,7 @@
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [bindgen]: https://rust-lang.github.io/rust-bindgen
 //! [bindgen Windows install]: https://rust-lang.github.io/rust-bindgen/requirements.html#windows
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.1.1")]
 #![deny(missing_docs, warnings)]
 
 pub use libftd2xx_ffi::DWORD;
