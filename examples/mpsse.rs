@@ -5,26 +5,14 @@
 //! On the FT232H this will toggle ADBUS0 from high to low.
 //!
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
-use libftd2xx::{list_devices, BitMode, FTDI};
+use libftd2xx::{BitMode, Ftdi};
 use std::error::Error;
 use std::process;
 use std::thread;
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let serial_number = {
-        let mut devices = list_devices()?;
-
-        if let Some(device) = devices.pop() {
-            println!("Using device: {}", device);
-            device.serial_number
-        } else {
-            println!("No devices found!");
-            process::exit(1);
-        }
-    };
-
-    let mut ft = FTDI::open_by_serial_number(serial_number.as_str())?;
+    let mut ft = Ftdi::open_by_index(0)?;
     ft.reset()?;
     let mut buf: [u8; 4096] = [0; 4096];
     let rx_bytes = ft.queue_status()? as usize;
