@@ -1,3 +1,4 @@
+#[deny(unsafe_code, warnings)]
 use libftd2xx::num_devices;
 use std::error::Error;
 

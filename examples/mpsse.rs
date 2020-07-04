@@ -5,6 +5,7 @@
 //! On the FT232H this will toggle ADBUS0 from high to low.
 //!
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
+#[deny(unsafe_code, warnings)]
 use libftd2xx::{BitMode, Ftdi};
 use std::error::Error;
 use std::process;
