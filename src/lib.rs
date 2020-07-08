@@ -341,7 +341,7 @@ pub struct Version {
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run
 /// use libftd2xx::library_version;
 ///
 /// let version = library_version()?;

@@ -12,7 +12,6 @@ documentation = "https://docs.rs/libftd2xx"
 license = "MIT"
 
 [badges]
-travis-ci = { repository = "newAM/libftd2xx-rs" }
 maintenance = { status = "as-is" }
 
 [dependencies]
