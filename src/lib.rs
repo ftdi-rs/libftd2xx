@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "0.2"
+//! libftd2xx = "0.3"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -18,7 +18,7 @@
 //! ```no_run
 //! use libftd2xx::Ftdi;
 //!
-//! let mut ft = Ftdi::open_by_index(0)?;
+//! let mut ft = Ftdi::new()?;
 //! let info = ft.device_info()?;
 //! println!("Device information: {}", info);
 //! # Ok::<(), libftd2xx::Ftd2xxError>(())
@@ -52,7 +52,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.3.0")]
 #![deny(missing_docs, warnings)]
 
 use libftd2xx_ffi::{
@@ -140,7 +140,7 @@ fn test_bit_mode_sanity() {
 
 /// These are the C API error codes.
 ///
-/// Unforunately there are provided in the C API as self documenting, which they
+/// Unfortunately there are provided in the C API as self documenting, which they
 /// are for the most part.
 ///
 /// This is used in the [`Ftd2xxError`] error structure.
@@ -173,7 +173,7 @@ pub enum ErrorCode {
 }
 
 // These get around an annoyance with bindgen generating different types for
-// preprocess macros on Linux vs Windows.
+// preprocessor macros on Linux vs Windows.
 const OK: FT_STATUS = FT_OK as FT_STATUS;
 const INVALID_HANDLE: FT_STATUS = FT_INVALID_HANDLE as FT_STATUS;
 const DEVICE_NOT_FOUND: FT_STATUS = FT_DEVICE_NOT_FOUND as FT_STATUS;
@@ -592,21 +592,52 @@ pub struct Ftdi {
 }
 
 impl Ftdi {
-    /// Open the device by an arbitrary index and initialize the handle.
+    /// Open the first device on the system.
     ///
-    /// This function can open multiple devices, but it cannot be used to open
-    /// a specific device.  Ordering of devices on a system is not guaranteed to
-    /// remain constant.
+    /// This is equivalent to calling [`with_index`] with an index of `0`.
+    ///
+    /// This function cannot be used to open a specific device.
+    /// Ordering of devices on a system is not guaranteed to remain constant.
+    /// Calling this function multiple times may result in a different device
+    /// each time when there is more than one device connected to the system.
+    /// Use [`with_serial_number`] to open a specific device.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// Ftdi::open_by_index(0)?;
+    /// Ftdi::new()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
-    pub fn open_by_index(index: i32) -> Result<Ftdi, Ftd2xxError> {
+    ///
+    /// [`with_index`]: #method.with_index
+    /// [`with_serial_number`]: #method.with_serial_number
+    pub fn new() -> Result<Ftdi, Ftd2xxError> {
+        Ftdi::with_index(0)
+    }
+
+    /// Open the device by an arbitrary index and initialize the handle.
+    ///
+    /// This function can open multiple devices, but it cannot be used to open
+    /// a specific device.
+    /// Ordering of devices on a system is not guaranteed to remain constant.
+    /// Calling this function multiple times with the same index may result in a
+    /// different device each time when there is more than one device connected
+    /// to the system.
+    /// Use [`with_serial_number`] to open a specific device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ftdi;
+    ///
+    /// Ftdi::with_index(0)?;
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    ///
+    /// [`with_serial_number`]: #method.with_serial_number
+    pub fn with_index(index: i32) -> Result<Ftdi, Ftd2xxError> {
         let mut handle: FT_HANDLE = std::ptr::null_mut();
         let status: FT_STATUS = unsafe { FT_Open(index, &mut handle) };
         ft_result!(Ftdi { handle: handle }, status)
@@ -619,10 +650,10 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// Ftdi::open_by_serial_number("FT59UO4C")?;
+    /// Ftdi::with_serial_number("FT59UO4C")?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
-    pub fn open_by_serial_number(serial_number: &str) -> Result<Ftdi, Ftd2xxError> {
+    pub fn with_serial_number(serial_number: &str) -> Result<Ftdi, Ftd2xxError> {
         let mut handle: FT_HANDLE = std::ptr::null_mut();
         let status: FT_STATUS = unsafe {
             FT_OpenEx(
@@ -642,7 +673,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// let info = ft.device_info()?;
     /// println!("Device information: {}", info);
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
@@ -684,7 +715,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.reset()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -708,7 +739,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_usb_parameters(16384)?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -730,7 +761,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     ///
     /// // disable all special characters
     /// ft.set_chars(0, false, 0, false)?;
@@ -763,7 +794,7 @@ impl Ftdi {
     /// use libftd2xx::Ftdi;
     /// use std::time::Duration;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     ///
     /// // Set read timeout of 5sec, write timeout of 1sec
     /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(1000))?;
@@ -810,7 +841,7 @@ impl Ftdi {
     /// use libftd2xx::Ftdi;
     /// use std::time::Duration;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     ///
     /// // Set latency timer to 10 milliseconds
     /// ft.set_latency_timer(Duration::from_millis(10))?;
@@ -831,7 +862,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_flow_control_none()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -849,7 +880,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_flow_control_rts_cts()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -867,7 +898,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_flow_control_dtr_dsr()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -890,7 +921,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_flow_control_xon_xoff(0x11, 0x13)?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -917,7 +948,7 @@ impl Ftdi {
     /// see the application note [Bit Bang Modes for the FT232R and FT245R].
     ///
     /// For a description of available bit modes for the FT2232,
-    /// see the applicationnote [Bit Mode Functions for the FT2232].
+    /// see the application note [Bit Mode Functions for the FT2232].
     ///
     /// For a description of Bit Bang Mode for the FT232B and FT245B,
     /// see the application note [FT232B/FT245B Bit Bang Mode].
@@ -940,7 +971,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::{Ftdi, BitMode};
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.set_bit_mode(0xFF, BitMode::AsyncBitbang)?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -958,7 +989,7 @@ impl Ftdi {
     /// use libftd2xx::Ftdi;
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// let rx_bytes = ft.queue_status()? as usize;
     ///
     /// if (rx_bytes > 0) {
@@ -995,13 +1026,13 @@ impl Ftdi {
     ///
     /// # Examples
     ///
-    /// ## Read all avliable data
+    /// ## Read all available data
     ///
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
     /// let mut buf: [u8; 4096] = [0; 4096];
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// let rx_bytes = ft.queue_status()? as usize;
     ///
     /// if rx_bytes > 0 {
@@ -1018,7 +1049,7 @@ impl Ftdi {
     ///
     /// const BUF_LEN: usize = 4096;
     /// let mut buf: [u8; BUF_LEN] = [0; BUF_LEN];
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     ///
     /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(0))?;
     ///
@@ -1061,7 +1092,7 @@ impl Ftdi {
     ///
     /// const BUF_SIZE: usize = 256;
     /// let buf: [u8; BUF_SIZE] = [0; BUF_SIZE];
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// let num_bytes_written = ft.write(&buf)? as usize;
     /// if num_bytes_written == BUF_SIZE {
     ///     println!("no write timeout")
@@ -1092,7 +1123,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.purge_tx()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -1108,7 +1139,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.purge_rx()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -1124,7 +1155,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.purge_all()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
@@ -1140,7 +1171,7 @@ impl Ftdi {
     /// ```no_run
     /// use libftd2xx::Ftdi;
     ///
-    /// let mut ft = Ftdi::open_by_index(0)?;
+    /// let mut ft = Ftdi::new()?;
     /// ft.close()?;
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```

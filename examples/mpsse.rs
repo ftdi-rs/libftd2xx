@@ -13,7 +13,7 @@ use std::thread;
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut ft = Ftdi::open_by_index(0)?;
+    let mut ft = Ftdi::new()?;
     ft.reset()?;
     let mut buf: [u8; 4096] = [0; 4096];
     let rx_bytes = ft.queue_status()? as usize;
