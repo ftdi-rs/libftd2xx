@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.3.1")]
 #![deny(missing_docs, warnings)]
 
 use libftd2xx_ffi::{
@@ -335,10 +335,79 @@ pub struct Version {
     pub build: u8,
 }
 
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.build)
+    }
+}
+
+fn bcd_decode(value: u8) -> u8 {
+    let nibble_lo: u8 = value & 0xF;
+    let nibble_hi: u8 = (value >> 4) & 0xF;
+    assert!(nibble_lo < 0xA);
+    assert!(nibble_hi < 0xA);
+
+    return nibble_hi * 10 + nibble_lo;
+}
+
+impl Version {
+    /// Create a new version structure from decimal values.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::Version;
+    ///
+    /// let version = Version::new(3, 1, 15);
+    /// assert_eq!(version, Version{major: 3, minor: 1, build: 15});
+    /// ```
+    pub fn new(major: u8, minor: u8, build: u8) -> Version {
+        Version {
+            major,
+            minor,
+            build,
+        }
+    }
+
+    /// Create a new version structure from [binary-coded decimal] (BCD) values.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::Version;
+    ///
+    /// let version = Version::with_bcd(0x03, 0x01, 0x15);
+    /// assert_eq!(version, Version::new(3, 1, 15));
+    /// ```
+    ///
+    /// [binary-coded decimal]: https://en.wikipedia.org/wiki/Binary-coded_decimal
+    pub fn with_bcd(major: u8, minor: u8, build: u8) -> Version {
+        Version::new(bcd_decode(major), bcd_decode(minor), bcd_decode(build))
+    }
+
+    /// Create a new version structure from the raw C-API value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::Version;
+    ///
+    /// let version = Version::with_raw(0x00030115);
+    /// assert_eq!(version, Version::new(3, 1, 15));
+    /// ```
+    pub fn with_raw(value: u32) -> Version {
+        Version::with_bcd(
+            ((value >> 16) & 0xFF) as u8,
+            ((value >> 8) & 0xFF) as u8,
+            (value & 0xFF) as u8,
+        )
+    }
+}
+
 /// Returns the version of the underlying C library.
 ///
 /// **Note**: The documentation says this function is only supported on Windows
-/// but it seems to correctly work on Linux.
+/// but it seems work correctly on Linux.
 ///
 /// # Example
 ///
@@ -346,20 +415,14 @@ pub struct Version {
 /// use libftd2xx::library_version;
 ///
 /// let version = library_version()?;
-/// println!("libftd2xx C library version: {:?}", version);
+/// println!("libftd2xx C library version: {}", version);
 /// # Ok::<(), libftd2xx::Ftd2xxError>(())
 /// ```
 pub fn library_version() -> Result<Version, Ftd2xxError> {
     let mut version: u32 = 0;
     let status: FT_STATUS = unsafe { FT_GetLibraryVersion(&mut version) };
-    ft_result!(
-        Version {
-            major: ((version >> 16) & 0xFF) as u8,
-            minor: ((version >> 8) & 0xFF) as u8,
-            build: (version & 0xFF) as u8
-        },
-        status
-    )
+
+    ft_result!(Version::with_raw(version), status)
 }
 
 /// USB device speed.
