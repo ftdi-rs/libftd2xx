@@ -57,7 +57,7 @@
 #![deny(missing_docs, warnings)]
 
 use libftd2xx_ffi::{
-    FT_Close, FT_CreateDeviceInfoList, FT_GetDeviceInfo, FT_GetDeviceInfoList,
+    FT_Close, FT_CreateDeviceInfoList, FT_GetDeviceInfo, FT_GetDeviceInfoList, FT_GetDriverVersion,
     FT_GetLibraryVersion, FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read,
     FT_ResetDevice, FT_SetBitMode, FT_SetChars, FT_SetFlowControl, FT_SetLatencyTimer,
     FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_BITMODE_ASYNC_BITBANG,
@@ -320,11 +320,12 @@ pub fn num_devices() -> Result<u32, Ftd2xxError> {
     ft_result!(num_devs, status)
 }
 
-/// D2xx library version.
+/// D2XX version structure.
 ///
-/// This is returned by [`library_version`].
+/// This is returned by [`library_version`] and [`driver_version`].
 ///
 /// [`library_version`]: ./fn.library_version.html
+/// [`driver_version`]: ./struct.Ftdi.html#method.driver_version
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Version {
     /// Major version.
@@ -770,6 +771,25 @@ impl Ftdi {
             },
             status
         )
+    }
+
+    /// Returns the D2XX driver version number.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ftdi;
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let version = ft.driver_version()?;
+    /// println!("Driver Version: {}", version);
+    /// # Ok::<(), libftd2xx::Ftd2xxError>(())
+    /// ```
+    pub fn driver_version(&mut self) -> Result<Version, Ftd2xxError> {
+        let mut version: u32 = 0;
+        let status: FT_STATUS = unsafe { FT_GetDriverVersion(self.handle, &mut version) };
+
+        ft_result!(Version::with_raw(version), status)
     }
 
     /// This function sends a reset command to the device.
