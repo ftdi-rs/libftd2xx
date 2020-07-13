@@ -720,9 +720,10 @@ impl Ftdi {
     /// ```
     pub fn with_serial_number(serial_number: &str) -> Result<Ftdi, Ftd2xxError> {
         let mut handle: FT_HANDLE = std::ptr::null_mut();
+        let cstr_serial_number = std::ffi::CString::new(serial_number).unwrap();
         let status: FT_STATUS = unsafe {
             FT_OpenEx(
-                serial_number.as_ptr() as *mut c_void,
+                cstr_serial_number.as_ptr() as *mut c_void,
                 FT_OPEN_BY_SERIAL_NUMBER,
                 &mut handle,
             )
