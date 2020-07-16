@@ -5,7 +5,7 @@
 //! On the FT232H this will toggle ADBUS0 from high to low.
 //!
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
-#[deny(unsafe_code, warnings)]
+#![deny(unsafe_code, warnings)]
 use libftd2xx::{BitMode, Ftdi};
 use std::error::Error;
 use std::process;
@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ft = Ftdi::new()?;
     ft.reset()?;
     let mut buf: [u8; 4096] = [0; 4096];
-    let rx_bytes = ft.queue_status()? as usize;
+    let rx_bytes = ft.queue_status()?;
 
     if rx_bytes > 0 {
         ft.read(&mut buf[0..rx_bytes])?;
@@ -57,17 +57,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         let mut buf: [u8; 65536] = [0; 65536];
-        let num_read = ft.read(&mut buf[0..(num_bytes as usize)])?;
+        let num_read = ft.read(&mut buf[0..num_bytes])?;
 
         let mut command_echoed = false;
-        for count in 0..(num_read as usize) {
+        for count in 0..num_read {
             if buf[count] == 0xFA && buf[count + 1] == 0xAB {
                 command_echoed = true;
                 break;
             }
         }
 
-        if command_echoed == false {
+        if !command_echoed {
             println!("Error in synchronizing the MPSSE");
             process::exit(1);
         } else {

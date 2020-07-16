@@ -1,4 +1,4 @@
-#[deny(unsafe_code, warnings)]
+#![deny(unsafe_code, warnings)]
 use libftd2xx::{library_version, Ftdi};
 use std::error::Error;
 

@@ -17,7 +17,7 @@ permission from FTDI.
 
 ```toml
 [dependencies]
-libftd2xx = "0.3"
+libftd2xx = "0.4"
 ```
 
 This is a basic example to get your started.
@@ -27,7 +27,7 @@ use libftd2xx::Ftdi;
 
 let mut ft = Ftdi::new()?;
 let info = ft.device_info()?;
-println!("Device information: {}", info);
+println!("Device information: {:?}", info);
 ```
 
 ## References
