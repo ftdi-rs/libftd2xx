@@ -1,15 +1,37 @@
 language: rust
-os:
-  - linux
-  - windows
-rust:
-  - stable
-  - beta
-  - nightly
-jobs:
-  allow_failures:
-    - rust: nightly
-  fast_finish: true
+matrix:
+  include:
+    - env: TARGET=x86_64-unknown-linux-gnu
+      os: linux
+      rust: stable
+    - env: TARGET=x86_64-unknown-linux-musl
+      os: linux
+      rust: stable
+    - env: TARGET=x86_64-pc-windows-msvc
+      os: windows
+      rust: stable
+    - env: TARGET=x86_64-unknown-linux-gnu
+      os: linux
+      rust: beta
+    - env: TARGET=x86_64-unknown-linux-musl
+      os: linux
+      rust: beta
+    - env: TARGET=x86_64-pc-windows-msvc
+      os: windows
+      rust: beta
+    - env: TARGET=x86_64-unknown-linux-gnu
+      os: linux
+      rust: nightly
+    - env: TARGET=x86_64-unknown-linux-musl
+      os: linux
+      rust: nightly
+    - env: TARGET=x86_64-pc-windows-msvc
+      os: windows
+      rust: nightly
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
 before_script:
   - |
     if [ "$TRAVIS_RUST_VERSION" = nightly]; then
@@ -18,13 +40,6 @@ before_script:
       rustup component add clippy
     fi
 script:
-  - |
-    if [ "$TRAVIS_OS_NAME" = "windows" ]; then
-      export LIBCLANG_PATH="C:\\Program Files\\LLVM\\\\bin"
-      export TARGET="x86_64-pc-windows-msvc"
-    else
-      export TARGET="x86_64-unknown-linux-gnu"
-    fi
   - rustup target add "$TARGET"
   - cargo clippy --all-targets --all-features -- -D warnings
   - cargo build --verbose --target "$TARGET" --all
@@ -38,4 +53,7 @@ deploy:
   on:
     branch: master
     tags: true
-    condition: $TRAVIS_RUST_VERSION = stable && $TRAVIS_OS_NAME = linux
+    condition: $TRAVIS_RUST_VERSION = stable && $TRAVIS_OS_NAME = linux && $TARGET = x86_64-unknown-linux-gnu
+notifications:
+  email:
+    on_success: never
