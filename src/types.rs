@@ -2,20 +2,43 @@
 use libftd2xx_ffi::{
     FT_BITMODE_ASYNC_BITBANG, FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL, FT_BITMODE_MCU_HOST,
     FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG, FT_BITMODE_SYNC_FIFO,
-    FT_DEVICE_LIST_INFO_NODE, FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
-    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_EEPROM_ERASE_FAILED,
-    FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED, FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED,
-    FT_FAILED_TO_WRITE_DEVICE, FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE,
-    FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR,
-    FT_STATUS,
+    FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H, FT_DEVICE_232R,
+    FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
+    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_INFO_NODE,
+    FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
+    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_DEVICE_UNKNOWN,
+    FT_DEVICE_X_SERIES, FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED,
+    FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE,
+    FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE,
+    FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR, FT_STATUS,
 };
 use std::error::Error;
 use std::fmt;
 use std::mem::transmute;
 
+// These get around an annoyance with bindgen generating different types for
+// enums on Linux vs Windows.
+const DEVICE_BM: u32 = FT_DEVICE_BM as u32;
+const DEVICE_AM: u32 = FT_DEVICE_AM as u32;
+const DEVICE_100AX: u32 = FT_DEVICE_100AX as u32;
+const DEVICE_UNKNOWN: u32 = FT_DEVICE_UNKNOWN as u32;
+const DEVICE_2232C: u32 = FT_DEVICE_2232C as u32;
+const DEVICE_232R: u32 = FT_DEVICE_232R as u32;
+const DEVICE_2232H: u32 = FT_DEVICE_2232H as u32;
+const DEVICE_4232H: u32 = FT_DEVICE_4232H as u32;
+const DEVICE_232H: u32 = FT_DEVICE_232H as u32;
+const DEVICE_X_SERIES: u32 = FT_DEVICE_X_SERIES as u32;
+const DEVICE_4222H_0: u32 = FT_DEVICE_4222H_0 as u32;
+const DEVICE_4222H_1_2: u32 = FT_DEVICE_4222H_1_2 as u32;
+const DEVICE_4222H_3: u32 = FT_DEVICE_4222H_3 as u32;
+const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
+
 /// FTDI device types.
 ///
 /// This is used in the [`DeviceInfo`] struct.
+///
+/// There is an unfortunate lack of documentation for which chip shows up as
+/// which device with the FTD2XX driver.
 ///
 /// [`DeviceInfo`]: ./struct.DeviceInfo.html
 #[allow(non_camel_case_types)]
@@ -23,49 +46,63 @@ use std::mem::transmute;
 #[repr(u32)]
 pub enum DeviceType {
     /// FTDI BM device.
-    FTBM = 0,
+    FTBM = DEVICE_BM,
     /// FTDI AM device.
-    FTAM = 1,
+    FTAM = DEVICE_AM,
     /// FTDI 100AX device.
-    FT100AX = 2,
+    FT100AX = DEVICE_100AX,
+    /// Unknown FTDI device.
+    ///
+    /// This frequently occurs on Linux when the VCP FTDI driver is in use.
+    ///
+    /// The driver can be removed with these commands.
+    /// ```bash
+    /// sudo rmmod ftdi_sio
+    /// sudo rmmod usbserial
+    /// ```
+    /// See [FTDI Drivers Installation Guide for Linux] for more details.
+    ///
+    /// [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
+    Unknown = DEVICE_UNKNOWN,
     /// FTDI 2232C device.
-    FT2232C = 4,
+    FT2232C = DEVICE_2232C,
     /// FTDI 232R device.
-    FT232R = 5,
+    FT232R = DEVICE_232R,
     /// FT2232H device.
-    FT2232H = 6,
+    FT2232H = DEVICE_2232H,
     /// FT4232H device.
-    FT4232H = 7,
+    FT4232H = DEVICE_4232H,
     /// FT232H device.
-    FT232H = 8,
+    FT232H = DEVICE_232H,
     /// FTDI x series device.
-    FT_X_SERIES = 9,
+    FT_X_SERIES = DEVICE_X_SERIES,
     /// FT4222H device.
-    FT4222H_0 = 10,
+    FT4222H_0 = DEVICE_4222H_0,
     /// FT4222H device.
-    FT4222H_1_2 = 11,
+    FT4222H_1_2 = DEVICE_4222H_1_2,
     /// FT4222H device.
-    FT4222H_3 = 12,
-    /// FT4222H device.
-    FT4222_PROG = 13,
+    FT4222H_3 = DEVICE_4222H_3,
+    /// FT4222 device.
+    FT4222_PROG = DEVICE_4222_PROG,
 }
 
 impl From<u32> for DeviceType {
     fn from(value: u32) -> DeviceType {
         match value {
-            0 => DeviceType::FTBM,
-            1 => DeviceType::FTAM,
-            2 => DeviceType::FT100AX,
-            4 => DeviceType::FT2232C,
-            5 => DeviceType::FT232R,
-            6 => DeviceType::FT2232H,
-            7 => DeviceType::FT4232H,
-            8 => DeviceType::FT232H,
-            9 => DeviceType::FT_X_SERIES,
-            10 => DeviceType::FT4222H_0,
-            11 => DeviceType::FT4222H_1_2,
-            12 => DeviceType::FT4222H_3,
-            13 => DeviceType::FT4222_PROG,
+            DEVICE_AM => DeviceType::FTBM,
+            DEVICE_BM => DeviceType::FTAM,
+            DEVICE_100AX => DeviceType::FT100AX,
+            DEVICE_UNKNOWN => DeviceType::Unknown,
+            DEVICE_2232C => DeviceType::FT2232C,
+            DEVICE_232R => DeviceType::FT232R,
+            DEVICE_2232H => DeviceType::FT2232H,
+            DEVICE_4232H => DeviceType::FT4232H,
+            DEVICE_232H => DeviceType::FT232H,
+            DEVICE_X_SERIES => DeviceType::FT_X_SERIES,
+            DEVICE_4222H_0 => DeviceType::FT4222H_0,
+            DEVICE_4222H_1_2 => DeviceType::FT4222H_1_2,
+            DEVICE_4222H_3 => DeviceType::FT4222H_3,
+            DEVICE_4222_PROG => DeviceType::FT4222_PROG,
             _ => panic!("unknown device: {}", value),
         }
     }
@@ -203,7 +240,7 @@ impl From<u8> for BitMode {
 }
 
 #[test]
-fn test_bit_mode_sanity() {
+fn bit_mode_sanity() {
     assert_eq!(BitMode::Reset as u8, 0x00);
     assert_eq!(BitMode::AsyncBitbang as u8, 0x01);
     assert_eq!(BitMode::Mpsse as u8, 0x02);
@@ -340,7 +377,7 @@ impl fmt::Display for Ftd2xxError {
 }
 
 #[test]
-fn test_ftd2xx_error_display() {
+fn ftd2xx_error_display() {
     assert_eq!(
         format!("{}", Ftd2xxError::new(1)),
         "FTD2XX C API error: INVALID_HANDLE (1)"
@@ -423,7 +460,7 @@ impl fmt::Display for SerialNumber {
 }
 
 #[test]
-fn test_serial_number_string() {
+fn serial_number_string() {
     let mut bytes: [u8; SERIAL_NUMBER_LEN] = [0x61; SERIAL_NUMBER_LEN];
 
     assert_eq!(
