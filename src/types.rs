@@ -114,7 +114,7 @@ impl From<u32> for DeviceType {
 ///
 /// [`library_version`]: ./fn.library_version.html
 /// [`driver_version`]: ./struct.Ftdi.html#method.driver_version
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Version {
     /// Major version.
     pub major: u8,
@@ -122,6 +122,31 @@ pub struct Version {
     pub minor: u8,
     /// Build number.
     pub build: u8,
+}
+
+#[cfg(test)]
+mod version {
+    use super::*;
+
+    macro_rules! case {
+        ($name:ident, ($a:expr, $b:expr, $c:expr), ($d:expr, $e:expr, $f:expr)) => {
+            #[test]
+            fn $name() {
+                let big = Version::new($a, $b, $c);
+                let little = Version::new($d, $e, $f);
+                assert!(big > little);
+                assert!(little < big);
+            }
+        };
+    }
+
+    case!(case_1, (0, 0, 1), (0, 0, 0));
+    case!(case_2, (0, 1, 0), (0, 0, 0));
+    case!(case_3, (1, 0, 0), (0, 0, 0));
+    case!(case_4, (2, 2, 2), (1, 1, 1));
+    case!(case_5, (255, 255, 255), (254, 255, 255));
+    case!(case_6, (1, 0, 0), (0, 255, 255));
+    case!(case_7, (13, 255, 0), (13, 254, 255));
 }
 
 impl fmt::Display for Version {
