@@ -58,10 +58,8 @@
 #![allow(clippy::redundant_field_names)]
 
 mod types;
-pub use types::{
-    BitMode, Description, DeviceInfo, DeviceType, Ftd2xxError, SerialNumber, Speed, Version,
-};
-use types::{DESCRIPTION_LEN, SERIAL_NUMBER_LEN};
+use types::vid_pid_from_id;
+pub use types::{BitMode, DeviceInfo, DeviceType, Ftd2xxError, Speed, Version};
 
 use libftd2xx_ffi::{
     FT_Close, FT_CreateDeviceInfoList, FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE,
@@ -88,6 +86,47 @@ macro_rules! ft_result {
             Ok($value)
         }
     };
+}
+
+// Converts a u8 array with interior nul bytes into a string.
+fn slice_into_string(array: &[i8]) -> String {
+    let mut idx: usize = array.len();
+    for (i, element) in array.iter().enumerate() {
+        if *element == 0 {
+            idx = i;
+            break;
+        }
+    }
+    String::from_utf8_lossy(unsafe { &*(&array[0..idx] as *const [i8] as *const [u8]) }).to_string()
+}
+
+#[cfg(test)]
+mod slice_into_string {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let data: [i8; 0] = [];
+        assert_eq!(slice_into_string(&data), String::from(""));
+    }
+
+    #[test]
+    fn interior_nul() {
+        let data: [i8; 3] = [0x61, 0x00, 0x61];
+        assert_eq!(slice_into_string(&data), String::from("a"));
+    }
+
+    #[test]
+    fn no_nul() {
+        let data: [i8; 3] = [0x61; 3];
+        assert_eq!(slice_into_string(&data), String::from("aaa"));
+    }
+
+    #[test]
+    fn non_utf8() {
+        let data: [i8; 2] = [0xFEu8 as i8, 0x00];
+        assert_eq!(slice_into_string(&data), String::from("�"));
+    }
 }
 
 /// Returns the number of FTDI devices connected to the system.
@@ -186,7 +225,16 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, Ftd2xxError> {
 
         for n in 0..num_devices_usize {
             let info_node: FT_DEVICE_LIST_INFO_NODE = { &*slice }[n];
-            devices.push(DeviceInfo::with_info_node(info_node));
+            let (vid, pid) = vid_pid_from_id(info_node.ID);
+            devices.push(DeviceInfo {
+                port_open: info_node.Flags & 0x1 == 0x1,
+                speed: Some((info_node.Flags & 0x2).into()),
+                device_type: info_node.Type.into(),
+                product_id: pid,
+                vendor_id: vid,
+                serial_number: slice_into_string(&info_node.SerialNumber),
+                description: slice_into_string(&info_node.Description),
+            });
         }
 
         libc::free(list_info_memory as *mut libc::c_void);
@@ -291,23 +339,32 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn device_info(&mut self) -> Result<DeviceInfo, Ftd2xxError> {
-        let mut dev_type: u32 = 0;
-        let mut dev_id: u32 = 0;
-        let mut sn: [u8; SERIAL_NUMBER_LEN] = [0; SERIAL_NUMBER_LEN];
-        let mut description: [u8; DESCRIPTION_LEN] = [0; DESCRIPTION_LEN];
+        const STRING_LEN: usize = 64;
+        let mut device_type: u32 = 0;
+        let mut device_id: u32 = 0;
+        let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
         let status: FT_STATUS = unsafe {
             FT_GetDeviceInfo(
                 self.handle,
-                &mut dev_type,
-                &mut dev_id,
-                sn.as_mut_ptr() as *mut i8,
-                description.as_mut_ptr() as *mut i8,
+                &mut device_type,
+                &mut device_id,
+                serial_number.as_mut_ptr(),
+                description.as_mut_ptr(),
                 std::ptr::null_mut(),
             )
         };
-
+        let (vid, pid) = vid_pid_from_id(device_id);
         ft_result!(
-            DeviceInfo::with_open_device_info(dev_type, dev_id, sn, description),
+            DeviceInfo {
+                port_open: true,
+                speed: None,
+                device_type: device_type.into(),
+                product_id: pid,
+                vendor_id: vid,
+                serial_number: slice_into_string(&serial_number),
+                description: slice_into_string(&description),
+            },
             status
         )
     }

@@ -4,17 +4,16 @@ use libftd2xx_ffi::{
     FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG, FT_BITMODE_SYNC_FIFO,
     FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H, FT_DEVICE_232R,
     FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
-    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_INFO_NODE,
-    FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
-    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_DEVICE_UNKNOWN,
-    FT_DEVICE_X_SERIES, FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED,
-    FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE,
-    FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE,
-    FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR, FT_STATUS,
+    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND,
+    FT_DEVICE_NOT_OPENED, FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE,
+    FT_DEVICE_UNKNOWN, FT_DEVICE_X_SERIES, FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT,
+    FT_EEPROM_NOT_PROGRAMMED, FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED,
+    FT_FAILED_TO_WRITE_DEVICE, FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE,
+    FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR,
+    FT_STATUS,
 };
 use std::error::Error;
 use std::fmt;
-use std::mem::transmute;
 
 // These get around an annoyance with bindgen generating different types for
 // enums on Linux vs Windows.
@@ -435,104 +434,13 @@ impl From<u32> for Speed {
     }
 }
 
-// if there is a better way to deal with C-strings that contain interior nul
-// bytes let me know
-fn u8_into_string(array: &[u8]) -> String {
-    debug_assert!(!array.is_empty());
-    let mut idx: usize = array.len();
-    for (i, element) in array.iter().enumerate() {
-        if *element == 0 {
-            idx = i;
-            break;
-        }
-    }
-    String::from_utf8_lossy(&array[0..idx]).to_string()
-}
-
-// Maximum lengths for returned string values.
-pub const SERIAL_NUMBER_LEN: usize = 16;
-pub const DESCRIPTION_LEN: usize = 64;
-
-/// FTDI device serial number.
-///
-/// This is used in [`DeviceInfo`].
-///
-/// [`DeviceInfo`]: ./struct.DeviceInfo.html
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct SerialNumber {
-    /// Raw byte value.
-    pub raw: [u8; SERIAL_NUMBER_LEN],
-}
-
-impl SerialNumber {
-    /// Create a new serial number structure.
-    pub fn new(raw: [u8; SERIAL_NUMBER_LEN]) -> SerialNumber {
-        SerialNumber { raw }
-    }
-
-    /// Create a new serial number structure from signed bytes.
-    pub fn with_i8(raw: [i8; SERIAL_NUMBER_LEN]) -> SerialNumber {
-        SerialNumber::new(unsafe {
-            transmute::<[i8; SERIAL_NUMBER_LEN], [u8; SERIAL_NUMBER_LEN]>(raw)
-        })
-    }
-}
-
-impl fmt::Display for SerialNumber {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", u8_into_string(&self.raw))
-    }
-}
-
-#[test]
-fn serial_number_string() {
-    let mut bytes: [u8; SERIAL_NUMBER_LEN] = [0x61; SERIAL_NUMBER_LEN];
-
-    assert_eq!(
-        SerialNumber::new(bytes).to_string(),
-        String::from("aaaaaaaaaaaaaaaa")
-    );
-
-    bytes[1] = 0x0;
-    assert_eq!(SerialNumber::new(bytes).to_string(), String::from("a"));
-}
-
-/// FTDI device description.
-///
-/// This is used in [`DeviceInfo`].
-///
-/// [`DeviceInfo`]: ./struct.DeviceInfo.html
-#[derive(Copy, Clone)]
-pub struct Description {
-    /// Raw byte value.
-    pub raw: [u8; DESCRIPTION_LEN],
-}
-
-impl Description {
-    /// Create a new description structure.
-    pub fn new(raw: [u8; DESCRIPTION_LEN]) -> Description {
-        Description { raw }
-    }
-
-    /// Create a new description structure from signed bytes.
-    pub fn with_i8(raw: [i8; DESCRIPTION_LEN]) -> Description {
-        Description::new(unsafe { transmute::<[i8; DESCRIPTION_LEN], [u8; DESCRIPTION_LEN]>(raw) })
-    }
-}
-
-impl fmt::Display for Description {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", u8_into_string(&self.raw))
-    }
-}
-
 /// FTDI device information.
 ///
 /// This is returned by [`list_devices`] and [`device_info`].
 ///
 /// [`list_devices`]: ./fn.list_devices.html
 /// [`device_info`]: ./struct.Ftdi.html#method.device_info
-#[derive(Copy, Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
     pub port_open: bool,
@@ -550,54 +458,24 @@ pub struct DeviceInfo {
     /// FTDI product ID.
     pub product_id: u16,
     /// Device serial number.
-    pub serial_number: SerialNumber,
+    ///
+    /// This is assumed to be UTF-8.
+    /// Data that is not UTF-8 will appear as the replacement character �.
+    pub serial_number: String,
     /// Device description.
-    pub description: Description,
+    ///
+    /// This is assumed to be UTF-8.
+    /// Data that is not UTF-8 will appear as the replacement character �.
+    pub description: String,
 }
 
-fn vid_pid_from_id(id: u32) -> (u16, u16) {
+pub fn vid_pid_from_id(id: u32) -> (u16, u16) {
     (((id >> 16) & 0xFFFF) as u16, (id & 0xFFFF) as u16)
 }
 
 #[test]
 fn test_vid_pid_from_id() {
     assert_eq!((0x0403, 0x6014), vid_pid_from_id(0x04036014))
-}
-
-impl DeviceInfo {
-    /// Create a new device information struct with a C-API info node.
-    pub fn with_info_node(info_node: FT_DEVICE_LIST_INFO_NODE) -> DeviceInfo {
-        let (vid, pid) = vid_pid_from_id(info_node.ID);
-        DeviceInfo {
-            port_open: info_node.Flags & 0x1 == 0x1,
-            speed: Some((info_node.Flags & 0x2).into()),
-            device_type: info_node.Type.into(),
-            product_id: pid,
-            vendor_id: vid,
-            serial_number: SerialNumber::with_i8(info_node.SerialNumber),
-            description: Description::with_i8(info_node.Description),
-        }
-    }
-
-    /// Create a new device information struct with the information returned by
-    /// the `FT_GetDeviceInfo` C-API function.
-    pub fn with_open_device_info(
-        device_type: u32,
-        device_id: u32,
-        serial_number: [u8; SERIAL_NUMBER_LEN],
-        description: [u8; DESCRIPTION_LEN],
-    ) -> DeviceInfo {
-        let (vid, pid) = vid_pid_from_id(device_id);
-        DeviceInfo {
-            port_open: true,
-            speed: None,
-            device_type: device_type.into(),
-            product_id: pid,
-            vendor_id: vid,
-            serial_number: SerialNumber::new(serial_number),
-            description: Description::new(description),
-        }
-    }
 }
 
 impl fmt::Debug for DeviceInfo {
