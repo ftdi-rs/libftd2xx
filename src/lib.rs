@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.5.1"
+//! libftd2xx = "~0.6.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.5.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.6.0")]
 #![deny(missing_docs, warnings)]
 #![allow(clippy::redundant_field_names)]
 
@@ -157,7 +157,7 @@ pub fn num_devices() -> Result<u32, Ftd2xxError> {
 /// Returns the version of the underlying C library.
 ///
 /// **Note**: The documentation says this function is only supported on Windows
-/// but it seems work correctly on Linux.
+/// but it seems to work correctly on Linux.
 ///
 /// # Example
 ///
@@ -182,7 +182,7 @@ fn create_device_info_list() -> Result<u32, Ftd2xxError> {
 }
 
 /// This function returns a device information vector with information about
-/// the D2xx devices connected to the system.
+/// the D2XX devices connected to the system.
 ///
 /// # Example
 ///

@@ -453,9 +453,18 @@ pub struct DeviceInfo {
     pub speed: Option<Speed>,
     /// FTDI device type.
     pub device_type: DeviceType,
-    /// FTDI vendor ID.
+    /// FTDI device vendor ID.
+    ///
+    /// This is typically `0x0403`.
     pub vendor_id: u16,
     /// FTDI product ID.
+    ///
+    /// Typical FTDI product IDs:
+    /// * `0x6001` FT232AM/FT232BM/FT232R
+    /// * `0x6010` FT2232C/FT2232D/FT2232H
+    /// * `0x6011` FT4232/FT4232H
+    /// * `0x6014` FT232H
+    /// * `0x6015` FT230X/FT231X/FT234X
     pub product_id: u16,
     /// Device serial number.
     ///
