@@ -1,7 +1,8 @@
-#![deny(unsafe_code, warnings)]
-use libftd2xx::{library_version, Ftd2xxError, Ftdi};
+#[deny(unsafe_code, warnings)]
+use libftd2xx::{library_version, Ftdi};
+use std::error::Error;
 
-fn main() -> Result<(), Ftd2xxError> {
+fn main() -> Result<(), Box<dyn Error>> {
     println!("Library Version: {}", library_version()?);
 
     let mut ft = Ftdi::new()?;

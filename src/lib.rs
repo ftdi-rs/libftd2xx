@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.6.0"
+//! libftd2xx = "0.3"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,27 +53,30 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.6.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.3.2")]
 #![deny(missing_docs, warnings)]
 #![allow(clippy::redundant_field_names)]
 
 mod types;
-use types::vid_pid_from_id;
-pub use types::{BitMode, DeviceInfo, DeviceType, Ftd2xxError, Speed, Version};
+pub use types::{
+    BitMode, DeviceInfo, DeviceType, Eeprom, Eeprom232h, EepromHeader, Ftd2xxError, Speed, Version,
+};
+use types::{DESCRIPTION_LEN, EEPROM_STRING_LEN, SERIAL_NUMBER_LEN};
 
 use libftd2xx_ffi::{
-    FT_Close, FT_CreateDeviceInfoList, FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE,
-    FT_GetDeviceInfo, FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLibraryVersion,
+    FT_Close, FT_CreateDeviceInfoList, FT_EEPROM_Read, FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite,
+    FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLibraryVersion,
     FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE,
     FT_ResetDevice, FT_SetBitMode, FT_SetChars, FT_SetFlowControl, FT_SetLatencyTimer,
     FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE,
-    FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
+    FT_EEPROM_232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
     FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::mem;
+use std::mem::transmute;
 use std::ptr;
 use std::time::Duration;
 use std::vec::Vec;
@@ -86,47 +89,6 @@ macro_rules! ft_result {
             Ok($value)
         }
     };
-}
-
-// Converts a u8 array with interior nul bytes into a string.
-fn slice_into_string(array: &[i8]) -> String {
-    let mut idx: usize = array.len();
-    for (i, element) in array.iter().enumerate() {
-        if *element == 0 {
-            idx = i;
-            break;
-        }
-    }
-    String::from_utf8_lossy(unsafe { &*(&array[0..idx] as *const [i8] as *const [u8]) }).to_string()
-}
-
-#[cfg(test)]
-mod slice_into_string {
-    use super::*;
-
-    #[test]
-    fn empty() {
-        let data: [i8; 0] = [];
-        assert_eq!(slice_into_string(&data), String::from(""));
-    }
-
-    #[test]
-    fn interior_nul() {
-        let data: [i8; 3] = [0x61, 0x00, 0x61];
-        assert_eq!(slice_into_string(&data), String::from("a"));
-    }
-
-    #[test]
-    fn no_nul() {
-        let data: [i8; 3] = [0x61; 3];
-        assert_eq!(slice_into_string(&data), String::from("aaa"));
-    }
-
-    #[test]
-    fn non_utf8() {
-        let data: [i8; 2] = [0xFEu8 as i8, 0x00];
-        assert_eq!(slice_into_string(&data), String::from("�"));
-    }
 }
 
 /// Returns the number of FTDI devices connected to the system.
@@ -157,7 +119,7 @@ pub fn num_devices() -> Result<u32, Ftd2xxError> {
 /// Returns the version of the underlying C library.
 ///
 /// **Note**: The documentation says this function is only supported on Windows
-/// but it seems to work correctly on Linux.
+/// but it seems work correctly on Linux.
 ///
 /// # Example
 ///
@@ -182,7 +144,7 @@ fn create_device_info_list() -> Result<u32, Ftd2xxError> {
 }
 
 /// This function returns a device information vector with information about
-/// the D2XX devices connected to the system.
+/// the D2xx devices connected to the system.
 ///
 /// # Example
 ///
@@ -225,15 +187,19 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, Ftd2xxError> {
 
         for n in 0..num_devices_usize {
             let info_node: FT_DEVICE_LIST_INFO_NODE = { &*slice }[n];
-            let (vid, pid) = vid_pid_from_id(info_node.ID);
+
             devices.push(DeviceInfo {
                 port_open: info_node.Flags & 0x1 == 0x1,
                 speed: Some((info_node.Flags & 0x2).into()),
                 device_type: info_node.Type.into(),
-                product_id: pid,
-                vendor_id: vid,
-                serial_number: slice_into_string(&info_node.SerialNumber),
-                description: slice_into_string(&info_node.Description),
+                product_id: u16::try_from(info_node.ID & 0xFFFF).unwrap(),
+                vendor_id: u16::try_from((info_node.ID >> 16) & 0xFFFF).unwrap(),
+                serial_number: transmute::<[i8; SERIAL_NUMBER_LEN], [u8; SERIAL_NUMBER_LEN]>(
+                    info_node.SerialNumber,
+                ),
+                description: transmute::<[i8; DESCRIPTION_LEN], [u8; DESCRIPTION_LEN]>(
+                    info_node.Description,
+                ),
             });
         }
 
@@ -339,31 +305,30 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::Ftd2xxError>(())
     /// ```
     pub fn device_info(&mut self) -> Result<DeviceInfo, Ftd2xxError> {
-        const STRING_LEN: usize = 64;
-        let mut device_type: u32 = 0;
-        let mut device_id: u32 = 0;
-        let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
-        let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut dev_type: u32 = 0;
+        let mut dev_id: u32 = 0;
+        let mut sn: [u8; SERIAL_NUMBER_LEN] = [0; SERIAL_NUMBER_LEN];
+        let mut description: [u8; DESCRIPTION_LEN] = [0; DESCRIPTION_LEN];
         let status: FT_STATUS = unsafe {
             FT_GetDeviceInfo(
                 self.handle,
-                &mut device_type,
-                &mut device_id,
-                serial_number.as_mut_ptr(),
-                description.as_mut_ptr(),
+                &mut dev_type,
+                &mut dev_id,
+                sn.as_mut_ptr() as *mut i8,
+                description.as_mut_ptr() as *mut i8,
                 std::ptr::null_mut(),
             )
         };
-        let (vid, pid) = vid_pid_from_id(device_id);
+
         ft_result!(
             DeviceInfo {
                 port_open: true,
                 speed: None,
-                device_type: device_type.into(),
-                product_id: pid,
-                vendor_id: vid,
-                serial_number: slice_into_string(&serial_number),
-                description: slice_into_string(&description),
+                device_type: dev_type.into(),
+                vendor_id: u16::try_from((dev_id >> 16) & 0xFFFF).unwrap(),
+                product_id: u16::try_from(dev_id & 0xFFFF).unwrap(),
+                serial_number: sn,
+                description: description,
             },
             status
         )
@@ -991,6 +956,39 @@ impl Ftdi {
         let len: u32 = u32::try_from(buf.len()).unwrap();
         let status: FT_STATUS = unsafe { FT_EE_UAWrite(self.handle, buf.as_ptr() as *mut u8, len) };
         ft_result!((), status)
+    }
+
+    // TODO
+    pub fn eeprom_read(&mut self) -> Result<Eeprom, Ftd2xxError> {
+        let info = self.device_info()?;
+        let mut manufacturer: [i8; EEPROM_STRING_LEN] = [0; EEPROM_STRING_LEN];
+        let mut manufacturer_id: [i8; EEPROM_STRING_LEN] = [0; EEPROM_STRING_LEN];
+        let mut description: [i8; EEPROM_STRING_LEN] = [0; EEPROM_STRING_LEN];
+        let mut serial_number: [i8; EEPROM_STRING_LEN] = [0; EEPROM_STRING_LEN];
+        let mut data: FT_EEPROM_232H = unsafe { mem::zeroed() };
+        let data_size: u32 = u32::try_from(mem::size_of::<FT_EEPROM_232H>()).unwrap();
+        data.common.deviceType = info.device_type as u32;
+        debug_assert!(data_size > 0);
+
+        let status: FT_STATUS = unsafe {
+            FT_EEPROM_Read(
+                self.handle,
+                &mut data as *mut FT_EEPROM_232H as *mut c_void,
+                data_size,
+                manufacturer.as_mut_ptr(),
+                manufacturer_id.as_mut_ptr(),
+                description.as_mut_ptr(),
+                serial_number.as_mut_ptr(),
+            )
+        };
+        let ret: Eeprom = Eeprom::Eeprom232h(Eeprom232h::new(
+            data,
+            manufacturer,
+            manufacturer_id,
+            description,
+            serial_number,
+        ));
+        ft_result!(ret, status)
     }
 }
 

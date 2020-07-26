@@ -1,7 +1,8 @@
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{list_devices, Ftd2xxError};
+use libftd2xx::list_devices;
+use std::error::Error;
 
-fn main() -> Result<(), Ftd2xxError> {
+fn main() -> Result<(), Box<dyn Error>> {
     let mut devices = list_devices()?;
 
     while let Some(device) = devices.pop() {

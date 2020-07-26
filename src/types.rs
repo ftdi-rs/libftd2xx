@@ -2,42 +2,20 @@
 use libftd2xx_ffi::{
     FT_BITMODE_ASYNC_BITBANG, FT_BITMODE_CBUS_BITBANG, FT_BITMODE_FAST_SERIAL, FT_BITMODE_MCU_HOST,
     FT_BITMODE_MPSSE, FT_BITMODE_RESET, FT_BITMODE_SYNC_BITBANG, FT_BITMODE_SYNC_FIFO,
-    FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H, FT_DEVICE_232R,
-    FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
-    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND,
-    FT_DEVICE_NOT_OPENED, FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE,
-    FT_DEVICE_UNKNOWN, FT_DEVICE_X_SERIES, FT_EEPROM_ERASE_FAILED, FT_EEPROM_NOT_PRESENT,
-    FT_EEPROM_NOT_PROGRAMMED, FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED,
-    FT_FAILED_TO_WRITE_DEVICE, FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE,
-    FT_INVALID_HANDLE, FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR,
-    FT_STATUS,
+    FT_DEVICE_LIST_NOT_READY, FT_DEVICE_NOT_FOUND, FT_DEVICE_NOT_OPENED,
+    FT_DEVICE_NOT_OPENED_FOR_ERASE, FT_DEVICE_NOT_OPENED_FOR_WRITE, FT_EEPROM_232H,
+    FT_EEPROM_ERASE_FAILED, FT_EEPROM_HEADER, FT_EEPROM_NOT_PRESENT, FT_EEPROM_NOT_PROGRAMMED,
+    FT_EEPROM_READ_FAILED, FT_EEPROM_WRITE_FAILED, FT_FAILED_TO_WRITE_DEVICE,
+    FT_INSUFFICIENT_RESOURCES, FT_INVALID_ARGS, FT_INVALID_BAUD_RATE, FT_INVALID_HANDLE,
+    FT_INVALID_PARAMETER, FT_IO_ERROR, FT_NOT_SUPPORTED, FT_OK, FT_OTHER_ERROR, FT_STATUS,
 };
 use std::error::Error;
 use std::fmt;
-
-// These get around an annoyance with bindgen generating different types for
-// enums on Linux vs Windows.
-const DEVICE_BM: u32 = FT_DEVICE_BM as u32;
-const DEVICE_AM: u32 = FT_DEVICE_AM as u32;
-const DEVICE_100AX: u32 = FT_DEVICE_100AX as u32;
-const DEVICE_UNKNOWN: u32 = FT_DEVICE_UNKNOWN as u32;
-const DEVICE_2232C: u32 = FT_DEVICE_2232C as u32;
-const DEVICE_232R: u32 = FT_DEVICE_232R as u32;
-const DEVICE_2232H: u32 = FT_DEVICE_2232H as u32;
-const DEVICE_4232H: u32 = FT_DEVICE_4232H as u32;
-const DEVICE_232H: u32 = FT_DEVICE_232H as u32;
-const DEVICE_X_SERIES: u32 = FT_DEVICE_X_SERIES as u32;
-const DEVICE_4222H_0: u32 = FT_DEVICE_4222H_0 as u32;
-const DEVICE_4222H_1_2: u32 = FT_DEVICE_4222H_1_2 as u32;
-const DEVICE_4222H_3: u32 = FT_DEVICE_4222H_3 as u32;
-const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
+use std::mem::transmute;
 
 /// FTDI device types.
 ///
 /// This is used in the [`DeviceInfo`] struct.
-///
-/// There is an unfortunate lack of documentation for which chip shows up as
-/// which device with the FTD2XX driver.
 ///
 /// [`DeviceInfo`]: ./struct.DeviceInfo.html
 #[allow(non_camel_case_types)]
@@ -45,64 +23,282 @@ const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
 #[repr(u32)]
 pub enum DeviceType {
     /// FTDI BM device.
-    FTBM = DEVICE_BM,
+    FTBM = 0,
     /// FTDI AM device.
-    FTAM = DEVICE_AM,
+    FTAM = 1,
     /// FTDI 100AX device.
-    FT100AX = DEVICE_100AX,
-    /// Unknown FTDI device.
-    ///
-    /// This frequently occurs on Linux when the VCP FTDI driver is in use.
-    ///
-    /// The driver can be removed with these commands.
-    /// ```bash
-    /// sudo rmmod ftdi_sio
-    /// sudo rmmod usbserial
-    /// ```
-    /// See [FTDI Drivers Installation Guide for Linux] for more details.
-    ///
-    /// [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
-    Unknown = DEVICE_UNKNOWN,
+    FT100AX = 2,
     /// FTDI 2232C device.
-    FT2232C = DEVICE_2232C,
+    FT2232C = 4,
     /// FTDI 232R device.
-    FT232R = DEVICE_232R,
+    FT232R = 5,
     /// FT2232H device.
-    FT2232H = DEVICE_2232H,
+    FT2232H = 6,
     /// FT4232H device.
-    FT4232H = DEVICE_4232H,
+    FT4232H = 7,
     /// FT232H device.
-    FT232H = DEVICE_232H,
+    FT232H = 8,
     /// FTDI x series device.
-    FT_X_SERIES = DEVICE_X_SERIES,
+    FT_X_SERIES = 9,
     /// FT4222H device.
-    FT4222H_0 = DEVICE_4222H_0,
+    FT4222H_0 = 10,
     /// FT4222H device.
-    FT4222H_1_2 = DEVICE_4222H_1_2,
+    FT4222H_1_2 = 11,
     /// FT4222H device.
-    FT4222H_3 = DEVICE_4222H_3,
-    /// FT4222 device.
-    FT4222_PROG = DEVICE_4222_PROG,
+    FT4222H_3 = 12,
+    /// FT4222H device.
+    FT4222_PROG = 13,
 }
 
 impl From<u32> for DeviceType {
     fn from(value: u32) -> DeviceType {
         match value {
-            DEVICE_AM => DeviceType::FTBM,
-            DEVICE_BM => DeviceType::FTAM,
-            DEVICE_100AX => DeviceType::FT100AX,
-            DEVICE_UNKNOWN => DeviceType::Unknown,
-            DEVICE_2232C => DeviceType::FT2232C,
-            DEVICE_232R => DeviceType::FT232R,
-            DEVICE_2232H => DeviceType::FT2232H,
-            DEVICE_4232H => DeviceType::FT4232H,
-            DEVICE_232H => DeviceType::FT232H,
-            DEVICE_X_SERIES => DeviceType::FT_X_SERIES,
-            DEVICE_4222H_0 => DeviceType::FT4222H_0,
-            DEVICE_4222H_1_2 => DeviceType::FT4222H_1_2,
-            DEVICE_4222H_3 => DeviceType::FT4222H_3,
-            DEVICE_4222_PROG => DeviceType::FT4222_PROG,
+            0 => DeviceType::FTBM,
+            1 => DeviceType::FTAM,
+            2 => DeviceType::FT100AX,
+            4 => DeviceType::FT2232C,
+            5 => DeviceType::FT232R,
+            6 => DeviceType::FT2232H,
+            7 => DeviceType::FT4232H,
+            8 => DeviceType::FT232H,
+            9 => DeviceType::FT_X_SERIES,
+            10 => DeviceType::FT4222H_0,
+            11 => DeviceType::FT4222H_1_2,
+            12 => DeviceType::FT4222H_3,
+            13 => DeviceType::FT4222_PROG,
             _ => panic!("unknown device: {}", value),
+        }
+    }
+}
+
+// Maximum lengths for EEPROM strings
+pub const EEPROM_STRING_LEN: usize = 64;
+
+/// EEPROM header structurecommon to all FTDI devices.
+///
+/// Used in the [`eeprom_read`] and [`eeprom_program`] functions.
+///
+/// [`eeprom_read`]: ./struct.Ftdi.html#method.eeprom_read
+/// [`eeprom_program`]: ./struct.Ftdi.html#method.eeprom_program
+#[derive(Copy, Clone)]
+pub struct EepromHeader {
+    /// Manufacturer.
+    pub manufacturer: [u8; EEPROM_STRING_LEN],
+    /// Manufacturer ID, typically the first two characters of the serial
+    /// number.
+    pub manufacturer_id: [u8; EEPROM_STRING_LEN],
+    /// Device description.
+    pub description: [u8; EEPROM_STRING_LEN],
+    /// Serial number.
+    pub serial_number: [u8; EEPROM_STRING_LEN],
+    /// Device type.
+    pub device_type: DeviceType,
+    /// USB vendor ID, typically 0x0403.
+    pub vendor_id: u16,
+    /// USB product ID.
+    pub product_id: u16,
+    /// non-zero if serial number to be used (TODO)
+    pub serial_number_enable: bool,
+    /// Maximum power.
+    ///
+    /// The source documentation is a little lacking here.
+    /// My best assumption is that this a maximum device power in milliamps.
+    ///
+    /// This field cannot be programmed to a value greater than 500.
+    pub max_power: u16,
+    /// 0 = bus powered, 1 = self powered
+    pub self_powered: bool,
+    /// 0 = not capable, 1 = capable
+    pub remote_wakeup: bool,
+    /// non-zero if pull down in suspend enabled
+    pub pull_down_enable: bool,
+}
+
+impl EepromHeader {
+    fn new(
+        data: FT_EEPROM_HEADER,
+        manufacturer: [i8; EEPROM_STRING_LEN],
+        manufacturer_id: [i8; EEPROM_STRING_LEN],
+        description: [i8; EEPROM_STRING_LEN],
+        serial_number: [i8; EEPROM_STRING_LEN],
+    ) -> EepromHeader {
+        EepromHeader {
+            device_type: data.deviceType.into(),
+            manufacturer: unsafe {
+                transmute::<[i8; EEPROM_STRING_LEN], [u8; EEPROM_STRING_LEN]>(manufacturer)
+            },
+            manufacturer_id: unsafe {
+                transmute::<[i8; EEPROM_STRING_LEN], [u8; EEPROM_STRING_LEN]>(manufacturer_id)
+            },
+            description: unsafe {
+                transmute::<[i8; EEPROM_STRING_LEN], [u8; EEPROM_STRING_LEN]>(description)
+            },
+            serial_number: unsafe {
+                transmute::<[i8; EEPROM_STRING_LEN], [u8; EEPROM_STRING_LEN]>(serial_number)
+            },
+            vendor_id: data.VendorId,
+            product_id: data.ProductId,
+            serial_number_enable: data.SerNumEnable != 0,
+            max_power: data.MaxPower,
+            self_powered: data.SelfPowered != 0,
+            remote_wakeup: data.RemoteWakeup != 0,
+            pull_down_enable: data.PullDownEnable != 0,
+        }
+    }
+}
+
+// if there is a better way to deal with C-strings that contain interior nul
+// bytes let me know
+fn u8_into_string(array: &[u8]) -> String {
+    debug_assert!(!array.is_empty());
+    let mut idx: usize = array.len();
+    for i in 1..array.len() {
+        if array[i] == 0 {
+            idx = i;
+            break;
+        }
+    }
+    String::from_utf8_lossy(&array[0..idx]).to_string()
+}
+
+impl fmt::Debug for EepromHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "DeviceInfo {{ \
+                manufacturer: {}, \
+                manufacturer_id: {}, \
+                description: {}, \
+                serial_number: {}, \
+                device_type: {:?}, \
+                vendor_id: 0x{:04X}, \
+                product_id: 0x{:04X}, \
+                serial_number_enable: {}, \
+                max_power: {}, \
+                self_powered: {}, \
+                remote_wakeup: {}, \
+                pull_down_enable: {} \
+            }}",
+            u8_into_string(&self.manufacturer),
+            u8_into_string(&self.manufacturer_id),
+            u8_into_string(&self.description),
+            u8_into_string(&self.serial_number),
+            self.device_type,
+            self.vendor_id,
+            self.product_id,
+            self.serial_number_enable,
+            self.max_power,
+            self.self_powered,
+            self.remote_wakeup,
+            self.pull_down_enable,
+        )
+    }
+}
+
+/// FT232H EEPROM structure.
+///
+/// Used in the [`eeprom_read`] and [`eeprom_program`] functions.
+///
+/// [`eeprom_read`]: ./struct.Ftdi.html#method.eeprom_read
+/// [`eeprom_program`]: ./struct.Ftdi.html#method.eeprom_program
+#[derive(Debug, Copy, Clone)]
+pub struct Eeprom232h {
+    /// Common EEPROM header
+    pub header: EepromHeader,
+    /// non-zero if AC bus pins have slow slew
+    pub ac_slow_slew: u8,
+    /// non-zero if AC bus pins are Schmitt input
+    pub ac_schmitt_input: u8,
+    /// valid values are 4mA, 8mA, 12mA, 16mA
+    pub ac_drive_current: u8,
+    /// non-zero if AD bus pins have slow slew
+    pub ad_slow_slew: u8,
+    /// non-zero if AD bus pins are Schmitt input
+    pub ad_schmitt_input: u8,
+    /// valid values are 4mA, 8mA, 12mA, 16mA
+    pub ad_drive_current: u8,
+    /// CBUS mux control
+    pub cbus0: u8,
+    /// CBUS mux control
+    pub cbus1: u8,
+    /// CBUS mux control
+    pub cbus2: u8,
+    /// CBUS mux control
+    pub cbus3: u8,
+    /// CBUS mux control
+    pub cbus4: u8,
+    /// CBUS mux control
+    pub cbus5: u8,
+    /// CBUS mux control
+    pub cbus6: u8,
+    /// CBUS mux control
+    pub cbus7: u8,
+    /// CBUS mux control
+    pub cbus8: u8,
+    /// CBUS mux control
+    pub cbus9: u8,
+    /// FT1248 clock polarity - clock idle high (1) or clock idle low (0)
+    pub ft1248_cpol: u8,
+    /// FT1248 data is LSB (1) or MSB (0)
+    pub ft1248_lsb: u8,
+    /// FT1248 flow control enable
+    pub ft1248_flow_control: u8,
+    /// non-zero if interface is 245 FIFO
+    pub is_fifo: u8,
+    /// non-zero if interface is 245 FIFO CPU target
+    pub is_fifo_target: u8,
+    /// non-zero if interface is Fast serial
+    pub is_fast_serial: u8,
+    /// non-zero if interface is FT1248
+    pub is_ft1248: u8,
+    /// TODO
+    pub power_save_enable: u8,
+    /// Driver option
+    pub driver_type: u8,
+}
+
+impl Eeprom232h {
+    /// Create a new FT232H EEPROM structure.
+    pub fn new(
+        data: FT_EEPROM_232H,
+        manufacturer: [i8; EEPROM_STRING_LEN],
+        manufacturer_id: [i8; EEPROM_STRING_LEN],
+        description: [i8; EEPROM_STRING_LEN],
+        serial_number: [i8; EEPROM_STRING_LEN],
+    ) -> Eeprom232h {
+        Eeprom232h {
+            header: EepromHeader::new(
+                data.common,
+                manufacturer,
+                manufacturer_id,
+                description,
+                serial_number,
+            ),
+            ac_slow_slew: data.ACSlowSlew,
+            ac_schmitt_input: data.ACSchmittInput,
+            ac_drive_current: data.ACDriveCurrent,
+            ad_slow_slew: data.ADSlowSlew,
+            ad_schmitt_input: data.ADSchmittInput,
+            ad_drive_current: data.ADDriveCurrent,
+            cbus0: data.Cbus0,
+            cbus1: data.Cbus1,
+            cbus2: data.Cbus2,
+            cbus3: data.Cbus3,
+            cbus4: data.Cbus4,
+            cbus5: data.Cbus5,
+            cbus6: data.Cbus6,
+            cbus7: data.Cbus7,
+            cbus8: data.Cbus8,
+            cbus9: data.Cbus9,
+            ft1248_cpol: data.FT1248Cpol,
+            ft1248_lsb: data.FT1248Lsb,
+            ft1248_flow_control: data.FT1248FlowControl,
+            is_fifo: data.IsFifo,
+            is_fifo_target: data.IsFifoTar,
+            is_fast_serial: data.IsFastSer,
+            is_ft1248: data.IsFT1248,
+            power_save_enable: data.PowerSaveEnable,
+            driver_type: data.DriverType,
         }
     }
 }
@@ -113,7 +309,7 @@ impl From<u32> for DeviceType {
 ///
 /// [`library_version`]: ./fn.library_version.html
 /// [`driver_version`]: ./struct.Ftdi.html#method.driver_version
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Version {
     /// Major version.
     pub major: u8,
@@ -121,31 +317,6 @@ pub struct Version {
     pub minor: u8,
     /// Build number.
     pub build: u8,
-}
-
-#[cfg(test)]
-mod version {
-    use super::*;
-
-    macro_rules! case {
-        ($name:ident, ($a:expr, $b:expr, $c:expr), ($d:expr, $e:expr, $f:expr)) => {
-            #[test]
-            fn $name() {
-                let big = Version::new($a, $b, $c);
-                let little = Version::new($d, $e, $f);
-                assert!(big > little);
-                assert!(little < big);
-            }
-        };
-    }
-
-    case!(case_1, (0, 0, 1), (0, 0, 0));
-    case!(case_2, (0, 1, 0), (0, 0, 0));
-    case!(case_3, (1, 0, 0), (0, 0, 0));
-    case!(case_4, (2, 2, 2), (1, 1, 1));
-    case!(case_5, (255, 255, 255), (254, 255, 255));
-    case!(case_6, (1, 0, 0), (0, 255, 255));
-    case!(case_7, (13, 255, 0), (13, 254, 255));
 }
 
 impl fmt::Display for Version {
@@ -264,7 +435,7 @@ impl From<u8> for BitMode {
 }
 
 #[test]
-fn bit_mode_sanity() {
+fn test_bit_mode_sanity() {
     assert_eq!(BitMode::Reset as u8, 0x00);
     assert_eq!(BitMode::AsyncBitbang as u8, 0x01);
     assert_eq!(BitMode::Mpsse as u8, 0x02);
@@ -273,6 +444,40 @@ fn bit_mode_sanity() {
     assert_eq!(BitMode::FastSerial as u8, 0x10);
     assert_eq!(BitMode::CbusBitbang as u8, 0x20);
     assert_eq!(BitMode::SyncFifo as u8, 0x40);
+}
+
+/// These are the C API error codes.
+///
+/// Unfortunately there are provided in the C API as self documenting,
+/// which they are for the most part.
+///
+/// This is used in the [`Ftd2xxError`] error structure.
+///
+/// [`Ftd2xxError`]: ./struct.Ftd2xxError.html
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[allow(non_camel_case_types, missing_docs)]
+pub enum ErrorCode {
+    INVALID_HANDLE = FT_INVALID_HANDLE as isize,
+    DEVICE_NOT_FOUND = FT_DEVICE_NOT_FOUND as isize,
+    DEVICE_NOT_OPENED = FT_DEVICE_NOT_OPENED as isize,
+    IO_ERROR = FT_IO_ERROR as isize,
+    INSUFFICIENT_RESOURCES = FT_INSUFFICIENT_RESOURCES as isize,
+    INVALID_PARAMETER = FT_INVALID_PARAMETER as isize,
+    INVALID_BAUD_RATE = FT_INVALID_BAUD_RATE as isize,
+    DEVICE_NOT_OPENED_FOR_ERASE = FT_DEVICE_NOT_OPENED_FOR_ERASE as isize,
+    DEVICE_NOT_OPENED_FOR_WRITE = FT_DEVICE_NOT_OPENED_FOR_WRITE as isize,
+    FAILED_TO_WRITE_DEVICE = FT_FAILED_TO_WRITE_DEVICE as isize,
+    EEPROM_READ_FAILED = FT_EEPROM_READ_FAILED as isize,
+    EEPROM_WRITE_FAILED = FT_EEPROM_WRITE_FAILED as isize,
+    EEPROM_ERASE_FAILED = FT_EEPROM_ERASE_FAILED as isize,
+    EEPROM_NOT_PRESENT = FT_EEPROM_NOT_PRESENT as isize,
+    EEPROM_NOT_PROGRAMMED = FT_EEPROM_NOT_PROGRAMMED as isize,
+    INVALID_ARGS = FT_INVALID_ARGS as isize,
+    NOT_SUPPORTED = FT_NOT_SUPPORTED as isize,
+    /// This seems to be used only in higher level FTDI provided C libraries
+    /// such as libmpsse.
+    OTHER_ERROR = FT_OTHER_ERROR as isize,
+    DEVICE_LIST_NOT_READY = FT_DEVICE_LIST_NOT_READY as isize,
 }
 
 // These get around an annoyance with bindgen generating different types for
@@ -297,41 +502,6 @@ const INVALID_ARGS: FT_STATUS = FT_INVALID_ARGS as FT_STATUS;
 const NOT_SUPPORTED: FT_STATUS = FT_NOT_SUPPORTED as FT_STATUS;
 const OTHER_ERROR: FT_STATUS = FT_OTHER_ERROR as FT_STATUS;
 const DEVICE_LIST_NOT_READY: FT_STATUS = FT_DEVICE_LIST_NOT_READY as FT_STATUS;
-
-/// These are the C API error codes.
-///
-/// Unfortunately there are provided in the C API as self documenting,
-/// which they are for the most part.
-///
-/// This is used in the [`Ftd2xxError`] error structure.
-///
-/// [`Ftd2xxError`]: ./struct.Ftd2xxError.html
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[allow(non_camel_case_types, missing_docs)]
-#[repr(u32)]
-pub enum ErrorCode {
-    INVALID_HANDLE = INVALID_HANDLE,
-    DEVICE_NOT_FOUND = DEVICE_NOT_FOUND,
-    DEVICE_NOT_OPENED = DEVICE_NOT_OPENED,
-    IO_ERROR = IO_ERROR,
-    INSUFFICIENT_RESOURCES = INSUFFICIENT_RESOURCES,
-    INVALID_PARAMETER = INVALID_PARAMETER,
-    INVALID_BAUD_RATE = INVALID_BAUD_RATE,
-    DEVICE_NOT_OPENED_FOR_ERASE = DEVICE_NOT_OPENED_FOR_ERASE,
-    DEVICE_NOT_OPENED_FOR_WRITE = DEVICE_NOT_OPENED_FOR_WRITE,
-    FAILED_TO_WRITE_DEVICE = FAILED_TO_WRITE_DEVICE,
-    EEPROM_READ_FAILED = EEPROM_READ_FAILED,
-    EEPROM_WRITE_FAILED = EEPROM_WRITE_FAILED,
-    EEPROM_ERASE_FAILED = EEPROM_ERASE_FAILED,
-    EEPROM_NOT_PRESENT = EEPROM_NOT_PRESENT,
-    EEPROM_NOT_PROGRAMMED = EEPROM_NOT_PROGRAMMED,
-    INVALID_ARGS = INVALID_ARGS,
-    NOT_SUPPORTED = NOT_SUPPORTED,
-    /// This seems to be used only in higher level FTDI provided C libraries
-    /// such as libmpsse.
-    OTHER_ERROR = OTHER_ERROR,
-    DEVICE_LIST_NOT_READY = DEVICE_LIST_NOT_READY,
-}
 
 impl From<FT_STATUS> for ErrorCode {
     fn from(x: FT_STATUS) -> ErrorCode {
@@ -401,7 +571,7 @@ impl fmt::Display for Ftd2xxError {
 }
 
 #[test]
-fn ftd2xx_error_display() {
+fn test_ftd2xx_error_diplay() {
     assert_eq!(
         format!("{}", Ftd2xxError::new(1)),
         "FTD2XX C API error: INVALID_HANDLE (1)"
@@ -434,13 +604,17 @@ impl From<u32> for Speed {
     }
 }
 
+// Maximum lengths for returned string values.
+pub const SERIAL_NUMBER_LEN: usize = 16;
+pub const DESCRIPTION_LEN: usize = 64;
+
 /// FTDI device information.
 ///
 /// This is returned by [`list_devices`] and [`device_info`].
 ///
 /// [`list_devices`]: ./fn.list_devices.html
 /// [`device_info`]: ./struct.Ftdi.html#method.device_info
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
     pub port_open: bool,
@@ -453,38 +627,14 @@ pub struct DeviceInfo {
     pub speed: Option<Speed>,
     /// FTDI device type.
     pub device_type: DeviceType,
-    /// FTDI device vendor ID.
-    ///
-    /// This is typically `0x0403`.
+    /// FTDI vendor ID.
     pub vendor_id: u16,
     /// FTDI product ID.
-    ///
-    /// Typical FTDI product IDs:
-    /// * `0x6001` FT232AM/FT232BM/FT232R
-    /// * `0x6010` FT2232C/FT2232D/FT2232H
-    /// * `0x6011` FT4232/FT4232H
-    /// * `0x6014` FT232H
-    /// * `0x6015` FT230X/FT231X/FT234X
     pub product_id: u16,
     /// Device serial number.
-    ///
-    /// This is assumed to be UTF-8.
-    /// Data that is not UTF-8 will appear as the replacement character �.
-    pub serial_number: String,
+    pub serial_number: [u8; SERIAL_NUMBER_LEN],
     /// Device description.
-    ///
-    /// This is assumed to be UTF-8.
-    /// Data that is not UTF-8 will appear as the replacement character �.
-    pub description: String,
-}
-
-pub fn vid_pid_from_id(id: u32) -> (u16, u16) {
-    (((id >> 16) & 0xFFFF) as u16, (id & 0xFFFF) as u16)
-}
-
-#[test]
-fn test_vid_pid_from_id() {
-    assert_eq!((0x0403, 0x6014), vid_pid_from_id(0x04036014))
+    pub description: [u8; DESCRIPTION_LEN],
 }
 
 impl fmt::Debug for DeviceInfo {
@@ -505,8 +655,15 @@ impl fmt::Debug for DeviceInfo {
             self.device_type,
             self.vendor_id,
             self.product_id,
-            self.serial_number,
-            self.description,
+            u8_into_string(&self.serial_number),
+            u8_into_string(&self.description),
         )
     }
+}
+
+/// Enumeration of all EEPROM structures.
+#[derive(Debug, Copy, Clone)]
+pub enum Eeprom {
+    /// FT232H EEPROM.
+    Eeprom232h(Eeprom232h),
 }
