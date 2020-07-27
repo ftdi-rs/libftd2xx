@@ -6,7 +6,7 @@
 //!
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{BitMode, Ftdi};
+use libftd2xx::{BitMode, Ftdi, FtdiCommon};
 use std::error::Error;
 use std::process;
 use std::thread;
@@ -35,8 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // enable internal loop-back
     {
-        let num_written = ft.write(&[0x84])?;
-        assert_eq!(num_written, 1);
+        ft.write(&[0x84])?;
         let rx_bytes = ft.queue_status()?;
         println!("rx_bytes={}", rx_bytes);
         if rx_bytes != 0 {
@@ -46,8 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // synchronize MPSSE
     {
-        let num_written = ft.write(&[0xAB])?;
-        assert_eq!(num_written, 1);
+        ft.write(&[0xAB])?;
         let mut num_bytes;
         loop {
             num_bytes = ft.queue_status()?;
@@ -57,10 +55,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         let mut buf: [u8; 65536] = [0; 65536];
-        let num_read = ft.read(&mut buf[0..num_bytes])?;
+        ft.read(&mut buf[0..num_bytes])?;
 
         let mut command_echoed = false;
-        for count in 0..num_read {
+        for count in 0..buf.len() {
             if buf[count] == 0xFA && buf[count + 1] == 0xAB {
                 command_echoed = true;
                 break;
@@ -77,16 +75,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // disable loopback
     {
-        let num_written = ft.write(&[0x85])?;
-        assert_eq!(num_written, 1);
+        ft.write(&[0x85])?;
         let rx_bytes = ft.queue_status()?;
         assert_eq!(rx_bytes, 0);
     }
 
     // Set ADBUS0 low.
     {
-        let num_written = ft.write(&[0x81])?;
-        assert_eq!(num_written, 1);
+        ft.write(&[0x81])?;
 
         // wait for data to be transmitted and returned by the device driver
         // see latency timer above
@@ -96,13 +92,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         assert_eq!(rx_bytes, 1);
 
         let mut buf: [u8; 1] = [0; 1];
-        let num_read = ft.read(&mut buf)?;
-        assert_eq!(num_read, 1);
+        ft.read(&mut buf)?;
 
         println!("GPIO low-byte 0x{:X}", buf[0]);
 
-        let num_written = ft.write(&[0x80, buf[0] & 0xFE, 0xFB])?;
-        assert_eq!(num_written, 3);
+        ft.write(&[0x80, buf[0] & 0xFE, 0xFB])?;
 
         thread::sleep(Duration::from_millis(10));
     }

@@ -1,7 +1,7 @@
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{list_devices, Ftd2xxError};
+use libftd2xx::{list_devices, FtStatus};
 
-fn main() -> Result<(), Ftd2xxError> {
+fn main() -> Result<(), FtStatus> {
     let mut devices = list_devices()?;
 
     while let Some(device) = devices.pop() {

@@ -17,13 +17,13 @@ permission from FTDI.
 
 ```toml
 [dependencies]
-libftd2xx = "~0.6.0"
+libftd2xx = "~0.7.0"
 ```
 
 This is a basic example to get your started.
 Check the source code or documentation for more examples.
 ```rust
-use libftd2xx::Ftdi;
+use libftd2xx::{Ftdi, FtdiCommon};
 
 let mut ft = Ftdi::new()?;
 let info = ft.device_info()?;

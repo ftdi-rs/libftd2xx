@@ -1,7 +1,7 @@
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{num_devices, Ftd2xxError};
+use libftd2xx::{num_devices, FtStatus};
 
-fn main() -> Result<(), Ftd2xxError> {
+fn main() -> Result<(), FtStatus> {
     let num_devices = num_devices()?;
     println!("Number of devices: {}", num_devices);
 

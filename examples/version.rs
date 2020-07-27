@@ -1,7 +1,7 @@
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{library_version, Ftd2xxError, Ftdi};
+use libftd2xx::{library_version, FtStatus, Ftdi, FtdiCommon};
 
-fn main() -> Result<(), Ftd2xxError> {
+fn main() -> Result<(), FtStatus> {
     println!("Library Version: {}", library_version()?);
 
     let mut ft = Ftdi::new()?;
