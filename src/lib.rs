@@ -1217,7 +1217,7 @@ macro_rules! impl_try_from_for {
 
             fn try_from(ft: &mut Ftdi) -> Result<Self, Self::Error> {
                 let device_type: DeviceType = ft.device_info()?.device_type;
-                if device_type != Ft4232h::DEVICE_TYPE {
+                if device_type != Self::DEVICE_TYPE {
                     Err(DeviceTypeError::DeviceType {
                         expected: $DEVICE::DEVICE_TYPE,
                         detected: device_type,
