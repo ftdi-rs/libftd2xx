@@ -102,6 +102,8 @@ pub enum DeviceType {
     /// [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
     Unknown = DEVICE_UNKNOWN,
     /// FTDI 2232C device.
+    ///
+    /// The FTDI 2232D also appears as a FTDI 2232C.
     FT2232C = DEVICE_2232C,
     /// FTDI 232R device.
     FT232R = DEVICE_232R,

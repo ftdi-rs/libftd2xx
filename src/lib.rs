@@ -231,6 +231,8 @@ pub struct Ftdi {
 ///
 /// # Example
 ///
+/// Converting from an unknown FTDI device.
+///
 /// ```no_run
 /// use std::convert::TryFrom;
 /// use libftd2xx::{Ftdi, Ft232h};
@@ -243,14 +245,11 @@ pub struct Ft232h {
     handle: FT_HANDLE,
 }
 
-impl Ft232h {
-    /// FTDI device type.
-    pub const DEVICE_TYPE: DeviceType = DeviceType::FT232H;
-}
-
 /// FT4232H device.
 ///
 /// # Example
+///
+/// Converting from an unknown FTDI device.
 ///
 /// ```no_run
 /// use std::convert::TryFrom;
@@ -264,13 +263,11 @@ pub struct Ft4232h {
     handle: FT_HANDLE,
 }
 
-impl Ft4232h {
-    /// FTDI device type.
-    pub const DEVICE_TYPE: DeviceType = DeviceType::FT4232H;
-}
-
 /// FTD2XX functions common to all devices.
 pub trait FtdiCommon {
+    /// FTDI device type.
+    const DEVICE_TYPE: DeviceType;
+
     /// Get the FTDI device handle.
     fn handle(&mut self) -> FT_HANDLE;
 
@@ -1167,9 +1164,45 @@ impl Ftdi {
     }
 }
 
+impl Ft232h {
+    /// Open a `Ft232h` device and initialize the handle.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232h;
+    ///
+    /// Ft232h::with_serial_number("FT59UO4C")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_serial_number(serial_number: &str) -> Result<Ft232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_serial_number(serial_number)?;
+        Ft232h::try_from(&mut unknown)
+    }
+}
+
+impl Ft4232h {
+    /// Open a `Ft4232h` device and initialize the handle.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232h;
+    ///
+    /// Ft4232h::with_serial_number("FT4PWSEOA")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_serial_number(serial_number: &str) -> Result<Ft4232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_serial_number(serial_number)?;
+        Ft4232h::try_from(&mut unknown)
+    }
+}
+
 macro_rules! impl_boilerplate_for {
-    ($DEVICE:ident) => {
+    ($DEVICE:ident, $TYPE:expr) => {
         impl FtdiCommon for $DEVICE {
+            const DEVICE_TYPE: DeviceType = $TYPE;
+
             fn handle(&mut self) -> FT_HANDLE {
                 self.handle
             }
@@ -1199,9 +1232,9 @@ macro_rules! impl_try_from_for {
     };
 }
 
-impl_boilerplate_for!(Ftdi);
-impl_boilerplate_for!(Ft232h);
-impl_boilerplate_for!(Ft4232h);
+impl_boilerplate_for!(Ftdi, DeviceType::Unknown);
+impl_boilerplate_for!(Ft232h, DeviceType::FT232H);
+impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
 
 impl_try_from_for!(Ft232h);
 impl_try_from_for!(Ft4232h);

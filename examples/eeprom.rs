@@ -1,9 +1,7 @@
-use libftd2xx::{DeviceTypeError, Ft4232h, Ftdi, FtdiEeprom};
-use std::convert::TryFrom;
+use libftd2xx::{DeviceTypeError, Ft4232h, FtdiEeprom};
 
 fn main() -> Result<(), DeviceTypeError> {
-    let mut ftdi = Ftdi::new()?;
-    let mut ft = Ft4232h::try_from(&mut ftdi)?;
+    let mut ft = Ft4232h::with_serial_number("FT4PWSEOA")?;
     let eeprom = ft.eeprom_read()?;
     println!("FT4232H EEPROM contents: {:?}", eeprom);
 
