@@ -188,8 +188,6 @@ pub enum FtStatus {
     EEPROM_NOT_PROGRAMMED = EEPROM_NOT_PROGRAMMED,
     INVALID_ARGS = INVALID_ARGS,
     NOT_SUPPORTED = NOT_SUPPORTED,
-    /// This seems to be used only in higher level FTDI provided C libraries
-    /// such as libmpsse.
     OTHER_ERROR = OTHER_ERROR,
     DEVICE_LIST_NOT_READY = DEVICE_LIST_NOT_READY,
 }

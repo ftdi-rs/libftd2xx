@@ -60,6 +60,9 @@
 mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
+mod mpsse;
+pub use mpsse::FtdiMpsse;
+
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
@@ -1241,3 +1244,6 @@ impl_try_from_for!(Ft4232h);
 
 impl_eeprom_for!(Ft232h, Eeprom232h, FT_EEPROM_232H);
 impl_eeprom_for!(Ft4232h, Eeprom4232h, FT_EEPROM_4232H);
+
+impl FtdiMpsse for Ft232h {}
+impl FtdiMpsse for Ft4232h {}

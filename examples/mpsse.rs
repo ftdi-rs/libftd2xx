@@ -6,14 +6,16 @@
 //!
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{BitMode, Ftdi, FtdiCommon};
+use libftd2xx::{BitMode, Ft232h, Ftdi, FtdiCommon, FtdiMpsse};
+use std::convert::TryFrom;
 use std::error::Error;
 use std::process;
 use std::thread;
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut ft = Ftdi::new()?;
+    let mut unknown = Ftdi::new()?;
+    let mut ft = Ft232h::try_from(&mut unknown)?;
     ft.reset()?;
     let mut buf: [u8; 4096] = [0; 4096];
     let rx_bytes = ft.queue_status()?;
@@ -33,15 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // From the application note "Wait for all the USB stuff to complete and work"
     thread::sleep(Duration::from_millis(100));
 
-    // enable internal loop-back
-    {
-        ft.write(&[0x84])?;
-        let rx_bytes = ft.queue_status()?;
-        println!("rx_bytes={}", rx_bytes);
-        if rx_bytes != 0 {
-            ft.purge_all()?;
-        }
-    }
+    ft.enable_loopback()?;
 
     // synchronize MPSSE
     {
@@ -58,7 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         ft.read(&mut buf[0..num_bytes])?;
 
         let mut command_echoed = false;
-        for count in 0..buf.len() {
+        for count in 0..(num_bytes - 1) {
             if buf[count] == 0xFA && buf[count + 1] == 0xAB {
                 command_echoed = true;
                 break;
@@ -73,12 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // disable loopback
-    {
-        ft.write(&[0x85])?;
-        let rx_bytes = ft.queue_status()?;
-        assert_eq!(rx_bytes, 0);
-    }
+    ft.disable_loopback()?;
 
     // Set ADBUS0 low.
     {
