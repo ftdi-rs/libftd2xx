@@ -78,10 +78,10 @@ use libftd2xx_ffi::{
     FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
     FT_GetDriverVersion, FT_GetLibraryVersion, FT_GetQueueStatus, FT_ListDevices, FT_Open,
     FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice, FT_SetBitMode, FT_SetChars,
-    FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_Write,
-    FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR,
-    FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY,
-    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
+    FT_SetDeadmanTimeout, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts,
+    FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
+    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
+    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 use std::convert::TryFrom;
@@ -447,6 +447,42 @@ pub trait FtdiCommon {
                 self.handle(),
                 u32::try_from(read_timeout.as_millis()).expect("read_timeout integer overflow"),
                 u32::try_from(write_timeout.as_millis()).expect("write_timeout integer overflow"),
+            )
+        };
+        ft_result!((), status)
+    }
+
+    /// This method allows the maximum time in milliseconds that a USB request
+    /// can remain outstandingto be set.
+    ///
+    /// The deadman timeout is referred to in FTDI application note
+    /// [AN232B-10 Advanced Driver Options] as the USB timeout.
+    /// It is unlikely that this method will be required by most users.
+    ///
+    /// The default duration is 5 seconds.
+    ///
+    /// The timeout value is limited to 4,294,967,295 (`std::u32::MAX`)
+    /// milliseconds.
+    ///
+    /// The timeout value has a 1 millisecond resolution.
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    /// use std::time::Duration;
+    ///
+    /// let mut ft = Ftdi::new()?;
+    ///
+    /// // set deadman timeout to 5 seconds
+    /// ft.set_deadman_timeout(Duration::from_secs(5))?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    ///
+    /// [AN232B-10 Advanced Driver Options]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_107_AdvancedDriverOptions_AN_000073.pdf
+    fn set_deadman_timeout(&mut self, timeout: Duration) -> Result<(), FtStatus> {
+        let status: FT_STATUS = unsafe {
+            FT_SetDeadmanTimeout(
+                self.handle(),
+                u32::try_from(timeout.as_millis()).expect("timeout integer overflow"),
             )
         };
         ft_result!((), status)
