@@ -15,7 +15,6 @@ license = "MIT"
 maintenance = { status = "as-is" }
 
 [dependencies]
-libc = "~0.2.74"
 libftd2xx-ffi = "~0.2.2"
 paste = "~1.0.0"
 

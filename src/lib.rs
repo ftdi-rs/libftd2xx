@@ -87,7 +87,6 @@ use libftd2xx_ffi::{
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::mem;
-use std::ptr;
 use std::time::Duration;
 use std::vec::Vec;
 
@@ -169,34 +168,27 @@ fn create_device_info_list() -> Result<u32, FtStatus> {
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
 pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
-    let mut devices = Vec::new();
+    let mut devices: Vec<DeviceInfo> = Vec::new();
     let mut num_devices: u32 = create_device_info_list()?;
     let num_devices_usize: usize = usize::try_from(num_devices).unwrap();
     if num_devices == 0 {
         return Ok(devices);
     }
 
+    let mut list_info_vec: Vec<FT_DEVICE_LIST_INFO_NODE> = Vec::with_capacity(num_devices_usize);
+
     let status: FT_STATUS = unsafe {
-        let list_info_memory_size = mem::size_of::<FT_DEVICE_LIST_INFO_NODE>() * num_devices_usize;
-        let list_info_memory = libc::malloc(list_info_memory_size);
-        if list_info_memory.is_null() {
-            panic!("failed to allocate memory");
-        }
-
-        libc::memset(list_info_memory, 0, list_info_memory_size);
-
-        let status = FT_GetDeviceInfoList(
-            list_info_memory as *mut FT_DEVICE_LIST_INFO_NODE,
+        list_info_vec.set_len(num_devices_usize);
+        FT_GetDeviceInfoList(
+            list_info_vec.as_mut_ptr() as *mut FT_DEVICE_LIST_INFO_NODE,
             &mut num_devices,
-        );
+        )
+    };
 
-        let slice: *const [FT_DEVICE_LIST_INFO_NODE] = ptr::slice_from_raw_parts(
-            list_info_memory as *mut FT_DEVICE_LIST_INFO_NODE,
-            num_devices_usize,
-        );
-
-        for n in 0..num_devices_usize {
-            let info_node: FT_DEVICE_LIST_INFO_NODE = { &*slice }[n];
+    if status != 0 {
+        Err(status.into())
+    } else {
+        while let Some(info_node) = list_info_vec.pop() {
             let (vid, pid) = vid_pid_from_id(info_node.ID);
             devices.push(DeviceInfo {
                 port_open: info_node.Flags & 0x1 == 0x1,
@@ -208,15 +200,6 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
                 description: slice_into_string(&info_node.Description),
             });
         }
-
-        libc::free(list_info_memory as *mut libc::c_void);
-
-        status
-    };
-
-    if status != 0 {
-        Err(status.into())
-    } else {
         Ok(devices)
     }
 }
