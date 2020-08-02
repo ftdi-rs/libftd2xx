@@ -1,3 +1,5 @@
+#![deny(missing_docs, warnings, unsafe_code)]
+
 use super::{BitMode, DeviceType, FtStatus, FtdiCommon, TimeoutError};
 use std::convert::From;
 use std::time::Duration;
@@ -328,11 +330,7 @@ pub trait FtdiMpsse: FtdiCommon {
             num_bytes = self.queue_status()?;
         }
 
-        let mut vec: Vec<u8> = Vec::with_capacity(num_bytes);
-        unsafe {
-            vec.set_len(num_bytes);
-        }
-        let mut buf = vec.into_boxed_slice();
+        let mut buf = vec![0; num_bytes].into_boxed_slice();
         self.read(&mut buf)?;
 
         let mut command_echoed = false;
