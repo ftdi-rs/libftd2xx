@@ -9,86 +9,39 @@
 use libftd2xx::{BitMode, Ft232h, Ftdi, FtdiCommon, FtdiMpsse};
 use std::convert::TryFrom;
 use std::error::Error;
-use std::process;
-use std::thread;
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut unknown = Ftdi::new()?;
     let mut ft = Ft232h::try_from(&mut unknown)?;
+
     ft.reset()?;
-    let mut buf: [u8; 4096] = [0; 4096];
-    let rx_bytes = ft.queue_status()?;
-
-    if rx_bytes > 0 {
-        ft.read(&mut buf[0..rx_bytes])?;
-    }
-
+    ft.purge_all()?;
+    debug_assert_eq!(ft.queue_status()?, 0);
     ft.set_usb_parameters(65536)?;
     ft.set_chars(0, false, 0, false)?;
-    ft.set_timeouts(Duration::from_millis(0), Duration::from_millis(1000))?;
+    ft.set_timeouts(Duration::from_millis(1000), Duration::from_millis(1000))?;
     ft.set_latency_timer(Duration::from_millis(2))?;
     ft.set_flow_control_rts_cts()?;
     ft.set_bit_mode(0x0, BitMode::Reset)?;
     ft.set_bit_mode(0x0, BitMode::Mpsse)?;
 
     // From the application note "Wait for all the USB stuff to complete and work"
-    thread::sleep(Duration::from_millis(100));
+    // This does not seem to be necessary though
+    // thread::sleep(Duration::from_millis(100));
 
     ft.enable_loopback()?;
-
-    // synchronize MPSSE
-    {
-        ft.write(&[0xAB])?;
-        let mut num_bytes;
-        loop {
-            num_bytes = ft.queue_status()?;
-            if num_bytes > 0 {
-                break;
-            }
-        }
-
-        let mut buf: [u8; 65536] = [0; 65536];
-        ft.read(&mut buf[0..num_bytes])?;
-
-        let mut command_echoed = false;
-        for count in 0..(num_bytes - 1) {
-            if buf[count] == 0xFA && buf[count + 1] == 0xAB {
-                command_echoed = true;
-                break;
-            }
-        }
-
-        if !command_echoed {
-            println!("Error in synchronizing the MPSSE");
-            process::exit(1);
-        } else {
-            println!("Successfully synchronized the MPSSE")
-        }
-    }
-
+    ft.synchronize_mpsse()?;
     ft.disable_loopback()?;
 
-    // Set ADBUS0 low.
-    {
-        ft.write(&[0x81])?;
-
-        // wait for data to be transmitted and returned by the device driver
-        // see latency timer above
-        thread::sleep(Duration::from_millis(10));
-
-        let rx_bytes = ft.queue_status()?;
-        assert_eq!(rx_bytes, 1);
-
-        let mut buf: [u8; 1] = [0; 1];
-        ft.read(&mut buf)?;
-
-        println!("GPIO low-byte 0x{:X}", buf[0]);
-
-        ft.write(&[0x80, buf[0] & 0xFE, 0xFB])?;
-
-        thread::sleep(Duration::from_millis(10));
+    // Toggle AD0
+    for _ in 0..8 {
+        print!(".");
+        ft.set_gpio_lower(0xFF, 0xFF)?;
+        ft.set_gpio_lower(0xFE, 0xFF)?;
     }
+
+    println!();
 
     ft.close()?;
 

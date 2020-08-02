@@ -61,7 +61,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-pub use mpsse::FtdiMpsse;
+pub use mpsse::{FtdiMpsse, MpsseSettings};
 
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
