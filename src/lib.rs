@@ -371,7 +371,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`set_usb_parameters`]: : #method.set_usb_parameters
+    /// [`set_usb_parameters`]: #method.set_usb_parameters
     fn set_usb_parameters(&mut self, in_transfer_size: u32) -> Result<(), FtStatus> {
         let status: FT_STATUS =
             unsafe { FT_SetUSBParameters(self.handle(), in_transfer_size, in_transfer_size) };
