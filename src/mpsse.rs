@@ -451,8 +451,8 @@ pub trait FtdiMpsse: FtdiCommon {
     ///
     /// # FT232H Corner Case
     ///
-    /// On the FT232H only CBUS5, CBUS6, CBUS8, and CBUS9 can be controled.
-    /// These pins confusing map to the first four bits in the direction and
+    /// On the FT232H only CBUS5, CBUS6, CBUS8, and CBUS9 can be controlled.
+    /// These pins confusingly map to the first four bits in the direction and
     /// state masks.
     ///
     /// [`set_gpio_lower`]: #method.set_gpio_lower
@@ -465,7 +465,11 @@ pub trait FtdiMpsse: FtdiCommon {
     ///
     /// See [`gpio_lower`] for an example.
     ///
+    /// See [`set_gpio_upper`] for additional information about physical pin
+    /// mappings.
+    ///
     /// [`gpio_lower`]: #method.gpio_lower
+    /// [`set_gpio_upper`]: #method.set_gpio_upper
     fn gpio_upper(&mut self) -> Result<u8, TimeoutError> {
         self.write(&[
             MpsseCmd::GetDataBitsHighbyte.into(),
