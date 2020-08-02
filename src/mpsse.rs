@@ -220,6 +220,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// use libftd2xx::{Ft4232h, FtdiMpsse};
     ///
     /// let mut ft = Ft4232h::with_serial_number("FT4PWSEOA")?;
+    /// ft.initialize_mpsse_default()?;
     /// ft.set_clock(100_000)?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
