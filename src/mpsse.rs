@@ -189,10 +189,10 @@ impl std::default::Default for MpsseSettings {
     fn default() -> Self {
         MpsseSettings {
             reset: true,
-            in_transfer_size: 64 * 1024,
+            in_transfer_size: 4096,
             read_timeout: Duration::from_secs(1),
             write_timeout: Duration::from_secs(1),
-            latency_timer: Duration::from_millis(2),
+            latency_timer: Duration::from_millis(16),
         }
     }
 }

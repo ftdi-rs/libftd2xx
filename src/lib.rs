@@ -338,8 +338,10 @@ pub trait FtdiCommon {
     ///
     /// This function can be used to change the transfer sizes from the default
     /// transfer size of 4096 bytes to better suit the application requirements.
+    ///
     /// Transfer sizes must be set to a multiple of 64 bytes between 64 bytes
-    /// and 64k bytes.
+    /// and 64k bytes.  Other values will result in panic.
+    ///
     /// When [`set_usb_parameters`] is called, the change comes into effect
     /// immediately and any data that was held in the driver at the time of the
     /// change is lost.
@@ -356,6 +358,26 @@ pub trait FtdiCommon {
     ///
     /// [`set_usb_parameters`]: #method.set_usb_parameters
     fn set_usb_parameters(&mut self, in_transfer_size: u32) -> Result<(), FtStatus> {
+        const MAX: u32 = 64 * 1024;
+        const MIN: u32 = 64;
+        assert!(
+            in_transfer_size <= MAX,
+            "in_transfer_size of {} exceeds maximum of {}",
+            in_transfer_size,
+            MAX
+        );
+        assert!(
+            in_transfer_size >= MIN,
+            "in_transfer_size of {} exceeds minimum of {}",
+            in_transfer_size,
+            MIN
+        );
+        assert!(
+            in_transfer_size % MIN == 0,
+            "in_transfer_size of {} not a multiple of {}",
+            in_transfer_size,
+            MIN
+        );
         let status: FT_STATUS =
             unsafe { FT_SetUSBParameters(self.handle(), in_transfer_size, in_transfer_size) };
         ft_result!((), status)
@@ -444,6 +466,9 @@ pub trait FtdiCommon {
     ///
     /// The resolution for the latecny timer is 1 millisecond.
     ///
+    /// **Note** the python FTDI library, [pyftdi] reports that values lower
+    /// than 16 ms may result in data loss.
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -452,10 +477,12 @@ pub trait FtdiCommon {
     ///
     /// let mut ft = Ftdi::new()?;
     ///
-    /// // Set latency timer to 10 milliseconds
-    /// ft.set_latency_timer(Duration::from_millis(10))?;
+    /// // Set latency timer to 16 milliseconds
+    /// ft.set_latency_timer(Duration::from_millis(16))?;
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
+    ///
+    /// [pyftdi]: https://github.com/eblot/pyftdi/tree/master
     fn set_latency_timer(&mut self, timer: Duration) -> Result<(), FtStatus> {
         let millis = timer.as_millis();
         debug_assert!(millis >= 2, "duration must be >= 2ms, got {:?}", timer);
