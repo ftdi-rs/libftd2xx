@@ -76,13 +76,13 @@ use util::slice_into_string;
 use libftd2xx_ffi::{
     FT_Close, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read, FT_EE_UARead,
     FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
-    FT_GetDriverVersion, FT_GetLibraryVersion, FT_GetQueueStatus, FT_ListDevices, FT_Open,
-    FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice, FT_SetBitMode, FT_SetChars,
-    FT_SetDeadmanTimeout, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts,
-    FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
-    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
-    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
-    FT_PURGE_TX, FT_STATUS,
+    FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion, FT_GetQueueStatus,
+    FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice,
+    FT_SetBitMode, FT_SetChars, FT_SetDeadmanTimeout, FT_SetFlowControl, FT_SetLatencyTimer,
+    FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE,
+    FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
+    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -504,7 +504,7 @@ pub trait FtdiCommon {
     ///
     /// The valid range for the latency timer is 2 to 255 milliseconds.
     ///
-    /// The resolution for the latecny timer is 1 millisecond.
+    /// The resolution for the latency timer is 1 millisecond.
     ///
     /// **Note** the python FTDI library, [pyftdi] reports that values lower
     /// than 16 ms may result in data loss.
@@ -526,9 +526,30 @@ pub trait FtdiCommon {
     fn set_latency_timer(&mut self, timer: Duration) -> Result<(), FtStatus> {
         let millis = timer.as_millis();
         debug_assert!(millis >= 2, "duration must be >= 2ms, got {:?}", timer);
-        debug_assert!(millis < 255, "duration must be < 255ms, got {:?}", timer);
-        let status: FT_STATUS = unsafe { FT_SetLatencyTimer(self.handle(), millis as u8) };
+        debug_assert!(millis <= 255, "duration must be <= 255ms, got {:?}", timer);
+        let millis = u8::try_from(millis).unwrap();
+        let status: FT_STATUS = unsafe { FT_SetLatencyTimer(self.handle(), millis) };
         ft_result!((), status)
+    }
+
+    /// Get the current value of the latency timer.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    /// use std::time::Duration;
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let timer = Duration::from_millis(32);
+    /// ft.set_latency_timer(timer)?;
+    /// assert_eq!(ft.latency_timer()?, timer);
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn latency_timer(&mut self) -> Result<Duration, FtStatus> {
+        let mut timer: u8 = 0;
+        let status: FT_STATUS = unsafe { FT_GetLatencyTimer(self.handle(), &mut timer as *mut u8) };
+        ft_result!(Duration::from_millis(timer as u64), status)
     }
 
     /// This function disables flow control for the device.

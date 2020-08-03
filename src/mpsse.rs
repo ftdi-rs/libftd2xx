@@ -228,18 +228,17 @@ pub trait FtdiMpsse: FtdiCommon {
         let (value, divisor) = clock_divisor(Self::DEVICE_TYPE, frequency);
         debug_assert!(value <= 0xFFFF);
 
+        let mut buf: Vec<u8> = Vec::new();
+
         if let Some(div) = divisor {
-            let buf: [u8; 1] = [div as u8; 1];
-            self.write(&buf)?;
+            buf.push(div.into());
         };
 
-        let buf: [u8; 3] = [
-            MpsseCmd::SetClockFrequency.into(),
-            (value & 0xFF) as u8,
-            ((value >> 8) & 0xFF) as u8,
-        ];
+        buf.push(MpsseCmd::SetClockFrequency.into());
+        buf.push((value & 0xFF) as u8);
+        buf.push(((value >> 8) & 0xFF) as u8);
 
-        self.write(&buf)
+        self.write(&buf.as_slice())
     }
 
     /// Initialize the MPSSE.
