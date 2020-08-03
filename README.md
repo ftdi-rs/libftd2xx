@@ -17,7 +17,7 @@ permission from FTDI.
 
 ```toml
 [dependencies]
-libftd2xx = "~0.8.2"
+libftd2xx = "~0.9.0"
 ```
 
 This is a basic example to get your started.
