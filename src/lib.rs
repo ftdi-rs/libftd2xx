@@ -81,7 +81,8 @@ use libftd2xx_ffi::{
     FT_SetDeadmanTimeout, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts,
     FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
     FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
-    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
+    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
+    FT_PURGE_TX, FT_STATUS,
 };
 
 use std::convert::TryFrom;
@@ -1211,6 +1212,30 @@ impl Ftdi {
 
         ft_result!(Ftdi { handle: handle }, status)
     }
+
+    /// Open the device by its device description.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ftdi;
+    ///
+    /// Ftdi::with_description("Hello")?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    pub fn with_description(description: &str) -> Result<Ftdi, FtStatus> {
+        let mut handle: FT_HANDLE = std::ptr::null_mut();
+        let cstr_description = std::ffi::CString::new(description).unwrap();
+        let status: FT_STATUS = unsafe {
+            FT_OpenEx(
+                cstr_description.as_ptr() as *mut c_void,
+                FT_OPEN_BY_DESCRIPTION,
+                &mut handle,
+            )
+        };
+
+        ft_result!(Ftdi { handle: handle }, status)
+    }
 }
 
 impl Ft232h {
@@ -1228,6 +1253,21 @@ impl Ft232h {
         let mut unknown = Ftdi::with_serial_number(serial_number)?;
         Ft232h::try_from(&mut unknown)
     }
+
+    /// Open a `Ft232h` device by its device description.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232h;
+    ///
+    /// Ft232h::with_description("Hello")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_description(serial_number: &str) -> Result<Ft232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_description(serial_number)?;
+        Ft232h::try_from(&mut unknown)
+    }
 }
 
 impl Ft4232h {
@@ -1243,6 +1283,21 @@ impl Ft4232h {
     /// ```
     pub fn with_serial_number(serial_number: &str) -> Result<Ft4232h, DeviceTypeError> {
         let mut unknown = Ftdi::with_serial_number(serial_number)?;
+        Ft4232h::try_from(&mut unknown)
+    }
+
+    /// Open a `Ft4232h` device by its device description.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232h;
+    ///
+    /// Ft4232h::with_description("FT4232H-56Q MiniModule A")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_description(serial_number: &str) -> Result<Ft4232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_description(serial_number)?;
         Ft4232h::try_from(&mut unknown)
     }
 }
