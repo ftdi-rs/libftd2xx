@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.8.1"
+//! libftd2xx = "~0.8.2"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.8.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.8.2")]
 #![deny(missing_docs, warnings)]
 #![allow(clippy::redundant_field_names)]
 

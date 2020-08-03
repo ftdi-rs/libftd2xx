@@ -1,7 +1,7 @@
 ![Maintenance](https://img.shields.io/badge/maintenance-as--is-yellow.svg)
 [![crates.io](https://img.shields.io/crates/v/libftd2xx.svg)](https://crates.io/crates/libftd2xx)
 [![docs.rs](https://docs.rs/libftd2xx/badge.svg)](https://docs.rs/libftd2xx/)
-[![Build Status](https://travis-ci.org/newAM/libftd2xx-rs.svg?branch=master)](https://travis-ci.com/newAM/libftd2xx-rs)
+[![Build Status](https://travis-ci.com/newAM/libftd2xx-rs.svg?branch=master)](https://travis-ci.com/newAM/libftd2xx-rs)
 
 # libftd2xx
 
@@ -17,7 +17,7 @@ permission from FTDI.
 
 ```toml
 [dependencies]
-libftd2xx = "~0.8.1"
+libftd2xx = "~0.8.2"
 ```
 
 This is a basic example to get your started.
