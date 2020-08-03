@@ -85,6 +85,9 @@ use libftd2xx_ffi::{
     FT_PURGE_TX, FT_STATUS,
 };
 
+#[cfg(target_os = "windows")]
+use libftd2xx_ffi::FT_GetComPortNumber;
+
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::mem;
@@ -867,6 +870,39 @@ pub trait FtdiCommon {
     fn close(&mut self) -> Result<(), FtStatus> {
         let status: FT_STATUS = unsafe { FT_Close(self.handle()) };
         ft_result!((), status)
+    }
+
+    /// Get the COM port associated with a device.
+    ///
+    /// This method is only avaliable when using the Windows CDM driver as both
+    /// the D2XX and VCP drivers can be installed at the same time.
+    ///
+    /// If no COM port is associated with the device `None` is returned.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// match ft.com_port_number()? {
+    ///     Some(num) => println!("COM{}", num),
+    ///     None => println!("no COM port"),
+    /// }
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    #[cfg(target_os = "windows")]
+    fn com_port_number(&mut self) -> Result<Option<u32>, FtStatus> {
+        let mut num: i32 = -1;
+        let status: FT_STATUS = unsafe { FT_GetComPortNumber(self.handle(), &mut num as *mut i32) };
+        ft_result!(
+            if num == -1 {
+                None
+            } else {
+                Some(u32::try_from(num).unwrap())
+            },
+            status
+        )
     }
 
     /// Read a value from an EEPROM location.
