@@ -278,7 +278,7 @@ pub trait FtdiMpsse: FtdiCommon {
         if settings.reset {
             self.reset()?;
         }
-        self.purge_all()?;
+        self.purge_rx()?;
         debug_assert_eq!(self.queue_status()?, 0);
         self.set_usb_parameters(settings.in_transfer_size)?;
         self.set_chars(0, false, 0, false)?;
@@ -322,7 +322,7 @@ pub trait FtdiMpsse: FtdiCommon {
     ///
     /// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
     fn synchronize_mpsse(&mut self) -> Result<(), TimeoutError> {
-        self.purge_all()?;
+        self.purge_rx()?;
         self.write(&[ECHO_CMD_2])?;
 
         let mut num_bytes: usize = 0;
