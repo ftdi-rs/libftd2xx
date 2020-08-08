@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings)]
+#![deny(missing_docs, warnings, unsafe_code)]
 
 // FT_X_SERIES_CBUS_
 use libftd2xx_ffi::{

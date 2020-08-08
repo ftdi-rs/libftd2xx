@@ -397,10 +397,10 @@ pub trait FtdiMpsse: FtdiCommon {
     /// ```no_run
     /// use libftd2xx::{Ft232h, FtdiMpsse};
     ///
-    /// let mut ft = Ft232h::with_serial_number("FT59UO4C")?;
+    /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
     /// ft.set_gpio_lower(0xFF, 0xFF)?;
-    /// ft.set_gpio_lower(0xFF, 0x00)?;
+    /// ft.set_gpio_lower(0x00, 0xFF)?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn set_gpio_lower(&mut self, state: u8, direction: u8) -> Result<(), TimeoutError> {
@@ -456,7 +456,7 @@ pub trait FtdiMpsse: FtdiCommon {
     ///
     /// [`set_gpio_lower`]: #method.set_gpio_lower
     fn set_gpio_upper(&mut self, state: u8, direction: u8) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::SetDataBitsHighbyte.into(), direction, state])
+        self.write(&[MpsseCmd::SetDataBitsHighbyte.into(), state, direction])
     }
 
     /// Get the pin state state of the upper byte (8-15) GPIO pins on the MPSSE

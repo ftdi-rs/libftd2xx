@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings)]
+#![deny(missing_docs, warnings, unsafe_code)]
 
 use std::convert::From;
 use std::error::Error;
