@@ -4,23 +4,9 @@ use super::{BitMode, DeviceType, FtStatus, FtdiCommon, TimeoutError};
 use std::convert::From;
 use std::time::Duration;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
-#[allow(dead_code)]
 enum MpsseCmd {
-    DataLsbFirst = 0x08,
-    DataOutBytesPosEdge = 0x10,
-    DataOutBytesNegEdge = 0x11,
-    DataOutBitsPosEdge = 0x12,
-    DataOutBitsNegEdge = 0x13,
-    DataInBytesPosEdge = 0x20,
-    DataInBitsPosEdge = 0x22,
-    DataInBytesNegEdge = 0x24,
-    DataInBitsNegEdge = 0x26,
-    DataBytesInPosOutNegEdge = 0x31,
-    DataBitsInPosOutNegEdge = 0x33,
-    DataBytesInNegOutPosEdge = 0x34,
-    DataBitsInNegOutPosEdge = 0x36,
     SetDataBitsLowbyte = 0x80,
     GetDataBitsLowbyte = 0x81,
     SetDataBitsHighbyte = 0x82,
@@ -31,9 +17,113 @@ enum MpsseCmd {
     SendImmediate = 0x87,
     DisableClockDivide = 0x8A,
     EnableClockDivide = 0x8B,
-    Enable3PhaseClocking = 0x8C,
-    Disable3PhaseClocking = 0x8D,
-    EnableDriveOnlyZero = 0x9E,
+    // Enable3PhaseClocking = 0x8C,
+    // Disable3PhaseClocking = 0x8D,
+    // EnableDriveOnlyZero = 0x9E,
+}
+
+/// Modes for clocking data out of the FTDI device.
+///
+/// This is an argument to the [`clock_data_out`] method.
+///
+/// [`clock_data_out`]: ./trait.FtdiMpsse.html#method.clock_data_out
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockDataOut {
+    /// Positive clock edge MSB first.
+    ///
+    /// The data is sent MSB first.
+    ///
+    /// The data will change to the next bit on the rising edge of the CLK pin.
+    MsbPos = 0x10,
+    /// Negative clock edge MSB first.
+    ///
+    /// The data is sent MSB first.
+    ///
+    /// The data will change to the next bit on the falling edge of the CLK pin.
+    MsbNeg = 0x11,
+    /// Positive clock edge LSB first.
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will change to the next bit on the rising edge of the CLK pin.
+    LsbPos = 0x18,
+    /// Negative clock edge LSB first.
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will change to the next bit on the falling edge of the CLK pin.
+    LsbNeg = 0x19,
+}
+
+impl From<ClockDataOut> for u8 {
+    fn from(value: ClockDataOut) -> u8 {
+        value as u8
+    }
+}
+
+/// Modes for clocking data into the FTDI device.
+///
+/// This is an argument to the [`clock_data_in`] method.
+///
+/// [`clock_data_in`]: ./trait.FtdiMpsse.html#method.clock_data_in
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockDataIn {
+    /// Positive clock edge MSB first.
+    ///
+    /// The first bit in will be the MSB of the first byte and so on.
+    ///
+    /// The data will be sampled on the rising edge of the CLK pin.
+    MsbPos = 0x20,
+    /// Negative clock edge MSB first.
+    ///
+    /// The first bit in will be the MSB of the first byte and so on.
+    ///
+    /// The data will be sampled on the falling edge of the CLK pin.
+    MsbNeg = 0x24,
+    /// Positive clock edge LSB first.
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will be sampled on the rising edge of the CLK pin.
+    LsbPos = 0x28,
+    /// Negative clock edge LSB first.
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will be sampled on the falling edge of the CLK pin.
+    LsbNeg = 0x2C,
+}
+
+impl From<ClockDataIn> for u8 {
+    fn from(value: ClockDataIn) -> u8 {
+        value as u8
+    }
+}
+
+/// Modes for clocking data in and out of the FTDI device.
+///
+/// This is an argument to the [`clock_data`] method.
+///
+/// [`clock_data`]: ./trait.FtdiMpsse.html#method.clock_data
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockData {
+    /// MSB first, data in on positive edge, data out on negative edge.
+    MsbPosIn = 0x31,
+    /// MSB first, data in on negative edge, data out on positive edge.
+    MsbNegIn = 0x34,
+    /// LSB first, data in on positive edge, data out on negative edge.
+    LsbPosIn = 0x39,
+    /// LSB first, data in on negative edge, data out on positive edge.
+    LsbNegIn = 0x3C,
+}
+
+impl From<ClockData> for u8 {
+    fn from(value: ClockData) -> u8 {
+        value as u8
+    }
 }
 
 // seemingly arbitrary values from libmpsse
@@ -183,6 +273,15 @@ pub struct MpsseSettings {
     ///
     /// [`set_latency_timer`]: ./trait.FtdiCommon.html#method.set_latency_timer
     pub latency_timer: Duration,
+    /// Bitmode mask.
+    ///
+    /// * A bit value of `0` sets the corresponding pin to an input.
+    /// * A bit value of `1` sets the corresponding pin to an output.
+    ///
+    /// This gets passed to [`set_bit_mode`].
+    ///
+    /// [`set_bit_mode`]: ./trait.FtdiCommon.html#method.set_bit_mode
+    pub mask: u8,
 }
 
 impl std::default::Default for MpsseSettings {
@@ -193,6 +292,7 @@ impl std::default::Default for MpsseSettings {
             read_timeout: Duration::from_secs(1),
             write_timeout: Duration::from_secs(1),
             latency_timer: Duration::from_millis(16),
+            mask: 0x00,
         }
     }
 }
@@ -286,7 +386,7 @@ pub trait FtdiMpsse: FtdiCommon {
         self.set_latency_timer(settings.latency_timer)?;
         self.set_flow_control_rts_cts()?;
         self.set_bit_mode(0x0, BitMode::Reset)?;
-        self.set_bit_mode(0x0, BitMode::Mpsse)?;
+        self.set_bit_mode(settings.mask, BitMode::Mpsse)?;
         self.enable_loopback()?;
         self.synchronize_mpsse()?;
         self.disable_loopback()?;
@@ -477,5 +577,65 @@ pub trait FtdiMpsse: FtdiCommon {
         let mut buf: [u8; 1] = [0];
         self.read(&mut buf)?;
         Ok(buf[0])
+    }
+
+    /// Clock data out.
+    ///
+    /// This will clock out bytes on TDI/DO.
+    /// No data is clocked into the device on TDO/DI.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ft232h, FtdiMpsse, ClockDataOut};
+    ///
+    /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
+    /// ft.initialize_mpsse_default()?;
+    /// ft.set_clock(100_000)?;
+    /// ft.set_gpio_lower(0xFA, 0xFB)?;
+    /// ft.set_gpio_lower(0xF2, 0xFB)?;
+    /// ft.clock_data_out(ClockDataOut::MsbNeg, &[0x12, 0x34, 0x56])?;
+    /// ft.set_gpio_lower(0xFA, 0xFB)?;
+    /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
+    /// ```
+    fn clock_data_out(&mut self, mode: ClockDataOut, data: &[u8]) -> Result<(), TimeoutError> {
+        let mut len = data.len();
+        if len == 0 {
+            return Ok(());
+        }
+        len -= 1;
+        assert!(len <= 65536);
+        let mut payload = vec![mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8];
+        payload.extend_from_slice(&data);
+        self.write(&payload.as_slice())
+    }
+
+    /// Clock data in.
+    ///
+    /// This will clock in bytes on TDO/DI.
+    /// No data is clocked out of the device on TDI/DO.
+    fn clock_data_in(&mut self, mode: ClockDataIn, data: &mut [u8]) -> Result<(), TimeoutError> {
+        let mut len = data.len();
+        if len == 0 {
+            return Ok(());
+        }
+        len -= 1;
+        assert!(len <= 65536);
+        self.write(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8])?;
+        self.read(data)
+    }
+
+    /// Clock data in and out at the same time.
+    fn clock_data(&mut self, mode: ClockData, data: &mut [u8]) -> Result<(), TimeoutError> {
+        let mut len = data.len();
+        if len == 0 {
+            return Ok(());
+        }
+        len -= 1;
+        assert!(len <= 65536);
+        let mut payload = vec![mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8];
+        payload.extend_from_slice(&data);
+        self.write(&payload.as_slice())?;
+        self.read(data)
     }
 }

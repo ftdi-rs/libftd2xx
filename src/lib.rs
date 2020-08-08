@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.9.1"
+//! libftd2xx = "~0.10.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.9.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.10.0")]
 #![deny(missing_docs, warnings)]
 #![allow(clippy::redundant_field_names)]
 
@@ -61,7 +61,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-pub use mpsse::{FtdiMpsse, MpsseSettings};
+pub use mpsse::{ClockData, ClockDataIn, ClockDataOut, FtdiMpsse, MpsseSettings};
 
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
