@@ -75,15 +75,16 @@ mod util;
 use util::slice_into_string;
 
 use libftd2xx_ffi::{
-    FT_Close, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read, FT_EE_UARead,
-    FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
+    FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
+    FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
     FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion, FT_GetQueueStatus,
     FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice,
     FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout,
-    FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_Write,
-    FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR,
-    FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY,
-    FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
+    FT_SetDtr, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts,
+    FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
+    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
+    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
+    FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -788,6 +789,74 @@ pub trait FtdiCommon {
                 parity.into(),
             )
         };
+        ft_result!((), status)
+    }
+
+    /// Set the Data Terminal Ready (DTR) control signal.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_dtr()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_dtr(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_SetDtr({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_SetDtr(self.handle()) };
+        ft_result!((), status)
+    }
+
+    /// Clear the Data Terminal Ready (DTR) control signal.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.clear_dtr()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn clear_dtr(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_ClrtDtr({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_ClrDtr(self.handle()) };
+        ft_result!((), status)
+    }
+
+    /// Set the Request to Send (RTS) control signal.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_rts()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_rts(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_SetRts({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_SetRts(self.handle()) };
+        ft_result!((), status)
+    }
+
+    /// Clear the Request to Send (RTS) control signal.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.clear_rts()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn clear_rts(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_ClrtRts({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_ClrRts(self.handle()) };
         ft_result!((), status)
     }
 
