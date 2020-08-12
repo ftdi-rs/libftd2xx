@@ -88,6 +88,9 @@ use libftd2xx_ffi::{
 #[cfg(target_os = "windows")]
 use libftd2xx_ffi::FT_GetComPortNumber;
 
+#[cfg(any(target_os = "linux", target_os = "mac"))]
+use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
+
 use log::trace;
 use std::convert::TryFrom;
 use std::ffi::c_void;
@@ -133,6 +136,56 @@ pub fn num_devices() -> Result<u32, FtStatus> {
     };
 
     ft_result!(num_devs, status)
+}
+
+/// A command to include a custom VID and PID combination within the internal
+/// device list table.
+/// This will allow the driver to load for the specified VID and PID combination.
+///
+/// # Example
+///
+/// ```no_run
+/// use libftd2xx::{set_vid_pid, vid_pid};
+///
+/// set_vid_pid(0x1234, 0x1234)?;
+/// let (vid, pid) = vid_pid()?;
+/// assert_eq!(vid, 0x1234);
+/// assert_eq!(pid, 0x1234);
+/// # Ok::<(), libftd2xx::FtStatus>(())
+/// ```
+#[cfg(any(target_os = "linux", target_os = "mac"))]
+pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
+    trace!("FT_SetVIDPID({}, {})", vid, pid);
+    let status: FT_STATUS = unsafe { FT_SetVIDPID(vid.into(), pid.into()) };
+    ft_result!((), status)
+}
+
+/// A command to retrieve the current VID and PID combination from within the
+/// internal device list table, as set by [`set_vid_pid`].
+///
+/// **Note** this returns a tuple of `(u32, u32)`, these should be `u16` but
+/// the underlying type in the FTD2XX driver is a `u32`, and the choice to
+/// convert is left up to the user.
+///
+/// # Example
+///
+/// ```no_run
+/// use libftd2xx::vid_pid;
+///
+/// let (vid, pid) = vid_pid()?;
+/// println!("VID: 0x{:04X}", vid);
+/// println!("PID: 0x{:04X}", vid);
+/// # Ok::<(), libftd2xx::FtStatus>(())
+/// ```
+///
+/// [`set_vid_pid`]: ./fn.set_vid_pid.html
+#[cfg(any(target_os = "linux", target_os = "mac"))]
+pub fn vid_pid() -> Result<(u32, u32), FtStatus> {
+    let mut vid: u32 = 0;
+    let mut pid: u32 = 0;
+    trace!("FT_GetVIDPID(_, _)");
+    let status: FT_STATUS = unsafe { FT_GetVIDPID(&mut vid, &mut pid) };
+    ft_result!((vid, pid), status)
 }
 
 /// Returns the version of the underlying C library.
