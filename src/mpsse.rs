@@ -17,8 +17,8 @@ enum MpsseCmd {
     SendImmediate = 0x87,
     DisableClockDivide = 0x8A,
     EnableClockDivide = 0x8B,
-    // Enable3PhaseClocking = 0x8C,
-    // Disable3PhaseClocking = 0x8D,
+    Enable3PhaseClocking = 0x8C,
+    Disable3PhaseClocking = 0x8D,
     // EnableDriveOnlyZero = 0x9E,
 }
 
@@ -637,5 +637,64 @@ pub trait FtdiMpsse: FtdiCommon {
         payload.extend_from_slice(&data);
         self.write(&payload.as_slice())?;
         self.read(data)
+    }
+}
+
+/// This contains MPSSE commands that are only avaliable on the the FT232H,
+/// FT2232H, and FT4232H devices.
+///
+/// For details about the MPSSE read the [FTDI MPSSE Basics].
+///
+/// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
+pub trait Ftx232hMpsse: FtdiMpsse {
+    /// Enable 3 phase data clocking.
+    ///
+    /// This will give a 3 stage data shift for the purposes of supporting
+    /// interfaces such as I2C which need the data to be valid on both edges of
+    /// the clock.
+    ///
+    /// It will appears as:
+    ///
+    /// 1. Data setup for 1/2 clock period
+    /// 2. Pulse clock for 1/2 clock period
+    /// 3. Data hold for 1/2 clock period
+    ///
+    /// # Example
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ft232h, FtdiMpsse, Ftx232hMpsse};
+    ///
+    /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
+    /// ft.initialize_mpsse_default()?;
+    /// ft.enable_3phase_data_clocking()?;
+    /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
+    /// ```
+    fn enable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
+        self.write(&[MpsseCmd::Enable3PhaseClocking.into()])
+    }
+
+    /// Disable 3 phase data clocking.
+    ///
+    /// This will give a 2 stage data shift which is the default state.
+    ///
+    /// It will appears as:
+    ///
+    /// 1. Data setup for 1/2 clock period
+    /// 2. Pulse clock for 1/2 clock period
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ft232h, FtdiMpsse, Ftx232hMpsse};
+    ///
+    /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
+    /// ft.initialize_mpsse_default()?;
+    /// ft.disable_3phase_data_clocking()?;
+    /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
+    /// ```
+    fn disable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
+        self.write(&[MpsseCmd::Disable3PhaseClocking.into()])
     }
 }

@@ -61,7 +61,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-pub use mpsse::{ClockData, ClockDataIn, ClockDataOut, FtdiMpsse, MpsseSettings};
+pub use mpsse::{ClockData, ClockDataIn, ClockDataOut, FtdiMpsse, Ftx232hMpsse, MpsseSettings};
 
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
@@ -1687,3 +1687,5 @@ impl_eeprom_for!(Ft4232h, Eeprom4232h, FT_EEPROM_4232H);
 
 impl FtdiMpsse for Ft232h {}
 impl FtdiMpsse for Ft4232h {}
+impl Ftx232hMpsse for Ft232h {}
+impl Ftx232hMpsse for Ft4232h {}
