@@ -78,10 +78,10 @@ use libftd2xx_ffi::{
     FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
     FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion, FT_GetQueueStatus,
     FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice,
-    FT_SetBitMode, FT_SetChars, FT_SetDeadmanTimeout, FT_SetFlowControl, FT_SetLatencyTimer,
-    FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE,
-    FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
-    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDeadmanTimeout, FT_SetFlowControl,
+    FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE,
+    FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
+    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
     FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
@@ -731,6 +731,23 @@ pub trait FtdiCommon {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle(), FT_FLOW_XON_XOFF as u16, xon, xoff) };
 
+        ft_result!((), status)
+    }
+
+    /// Set the baud rate for the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_baud_rate(115200)?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_baud_rate(&mut self, baud_rate: u32) -> Result<(), FtStatus> {
+        trace!("FT_SetBaudRate({:?}, {})", self.handle(), baud_rate);
+        let status: FT_STATUS = unsafe { FT_SetBaudRate(self.handle(), baud_rate) };
         ft_result!((), status)
     }
 
