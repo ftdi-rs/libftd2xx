@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.12.0"
+//! libftd2xx = "~0.12.1"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.12.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.12.1")]
 #![deny(missing_docs, warnings)]
 
 mod errors;
@@ -141,7 +141,9 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 
 /// A command to include a custom VID and PID combination within the internal
 /// device list table.
-/// This will allow the driver to load for the specified VID and PID combination.
+///
+/// This will allow the driver to load for the specified VID and PID
+/// combination.
 ///
 /// # Example
 ///
@@ -162,7 +164,9 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 }
 
 /// A command to retrieve the current VID and PID combination from within the
-/// internal device list table, as set by [`set_vid_pid`].
+/// internal device list table.
+///
+/// This `vid` and `pid` are set by [`set_vid_pid`].
 ///
 /// **Note** this returns a tuple of `(u32, u32)`, these should be `u16` but
 /// the underlying type in the FTD2XX driver is a `u32`, and the choice to

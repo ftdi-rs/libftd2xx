@@ -640,7 +640,7 @@ pub trait FtdiMpsse: FtdiCommon {
     }
 }
 
-/// This contains MPSSE commands that are only avaliable on the the FT232H,
+/// This contains MPSSE commands that are only available on the the FT232H,
 /// FT2232H, and FT4232H devices.
 ///
 /// For details about the MPSSE read the [FTDI MPSSE Basics].
