@@ -66,8 +66,9 @@ pub use mpsse::{ClockData, ClockDataIn, ClockDataOut, FtdiMpsse, MpsseSettings};
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
-    BitMode, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo, DeviceType,
-    DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, Speed, Version,
+    BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
+    DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, Parity, Speed, StopBits,
+    Version,
 };
 
 mod util;
@@ -78,11 +79,11 @@ use libftd2xx_ffi::{
     FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
     FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion, FT_GetQueueStatus,
     FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice,
-    FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDeadmanTimeout, FT_SetFlowControl,
-    FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE,
-    FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
-    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
-    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
+    FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout,
+    FT_SetFlowControl, FT_SetLatencyTimer, FT_SetTimeouts, FT_SetUSBParameters, FT_Write,
+    FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR,
+    FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY,
+    FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -748,6 +749,45 @@ pub trait FtdiCommon {
     fn set_baud_rate(&mut self, baud_rate: u32) -> Result<(), FtStatus> {
         trace!("FT_SetBaudRate({:?}, {})", self.handle(), baud_rate);
         let status: FT_STATUS = unsafe { FT_SetBaudRate(self.handle(), baud_rate) };
+        ft_result!((), status)
+    }
+
+    /// Set the data characteristics for the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon, BitsPerWord, StopBits, Parity};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_data_characteristics(
+    ///     BitsPerWord::Bits8,
+    ///     StopBits::Bits1,
+    ///     Parity::No
+    /// )?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_data_characteristics(
+        &mut self,
+        bits_per_word: BitsPerWord,
+        stop_bits: StopBits,
+        parity: Parity,
+    ) -> Result<(), FtStatus> {
+        trace!(
+            "FT_SetDataCharacteristics({:?}, {}, {}, {})",
+            self.handle(),
+            u8::from(bits_per_word),
+            u8::from(stop_bits),
+            u8::from(parity),
+        );
+        let status: FT_STATUS = unsafe {
+            FT_SetDataCharacteristics(
+                self.handle(),
+                bits_per_word.into(),
+                stop_bits.into(),
+                parity.into(),
+            )
+        };
         ft_result!((), status)
     }
 

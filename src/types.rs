@@ -53,6 +53,90 @@ use std::{convert::TryFrom, fmt};
 /// Maximum length of common FTDI strings.
 pub const STRING_LEN: usize = 64;
 
+/// Bits per word.
+///
+/// This is used by the [`set_data_characteristics`] method.
+///
+/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(u8)]
+pub enum BitsPerWord {
+    /// 7 bits per word.
+    Bits7 = 7,
+    /// 8 bits per word.
+    Bits8 = 8,
+}
+
+impl From<BitsPerWord> for u8 {
+    fn from(val: BitsPerWord) -> u8 {
+        val as u8
+    }
+}
+
+impl Default for BitsPerWord {
+    fn default() -> Self {
+        BitsPerWord::Bits8
+    }
+}
+
+/// Stop bits.
+///
+/// This is used by the [`set_data_characteristics`] method.
+///
+/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(u8)]
+pub enum StopBits {
+    /// 1 stop bit.
+    Bits1 = 0,
+    /// 2 stop bits.
+    Bits2 = 2,
+}
+
+impl From<StopBits> for u8 {
+    fn from(val: StopBits) -> u8 {
+        val as u8
+    }
+}
+
+impl Default for StopBits {
+    fn default() -> Self {
+        StopBits::Bits1
+    }
+}
+
+/// Serial parity bits.
+///
+/// This is used by the [`set_data_characteristics`] method.
+///
+/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(u8)]
+pub enum Parity {
+    /// No pairty.
+    No = 0,
+    /// Odd parity.
+    Odd = 1,
+    /// Even parity.
+    Even = 2,
+    /// Mark parity.
+    Mark = 3,
+    /// Space parity.
+    Space = 4,
+}
+
+impl From<Parity> for u8 {
+    fn from(val: Parity) -> u8 {
+        val as u8
+    }
+}
+
+impl Default for Parity {
+    fn default() -> Self {
+        Parity::No
+    }
+}
+
 // These get around an annoyance with bindgen generating different types for
 // enums on Linux vs Windows.
 const DEVICE_BM: u32 = FT_DEVICE_BM as u32;
