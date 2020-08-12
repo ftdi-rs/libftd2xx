@@ -55,7 +55,6 @@
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 #![doc(html_root_url = "https://docs.rs/libftd2xx/0.12.0")]
 #![deny(missing_docs, warnings)]
-#![allow(clippy::redundant_field_names)]
 
 mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
@@ -1469,6 +1468,15 @@ macro_rules! impl_eeprom_for {
     };
 }
 
+fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
+    let mut handle: FT_HANDLE = std::ptr::null_mut();
+    let cstr_arg = std::ffi::CString::new(arg).unwrap();
+    trace!("FT_OpenEx({}, {}, _)", arg, flag);
+    let status: FT_STATUS =
+        unsafe { FT_OpenEx(cstr_arg.as_ptr() as *mut c_void, flag, &mut handle) };
+    ft_result!(handle, status)
+}
+
 impl Ftdi {
     /// Open the first device on the system.
     ///
@@ -1533,22 +1541,8 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     pub fn with_serial_number(serial_number: &str) -> Result<Ftdi, FtStatus> {
-        let mut handle: FT_HANDLE = std::ptr::null_mut();
-        let cstr_serial_number = std::ffi::CString::new(serial_number).unwrap();
-        trace!(
-            "FT_OpenEx({}, {}, _)",
-            serial_number,
-            FT_OPEN_BY_SERIAL_NUMBER
-        );
-        let status: FT_STATUS = unsafe {
-            FT_OpenEx(
-                cstr_serial_number.as_ptr() as *mut c_void,
-                FT_OPEN_BY_SERIAL_NUMBER,
-                &mut handle,
-            )
-        };
-
-        ft_result!(Ftdi { handle: handle }, status)
+        let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
+        Ok(Ftdi { handle })
     }
 
     /// Open the device by its device description.
@@ -1562,22 +1556,35 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     pub fn with_description(description: &str) -> Result<Ftdi, FtStatus> {
-        let mut handle: FT_HANDLE = std::ptr::null_mut();
-        let cstr_description = std::ffi::CString::new(description).unwrap();
-        trace!("FT_OpenEx({}, {}, _)", description, FT_OPEN_BY_DESCRIPTION);
-        let status: FT_STATUS = unsafe {
-            FT_OpenEx(
-                cstr_description.as_ptr() as *mut c_void,
-                FT_OPEN_BY_DESCRIPTION,
-                &mut handle,
-            )
-        };
-
-        ft_result!(Ftdi { handle: handle }, status)
+        let handle = ft_open_ex(description, FT_OPEN_BY_DESCRIPTION)?;
+        Ok(Ftdi { handle })
     }
 }
 
 impl Ft232h {
+    /// Open a `Ft4232h` device and initialize the handle.
+    ///
+    /// # Safety
+    ///
+    /// This is **unchecked** meaning a device type check will not be performed.
+    /// Mthods that require this specific device type may fail in unexpected
+    /// ways if the wrong device is used.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232h;
+    ///
+    /// let mut ft = unsafe {
+    ///     Ft232h::with_serial_number_unchecked("FT5AVX6B")?
+    /// };
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft232h, FtStatus> {
+        let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
+        Ok(Ft232h { handle })
+    }
+
     /// Open a `Ft232h` device and initialize the handle.
     ///
     /// # Example
@@ -1610,6 +1617,29 @@ impl Ft232h {
 }
 
 impl Ft4232h {
+    /// Open a `Ft4232h` device and initialize the handle.
+    ///
+    /// # Safety
+    ///
+    /// This is **unchecked** meaning a device type check will not be performed.
+    /// Mthods that require this specific device type may fail in unexpected
+    /// ways if the wrong device is used.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232h;
+    ///
+    /// let mut ft = unsafe {
+    ///     Ft4232h::with_serial_number_unchecked("FT4PWSEOA")?
+    /// };
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft4232h, FtStatus> {
+        let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
+        Ok(Ft4232h { handle })
+    }
+
     /// Open a `Ft4232h` device and initialize the handle.
     ///
     /// # Example
