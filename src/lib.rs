@@ -75,15 +75,15 @@ use util::slice_into_string;
 
 use libftd2xx_ffi::{
     FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
-    FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetDeviceInfo, FT_GetDeviceInfoList,
-    FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion, FT_GetQueueStatus,
-    FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice,
-    FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout,
-    FT_SetDtr, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts,
-    FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
-    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
-    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
-    FT_PURGE_TX, FT_STATUS,
+    FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetBitMode, FT_GetDeviceInfo,
+    FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion,
+    FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE,
+    FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDataCharacteristics,
+    FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts,
+    FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE,
+    FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
+    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -873,7 +873,7 @@ pub trait FtdiCommon {
     ///   In the case of CBUS Bit Bang, the upper nibble of this value controls
     ///   which pins are inputs and outputs, while the lower nibble controls
     ///   which of the outputs are high and low.
-    /// * `mode` - Bitmode, see the `BitMode` struct for more details.
+    /// * `mode` - Bitmode, see the [`BitMode`] struct for more details.
     ///
     /// For a description of available bit modes for the FT232R,
     /// see the application note [Bit Bang Modes for the FT232R and FT245R].
@@ -896,6 +896,7 @@ pub trait FtdiCommon {
     /// [Bit Mode Functions for the FT2232]: https://www.ftdichip.com/Support/Documents/AppNotes/AN2232C-02_FT2232CBitMode.pdf
     /// [FT232B/FT245B Bit Bang Mode]: https://www.ftdichip.com/Support/Documents/AppNotes/AN232B-01_BitBang.pdf
     /// [FTDI website]: https://www.ftdichip.com/Support/Documents/AppNotes.htm
+    /// [`BitMode`]: ./enum.BitMode.html
     ///
     /// # Example
     ///
@@ -916,6 +917,31 @@ pub trait FtdiCommon {
         let status: FT_STATUS = unsafe { FT_SetBitMode(self.handle(), mask, mode as u8) };
 
         ft_result!((), status)
+    }
+
+    /// Get the instantaneous value of the data bus.
+    ///
+    /// **Note:** This is not the [`BitMode`] as set in [`set_bit_mode`],
+    /// this is the value (logic high or logic low) of the pins on the bus.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let bitmode = ft.bit_mode()?;
+    /// println!("Data bus state: {}", bitmode);
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    ///
+    /// [`set_bit_mode`]: #method.set_bit_mode
+    /// [`BitMode`]: ./enum.BitMode.html
+    fn bit_mode(&mut self) -> Result<u8, FtStatus> {
+        let mut mode: u8 = 0;
+        trace!("FT_GetBitMode({:?}, _)", self.handle());
+        let status: FT_STATUS = unsafe { FT_GetBitMode(self.handle(), &mut mode) };
+        ft_result!(mode, status)
     }
 
     /// Gets the number of bytes in the receive queue.
