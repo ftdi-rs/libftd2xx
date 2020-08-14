@@ -78,11 +78,11 @@ use libftd2xx_ffi::{
     FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetBitMode, FT_GetDeviceInfo,
     FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion,
     FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE,
-    FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetChars, FT_SetDataCharacteristics,
-    FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts,
-    FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE,
-    FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
-    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff, FT_SetBreakOn, FT_SetChars,
+    FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl,
+    FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE,
+    FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
+    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
     FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
@@ -942,6 +942,40 @@ pub trait FtdiCommon {
         trace!("FT_GetBitMode({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetBitMode(self.handle(), &mut mode) };
         ft_result!(mode, status)
+    }
+
+    /// Sets the BREAK condition for the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_break_off()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_break_on(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_SetBreakOn({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_SetBreakOn(self.handle()) };
+        ft_result!((), status)
+    }
+
+    /// Resets the BREAK condition for the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.set_break_off()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn set_break_off(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_SetBreakOff({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_SetBreakOff(self.handle()) };
+        ft_result!((), status)
     }
 
     /// Gets the number of bytes in the receive queue.
