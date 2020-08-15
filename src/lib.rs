@@ -245,11 +245,21 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
         return Ok(devices);
     }
 
-    let mut list_info_vec: Vec<FT_DEVICE_LIST_INFO_NODE> = Vec::with_capacity(num_devices_usize);
+    let mut list_info_vec: Vec<FT_DEVICE_LIST_INFO_NODE> = vec![
+        FT_DEVICE_LIST_INFO_NODE {
+            Flags: 0,
+            Type: 0,
+            ID: 0,
+            LocId: 0,
+            SerialNumber: [0; 16],
+            Description: [0; 64],
+            ftHandle: std::ptr::null_mut(),
+        };
+        num_devices_usize
+    ];
 
     trace!("FT_GetDeviceInfoList(_, _)");
     let status: FT_STATUS = unsafe {
-        list_info_vec.set_len(num_devices_usize);
         FT_GetDeviceInfoList(
             list_info_vec.as_mut_ptr() as *mut FT_DEVICE_LIST_INFO_NODE,
             &mut num_devices,
