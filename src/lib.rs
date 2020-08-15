@@ -87,7 +87,7 @@ use libftd2xx_ffi::{
 };
 
 #[cfg(target_os = "windows")]
-use libftd2xx_ffi::FT_GetComPortNumber;
+use libftd2xx_ffi::{FT_GetComPortNumber, FT_Rescan};
 
 #[cfg(any(target_os = "linux", target_os = "mac"))]
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
@@ -283,6 +283,28 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
         }
         Ok(devices)
     }
+}
+
+/// Rescan devices on the system.
+///
+/// This can be of used when trying to recover devices programatically.
+///
+/// Calling `rescan` is equivalent to clicking the "Scan for hardware changes"
+/// button in the Device Manager.
+/// Only USB hardware is checked for new devices.
+/// All USB devices are scanned, not just FTDI devices.
+///
+/// # Example
+///
+/// ```no_run
+/// libftd2xx::rescan()?;
+/// # Ok::<(), libftd2xx::FtStatus>(())
+/// ```
+#[cfg(target_os = "windows")]
+pub fn rescan() -> Result<(), FtStatus> {
+    trace!("FT_Rescan()");
+    let status: FT_STATUS = unsafe { FT_Rescan() };
+    ft_result!((), status)
 }
 
 /// Generic FTDI device.
