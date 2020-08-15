@@ -66,8 +66,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, Parity, Speed, StopBits,
-    Version,
+    DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, ModemStatus, Parity, Speed,
+    StopBits, Version,
 };
 
 mod util;
@@ -77,9 +77,9 @@ use libftd2xx_ffi::{
     FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
     FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetBitMode, FT_GetDeviceInfo,
     FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion,
-    FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read, FT_ReadEE,
-    FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff, FT_SetBreakOn, FT_SetChars,
-    FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl,
+    FT_GetModemStatus, FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read,
+    FT_ReadEE, FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff, FT_SetBreakOn,
+    FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl,
     FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE,
     FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
     FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
@@ -1268,6 +1268,25 @@ pub trait FtdiCommon {
             },
             status
         )
+    }
+
+    /// Gets the modem status and line status from the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let modem_status = ft.modem_status()?;
+    /// println!("CTS={}", modem_status.clear_to_send());
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn modem_status(&mut self) -> Result<ModemStatus, FtStatus> {
+        let mut modem_status: u32 = 0;
+        trace!("FT_GetModemStatus({:?}, _)", self.handle());
+        let status: FT_STATUS = unsafe { FT_GetModemStatus(self.handle(), &mut modem_status) };
+        ft_result!(ModemStatus::new(modem_status), status)
     }
 
     /// Read a value from an EEPROM location.

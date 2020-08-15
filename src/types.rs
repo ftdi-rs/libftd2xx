@@ -447,6 +447,71 @@ impl From<u32> for Speed {
     }
 }
 
+/// FTDI modem status.
+///
+/// This is returned by [`modem_status`].
+///
+/// [`device_info`]: ./struct.Ftdi.html#method.device_info
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct ModemStatus(u32);
+
+impl ModemStatus {
+    /// Construct a new `ModemStatus` from a raw value.
+    pub fn new(status: u32) -> ModemStatus {
+        ModemStatus(status)
+    }
+
+    /// Get the line status byte.
+    pub fn line_status(&self) -> u8 {
+        u8::try_from((self.0 >> 8) & 0xFF).unwrap()
+    }
+
+    /// Get the modem status byte.
+    pub fn modem_status(&self) -> u8 {
+        u8::try_from(self.0 & 0xFF).unwrap()
+    }
+
+    /// Clear to send (CTS) status.
+    pub fn clear_to_send(&self) -> bool {
+        self.modem_status() & 0x10 != 0
+    }
+
+    /// Data set ready (DSR) status.
+    pub fn data_set_ready(&self) -> bool {
+        self.modem_status() & 0x20 != 0
+    }
+
+    /// Ring indicator (RI) status.
+    pub fn ring_indicator(&self) -> bool {
+        self.modem_status() & 0x40 != 0
+    }
+
+    /// Data carrier detect (DCD) status.
+    pub fn data_carrier_detect(&self) -> bool {
+        self.modem_status() & 0x80 != 0
+    }
+
+    /// Overrun error (OE) status.
+    pub fn overrun_error(&self) -> bool {
+        self.line_status() & 0x02 != 0
+    }
+
+    /// Parity error (PE) status.
+    pub fn parity_error(&self) -> bool {
+        self.line_status() & 0x04 != 0
+    }
+
+    /// Framing error (FE) status.
+    pub fn framing_error(&self) -> bool {
+        self.line_status() & 0x08 != 0
+    }
+
+    /// Break interrupt (BI) status.
+    pub fn break_interrupt(&self) -> bool {
+        self.line_status() & 0x10 != 0
+    }
+}
+
 /// FTDI device information.
 ///
 /// This is returned by [`list_devices`] and [`device_info`].
