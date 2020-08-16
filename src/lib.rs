@@ -66,8 +66,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, ModemStatus, Parity, Speed,
-    StopBits, Version,
+    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, ModemStatus,
+    Parity, Speed, StopBits, Version,
 };
 
 mod util;
@@ -77,13 +77,14 @@ use libftd2xx_ffi::{
     FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
     FT_EE_UARead, FT_EE_UASize, FT_EE_UAWrite, FT_EraseEE, FT_GetBitMode, FT_GetDeviceInfo,
     FT_GetDeviceInfoList, FT_GetDriverVersion, FT_GetLatencyTimer, FT_GetLibraryVersion,
-    FT_GetModemStatus, FT_GetQueueStatus, FT_ListDevices, FT_Open, FT_OpenEx, FT_Purge, FT_Read,
-    FT_ReadEE, FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff, FT_SetBreakOn,
-    FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr, FT_SetFlowControl,
-    FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters, FT_Write, FT_WriteEE,
-    FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
-    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
-    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
+    FT_GetModemStatus, FT_GetQueueStatus, FT_GetStatus, FT_ListDevices, FT_Open, FT_OpenEx,
+    FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff,
+    FT_SetBreakOn, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr,
+    FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters,
+    FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H,
+    FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
+    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
+    FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -1032,6 +1033,45 @@ pub trait FtdiCommon {
         let status: FT_STATUS = unsafe { FT_GetQueueStatus(self.handle(), &mut queue_status) };
 
         ft_result!(usize::try_from(queue_status).unwrap(), status)
+    }
+
+    /// Gets the device status including number of characters in the receive
+    /// queue, number of characters in the transmit queue, and the current event
+    /// status.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let status = ft.status()?;
+    /// println!("status={:?}", status);
+    /// # Ok::<(), libftd2xx::TimeoutError>(())
+    /// ```
+    fn status(&mut self) -> Result<DeviceStatus, FtStatus> {
+        let mut ammount_in_rx_queue: u32 = 0;
+        let mut ammount_in_tx_queue: u32 = 0;
+        let mut event_status: u32 = 0;
+
+        trace!("FT_GetStatus({:?}, _, _, _)", self.handle());
+        let status: FT_STATUS = unsafe {
+            FT_GetStatus(
+                self.handle(),
+                &mut ammount_in_rx_queue,
+                &mut ammount_in_tx_queue,
+                &mut event_status,
+            )
+        };
+
+        ft_result!(
+            DeviceStatus {
+                ammount_in_rx_queue,
+                ammount_in_tx_queue,
+                event_status
+            },
+            status
+        )
     }
 
     /// Read data from the device.

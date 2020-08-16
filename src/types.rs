@@ -447,6 +447,21 @@ impl From<u32> for Speed {
     }
 }
 
+/// FTDI device status.
+///
+/// This is returned by [`status`].
+///
+/// [`status`]: ./struct.Ftdi.html#method.status
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct DeviceStatus {
+    /// Number of characters in the receive queue.
+    pub ammount_in_rx_queue: u32,
+    /// Number of characters in the transmit queue.
+    pub ammount_in_tx_queue: u32,
+    /// Current state of the event status.
+    pub event_status: u32,
+}
+
 /// FTDI modem status.
 ///
 /// This is returned by [`modem_status`].
