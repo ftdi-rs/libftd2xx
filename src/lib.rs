@@ -1085,6 +1085,10 @@ pub trait FtdiCommon {
     ///
     /// This function will panic if an invalid [`EventMask`] is passed.
     ///
+    /// # Safety
+    ///
+    /// The function this calls into does some unknown casting under the hood.
+    ///
     /// [`EventMask`]: ./struct.EventMask.html
     unsafe fn set_event_notification(
         &mut self,
@@ -1097,7 +1101,7 @@ pub trait FtdiCommon {
         );
         let mask: u32 = event_mask.to_mask();
         trace!("FT_SetEventNotification({:?}, {}, _)", self.handle(), mask);
-        let status: FT_STATUS = FT_SetEventNotification(self.handle(), mask, mtx as *mut c_void);
+        let status: FT_STATUS = FT_SetEventNotification(self.handle(), mask, mtx);
         ft_result!((), status)
     }
 
