@@ -66,8 +66,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, ModemStatus,
-    Parity, Speed, StopBits, Version,
+    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, EventMask,
+    ModemStatus, Parity, Speed, StopBits, Version,
 };
 
 mod util;
@@ -80,9 +80,9 @@ use libftd2xx_ffi::{
     FT_GetModemStatus, FT_GetQueueStatus, FT_GetStatus, FT_ListDevices, FT_Open, FT_OpenEx,
     FT_Purge, FT_Read, FT_ReadEE, FT_ResetDevice, FT_SetBaudRate, FT_SetBitMode, FT_SetBreakOff,
     FT_SetBreakOn, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr,
-    FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters,
-    FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H, FT_EEPROM_4232H,
-    FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
+    FT_SetEventNotification, FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts,
+    FT_SetUSBParameters, FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_232H,
+    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
     FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
     FT_PURGE_TX, FT_STATUS,
 };
@@ -1072,6 +1072,33 @@ pub trait FtdiCommon {
             },
             status
         )
+    }
+
+    /// Sets conditions for an event notification.
+    ///
+    /// An application can use this function to setup conditions which allow a
+    /// thread to block until one of the conditions is met.
+    /// Typically, an application will create an event, call this function,
+    /// then block on the event.
+    /// When the conditions are met, the event is set, and the application
+    /// thread unblocked.
+    ///
+    /// This function will panic if an invalid [`EventMask`] is passed.
+    ///
+    /// [`EventMask`]: ./struct.EventMask.html
+    unsafe fn set_event_notification(
+        &mut self,
+        event_mask: EventMask,
+        mtx: *mut c_void,
+    ) -> Result<(), FtStatus> {
+        assert!(
+            event_mask.valid(),
+            "event_mask must have at least one event set"
+        );
+        let mask: u32 = event_mask.to_mask();
+        trace!("FT_SetEventNotification({:?}, {}, _)", self.handle(), mask);
+        let status: FT_STATUS = FT_SetEventNotification(self.handle(), mask, mtx as *mut c_void);
+        ft_result!((), status)
     }
 
     /// Read data from the device.

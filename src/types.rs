@@ -47,6 +47,9 @@ use libftd2xx_ffi::{FT_DRIVER_TYPE_D2XX, FT_DRIVER_TYPE_VCP};
 // FT_EEPROM_
 use libftd2xx_ffi::{FT_EEPROM_232H, FT_EEPROM_4232H};
 
+// FT_EVENT_
+use libftd2xx_ffi::{FT_EVENT_LINE_STATUS, FT_EVENT_MODEM_STATUS, FT_EVENT_RXCHAR};
+
 use super::{EepromStringsError, EepromValueError};
 use std::{convert::TryFrom, fmt};
 
@@ -460,6 +463,71 @@ pub struct DeviceStatus {
     pub ammount_in_tx_queue: u32,
     /// Current state of the event status.
     pub event_status: u32,
+}
+
+/// FTDI event mask.
+///
+/// This is an argument of [`set_event_notification`].
+///
+/// [`set_event_notification`]: ./struct.Ftdi.html#method.set_event_notification
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct EventMask {
+    /// Set the event when a character has been recieved by the device.
+    pub rx_char: bool,
+    /// Set the event when a change in the modem signals has been detected by
+    /// the device.
+    pub modem_status: bool,
+    /// Set the event when a change in the line status has been detected by the
+    /// device.
+    pub line_status: bool,
+}
+
+impl EventMask {
+    /// Get the bitmask for the structure.
+    pub fn to_mask(&self) -> u32 {
+        let mut val: u32 = 0;
+        if self.rx_char {
+            val |= FT_EVENT_RXCHAR as u32;
+        }
+        if self.modem_status {
+            val |= FT_EVENT_MODEM_STATUS as u32;
+        }
+        if self.line_status {
+            val |= FT_EVENT_LINE_STATUS as u32;
+        }
+        val
+    }
+
+    /// Validate the event mask, at least one event condition must be enabled to
+    /// be valid.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::EventMask;
+    ///
+    /// let mut mask = EventMask {
+    ///     rx_char: false,
+    ///     modem_status: false,
+    ///     line_status: false,
+    /// };
+    /// assert_eq!(mask.valid(), false);
+    /// mask.rx_char = true;
+    /// assert_eq!(mask.valid(), true);
+    /// ```
+    pub fn valid(&self) -> bool {
+        self.rx_char || self.modem_status || self.line_status
+    }
+}
+
+impl Default for EventMask {
+    fn default() -> EventMask {
+        EventMask {
+            rx_char: true,
+            modem_status: true,
+            line_status: true,
+        }
+    }
 }
 
 /// FTDI modem status.
