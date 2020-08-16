@@ -88,7 +88,7 @@ use libftd2xx_ffi::{
 };
 
 #[cfg(target_os = "windows")]
-use libftd2xx_ffi::{FT_GetComPortNumber, FT_Rescan};
+use libftd2xx_ffi::{FT_CyclePort, FT_GetComPortNumber, FT_Rescan, FT_ResetPort};
 
 #[cfg(any(target_os = "linux", target_os = "mac"))]
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
@@ -1308,6 +1308,64 @@ pub trait FtdiCommon {
             },
             status
         )
+    }
+
+    /// Send a reset command to the port.
+    ///
+    /// This function is used to attempt to recover the device upon failure.
+    /// For the equivalent of a unplug-replug event use [`cycle_port`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.reset_port()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    ///
+    /// [`cycle_port`]: #cycle_port
+    #[cfg(target_os = "windows")]
+    fn reset_port(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_ResetPort({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_ResetPort(self.handle()) };
+        ft_result!((), status)
+    }
+
+    /// Send a cycle command to the USB port.
+    ///
+    /// The effect of this method is the same as disconnecting then
+    /// reconnecting the device from the USB port.
+    /// Possible use of this method is situations where a fatal error has
+    /// occurred and it is difficult, or not possible, to recover without
+    /// unplugging and replugging the USB cable.
+    /// This method can also be used after re-programming the EEPROM to force
+    /// the FTDI device to read the new EEPROM contents which would otherwise
+    /// require a physical disconnect-reconnect.
+    ///
+    /// As the current session is not restored when the driver is reloaded,
+    /// the application must be able to recover after calling this method.
+    /// It is the responisbility of the application to close the handle after
+    /// successfully calling this method.
+    ///
+    /// For FT4232H, FT2232H and FT2232 devices, `cycle_port` will only work
+    /// under Windows XP and later.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// ft.cycle_port()?;
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    #[cfg(target_os = "windows")]
+    fn cycle_port(&mut self) -> Result<(), FtStatus> {
+        trace!("FT_CyclePort({:?})", self.handle());
+        let status: FT_STATUS = unsafe { FT_CyclePort(self.handle()) };
+        ft_result!((), status)
     }
 
     /// Gets the modem status and line status from the device.
