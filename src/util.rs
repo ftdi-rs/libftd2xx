@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings)]
+#![deny(missing_docs)]
 
 // Converts an i8 slice into a string.  Non UTF-8 will be lost.
 //

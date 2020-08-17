@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings, unsafe_code)]
+#![deny(missing_docs, unsafe_code)]
 
 // FT_X_SERIES_CBUS_
 use libftd2xx_ffi::{
@@ -45,9 +45,10 @@ use libftd2xx_ffi::{
 use libftd2xx_ffi::{FT_DRIVER_TYPE_D2XX, FT_DRIVER_TYPE_VCP};
 
 // FT_EEPROM_
-use libftd2xx_ffi::{FT_EEPROM_232H, FT_EEPROM_4232H};
+use libftd2xx_ffi::{FT_EEPROM_232H, FT_EEPROM_4232H, FT_EEPROM_HEADER};
 
 use super::{EepromStringsError, EepromValueError};
+use crate::util::slice_into_string;
 use std::{convert::TryFrom, fmt};
 
 /// Maximum length of common FTDI strings.
@@ -478,12 +479,12 @@ impl ModemStatus {
 
     /// Get the line status byte.
     pub fn line_status(&self) -> u8 {
-        u8::try_from((self.0 >> 8) & 0xFF).unwrap()
+        u8::try_from(((self.0) >> 8) & 0xFF).unwrap()
     }
 
     /// Get the modem status byte.
     pub fn modem_status(&self) -> u8 {
-        u8::try_from(self.0 & 0xFF).unwrap()
+        u8::try_from((self.0) & 0xFF).unwrap()
     }
 
     /// Clear to send (CTS) status.
@@ -787,103 +788,227 @@ cbus_enum!(
     }
 );
 
-/// EEPROM structure for the FT232H.
+/// EEPROM strings structure.
+///
+/// This structure contains the strings programmed into EEPROM that are common
+/// across all FTDI devices.
 ///
 /// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
 ///
 /// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
 /// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
-#[derive(Debug, Clone)]
-pub struct Eeprom232h {
-    eeprom: FT_EEPROM_232H,
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
+pub struct EepromStrings {
     manufacturer: String,
     manufacturer_id: String,
     description: String,
     serial_number: String,
 }
 
-#[allow(clippy::wrong_self_convention)]
-impl Eeprom232h {
-    /// FT1248 clock polarity.
-    pub fn ft1248_cpol(&self) -> ClockPolarity {
-        self.eeprom.FT1248Cpol.into()
+impl EepromStrings {
+    /// Create a new EEPROM strings structure.
+    pub fn with_strs(
+        manufacturer: &str,
+        manufacturer_id: &str,
+        description: &str,
+        serial_number: &str,
+    ) -> Result<Self, EepromStringsError> {
+        let mut ret = Self::default();
+        ret.set_manufacturer(manufacturer.to_string())?;
+        ret.set_manufacturer_id(manufacturer_id.to_string())?;
+        ret.set_description(description.to_string())?;
+        ret.set_serial_number(serial_number.to_string())?;
+        Ok(ret)
     }
 
-    /// Set FT1248 clock polarity.
-    pub fn set_ft1248_cpol(&mut self, value: ClockPolarity) {
-        self.eeprom.FT1248Cpol = value as u8
+    /// Create a new EEPROM strings structure from raw slices.
+    pub fn with_slices(
+        manufacturer: &[i8],
+        manufacturer_id: &[i8],
+        description: &[i8],
+        serial_number: &[i8],
+    ) -> Result<Self, EepromStringsError> {
+        let mut ret = Self::default();
+        ret.set_manufacturer(slice_into_string(manufacturer))?;
+        ret.set_manufacturer_id(slice_into_string(manufacturer_id))?;
+        ret.set_description(slice_into_string(description))?;
+        ret.set_serial_number(slice_into_string(serial_number))?;
+        Ok(ret)
     }
-
-    /// FT1248 byte order.
-    pub fn ft1248_byteorder(&self) -> ByteOrder {
-        self.eeprom.FT1248Lsb.into()
-    }
-
-    /// Set FT1248 byte order.
-    pub fn set_ft1248_byteorder(&mut self, value: ByteOrder) {
-        self.eeprom.FT1248Lsb = value as u8
-    }
-
-    /// FT1248 flow control enable.
-    pub fn ft1248_flow_control(&self) -> bool {
-        self.eeprom.FT1248FlowControl != 0
-    }
-
-    /// Set FT1248 flow control enable.
-    pub fn set_ft1248_flow_control(&mut self, value: bool) {
-        self.eeprom.FT1248FlowControl = if value { 1 } else { 0 }
-    }
-
-    /// FT245 FIFO interface mode.
-    pub fn is_fifo(&self) -> bool {
-        self.eeprom.IsFifo != 0
-    }
-
-    /// Set FT245 FIFO interface mode.
-    pub fn set_is_fifo(&mut self, value: bool) {
-        self.eeprom.IsFifo = if value { 1 } else { 0 }
-    }
-
-    /// FT245 FIFO CPU target mode.
-    pub fn is_fifo_target(&self) -> bool {
-        self.eeprom.IsFifoTar != 0
-    }
-
-    /// Set FT245 FIFO CPU target mode.
-    pub fn set_is_fifo_target(&mut self, value: bool) {
-        self.eeprom.IsFifoTar = if value { 1 } else { 0 }
-    }
-
-    /// Fast serial interface mode.
-    pub fn is_fast_serial(&self) -> bool {
-        self.eeprom.IsFastSer != 0
-    }
-
-    /// Set Fast serial interface mode.
-    pub fn set_is_fast_serial(&mut self, value: bool) {
-        self.eeprom.IsFastSer = if value { 1 } else { 0 }
-    }
-
-    /// FT1248 interface mode.
-    pub fn is_ft1248(&self) -> bool {
-        self.eeprom.IsFT1248 != 0
-    }
-
-    /// Set FT1248 interface mode.
-    pub fn set_is_ft1248(&mut self, value: bool) {
-        self.eeprom.IsFT1248 = if value { 1 } else { 0 }
-    }
-
-    /// Power save enable.
+    /// Total length of the `manufacturer`, `manufacturer_id`,
+    /// `description`, and `serial_number` strings.
     ///
-    /// Use a pin to save power for self-powered designs.
-    pub fn power_save_enable(&self) -> bool {
-        self.eeprom.PowerSaveEnable != 0
+    /// Together these strings cannot exceed 96 characters.
+    pub fn string_len(&self) -> usize {
+        self.manufacturer.len()
+            + self.manufacturer_id.len()
+            + self.description.len()
+            + self.serial_number.len()
     }
 
-    /// Set power save enable.
-    pub fn set_power_save_enable(&mut self, value: bool) {
-        self.eeprom.PowerSaveEnable = if value { 1 } else { 0 }
+    /// Manufacturer string.
+    pub fn manufacturer(&self) -> String {
+        self.manufacturer.clone()
+    }
+
+    /// Set the manufacturer string.
+    ///
+    /// # Requirements
+    ///
+    /// * Less than or equal to 64 characters.
+    /// * The total length of the `manufacturer`, `manufacturer_id`,
+    ///   `description`, and `serial_number` strings can not exceed
+    ///   96 characters.
+    pub fn set_manufacturer(&mut self, value: String) -> Result<(), EepromStringsError> {
+        if value.len() > EepromStringsError::MAX_LEN
+            || self.manufacturer_id.len() + self.description.len() + self.serial_number.len()
+                > EepromStringsError::MAX_TOTAL_LEN
+        {
+            Err(EepromStringsError {
+                manufacturer: value.len(),
+                manufacturer_id: self.manufacturer_id.len(),
+                description: self.description.len(),
+                serial_number: self.serial_number.len(),
+            })
+        } else {
+            self.manufacturer = value;
+            Ok(())
+        }
+    }
+
+    /// Manufacturer ID string.
+    pub fn manufacturer_id(&self) -> String {
+        self.manufacturer_id.clone()
+    }
+
+    /// Set the manufacturer ID string.
+    ///
+    /// The first two characters of this string should be the same as
+    /// the first two characters of the device serial number.
+    /// For example, if your manufacturer ID is "FTDI" your serial
+    /// number should start with "FT".
+    ///
+    /// # Requirements
+    ///
+    /// * Less than or equal to 64 characters.
+    /// * The total length of the `manufacturer`, `manufacturer_id`,
+    ///   `description`, and `serial_number` strings can not exceed
+    ///   96 characters.
+    pub fn set_manufacturer_id(&mut self, value: String) -> Result<(), EepromStringsError> {
+        if value.len() > EepromStringsError::MAX_LEN
+            || self.manufacturer.len() + self.description.len() + self.serial_number.len()
+                > EepromStringsError::MAX_TOTAL_LEN
+        {
+            Err(EepromStringsError {
+                manufacturer: self.manufacturer.len(),
+                manufacturer_id: value.len(),
+                description: self.description.len(),
+                serial_number: self.serial_number.len(),
+            })
+        } else {
+            self.manufacturer_id = value;
+            Ok(())
+        }
+    }
+
+    /// Description string.
+    pub fn description(&self) -> String {
+        self.description.clone()
+    }
+
+    /// Set the description string.
+    ///
+    /// # Requirements
+    ///
+    /// * Less than or equal to 64 characters.
+    /// * The total length of the `manufacturer`, `manufacturer_id`,
+    ///   `description`, and `serial_number` strings can not exceed
+    ///   96 characters.
+    pub fn set_description(&mut self, value: String) -> Result<(), EepromStringsError> {
+        if value.len() > EepromStringsError::MAX_LEN
+            || self.manufacturer.len() + self.manufacturer_id.len() + self.serial_number.len()
+                > EepromStringsError::MAX_TOTAL_LEN
+        {
+            Err(EepromStringsError {
+                manufacturer: self.manufacturer.len(),
+                manufacturer_id: self.manufacturer_id.len(),
+                description: value.len(),
+                serial_number: self.serial_number.len(),
+            })
+        } else {
+            self.description = value;
+            Ok(())
+        }
+    }
+
+    /// Serial number string.
+    pub fn serial_number(&self) -> String {
+        self.serial_number.clone()
+    }
+
+    /// Set the manufacturer ID string.
+    ///
+    /// The first two characters of this string should be the same as
+    /// the first two characters of the device serial number.
+    /// For example, if your manufacturer ID is "FTDI" your serial
+    /// number should start with "FT".
+    ///
+    /// # Requirements
+    ///
+    /// * Less than or equal to 64 characters.
+    /// * The total length of the `manufacturer`, `manufacturer_id`,
+    ///   `description`, and `serial_number` strings can not exceed
+    ///   96 characters.
+    pub fn set_serial_number(&mut self, value: String) -> Result<(), EepromStringsError> {
+        if value.len() > EepromStringsError::MAX_LEN
+            || self.manufacturer.len() + self.manufacturer_id.len() + self.description.len()
+                > EepromStringsError::MAX_TOTAL_LEN
+        {
+            Err(EepromStringsError {
+                manufacturer: self.manufacturer.len(),
+                manufacturer_id: self.manufacturer_id.len(),
+                description: self.description.len(),
+                serial_number: value.len(),
+            })
+        } else {
+            self.serial_number = value;
+            Ok(())
+        }
+    }
+}
+
+/// EEPROM structure for the FT232H.
+///
+/// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
+///
+/// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
+/// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
+#[derive(Debug, Copy, Clone)]
+pub struct Eeprom232h(FT_EEPROM_232H);
+
+impl From<Eeprom232h> for FT_EEPROM_232H {
+    fn from(val: Eeprom232h) -> FT_EEPROM_232H {
+        val.0
+    }
+}
+
+impl From<FT_EEPROM_232H> for Eeprom232h {
+    fn from(val: FT_EEPROM_232H) -> Eeprom232h {
+        Eeprom232h(val)
+    }
+}
+
+impl Default for Eeprom232h {
+    fn default() -> Self {
+        let mut header = EepromHeader::default();
+        header.set_device_type(DeviceType::FT232H);
+        header.set_product_id(0x6014);
+        Self(FT_EEPROM_232H {
+            common: header.0,
+            ACDriveCurrent: 4,
+            ADDriveCurrent: 4,
+            ..FT_EEPROM_232H::default()
+        })
     }
 }
 
@@ -893,13 +1018,277 @@ impl Eeprom232h {
 ///
 /// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
 /// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
-#[derive(Debug, Clone)]
-pub struct Eeprom4232h {
-    eeprom: FT_EEPROM_4232H,
-    manufacturer: String,
-    manufacturer_id: String,
-    description: String,
-    serial_number: String,
+#[derive(Debug, Copy, Clone)]
+pub struct Eeprom4232h(FT_EEPROM_4232H);
+
+impl From<Eeprom4232h> for FT_EEPROM_4232H {
+    fn from(val: Eeprom4232h) -> FT_EEPROM_4232H {
+        val.0
+    }
+}
+
+impl From<FT_EEPROM_4232H> for Eeprom4232h {
+    fn from(val: FT_EEPROM_4232H) -> Eeprom4232h {
+        Eeprom4232h(val)
+    }
+}
+
+impl Default for Eeprom4232h {
+    fn default() -> Self {
+        let mut header = EepromHeader::default();
+        header.set_device_type(DeviceType::FT4232H);
+        header.set_product_id(0x6011);
+        Self(FT_EEPROM_4232H {
+            common: header.0,
+            ADriveCurrent: 4,
+            BDriveCurrent: 4,
+            CDriveCurrent: 4,
+            DDriveCurrent: 4,
+            ..FT_EEPROM_4232H::default()
+        })
+    }
+}
+
+impl Eeprom4232h {
+    /// Get the EEPROM header.
+    pub fn header(&self) -> EepromHeader {
+        EepromHeader((self.0).common)
+    }
+
+    /// Set the EEPROM header.
+    pub fn set_header(&mut self, header: EepromHeader) {
+        (self.0).common = header.into()
+    }
+}
+
+/// FTDI EEPROM header common to all FTDI devices.
+#[derive(Debug, Copy, Clone)]
+pub struct EepromHeader(FT_EEPROM_HEADER);
+
+impl EepromHeader {
+    /// Set the FTDI device type.
+    pub fn set_device_type(&mut self, device_type: DeviceType) {
+        (self.0).deviceType = device_type as u32;
+    }
+
+    /// FTDI USB device vendor ID.
+    ///
+    /// This is typically `0x0403`.
+    pub fn vendor_id(&self) -> u16 {
+        (self.0).VendorId
+    }
+
+    /// Set the FTDI USB device vendor ID.
+    pub fn set_vendor_id(&mut self, value: u16) {
+        (self.0).VendorId = value
+    }
+
+    /// FTDI USB product ID.
+    ///
+    /// Typical FTDI product IDs:
+    /// * `0x6001` FT232AM/FT232BM/FT232R
+    /// * `0x6010` FT2232C/FT2232D/FT2232H
+    /// * `0x6011` FT4232/FT4232H
+    /// * `0x6014` FT232H
+    /// * `0x6015` FT230X/FT231X/FT234X
+    pub fn product_id(&self) -> u16 {
+        (self.0).ProductId
+    }
+
+    /// Set the FTDI USB product ID.
+    pub fn set_product_id(&mut self, value: u16) {
+        (self.0).ProductId = value
+    }
+
+    /// Serial Number Enable.
+    ///
+    /// `true` if the serial number is to be used.
+    ///
+    /// The documentation is unclear what *exactly* this means.
+    pub fn serial_number_enable(&self) -> bool {
+        (self.0).SerNumEnable != 0
+    }
+
+    /// Set Serial Number Enable.
+    pub fn set_serial_number_enable(&mut self, value: bool) {
+        (self.0).SerNumEnable = if value { 1 } else { 0 }
+    }
+
+    /// Maximum bus current.
+    ///
+    /// The unit for this value is milliamps, and the value range is
+    /// 0-500 mA.
+    pub fn max_current(&self) -> u16 {
+        (self.0).MaxPower
+    }
+
+    /// Set maximum bus current.
+    ///
+    /// Values greater than 500 mA (`500u16`) will result in panic.
+    pub fn set_max_current(&mut self, value: u16) {
+        assert!(value <= 500, "{} exceeds 500 mA limit", value);
+        (self.0).MaxPower = value
+    }
+
+    /// Device power source.
+    ///
+    /// * `true` if the device is self-powered.
+    /// * `false` if the device is powered by the bus.
+    pub fn self_powered(&self) -> bool {
+        (self.0).SelfPowered != 0
+    }
+
+    /// Set device power source.
+    pub fn set_self_powered(&mut self, value: bool) {
+        (self.0).SelfPowered = if value { 1 } else { 0 }
+    }
+
+    /// Remote wakeup capabilities.
+    ///
+    /// * `true` if the device is capable of remote wakeup.
+    /// * `false` if the device is not capable of remote wakeup.
+    pub fn remote_wakeup(&self) -> bool {
+        (self.0).RemoteWakeup != 0
+    }
+
+    /// Set device power source.
+    pub fn set_remote_wakeup(&mut self, value: bool) {
+        (self.0).RemoteWakeup = if value { 1 } else { 0 }
+    }
+
+    /// Pull down in suspend mode.
+    ///
+    /// * `true` if pull-down in suspend is enabled.
+    /// * `false` if pull-down in suspend is disabled.
+    pub fn pull_down_enable(&self) -> bool {
+        (self.0).PullDownEnable != 0
+    }
+
+    /// Set device power source.
+    pub fn set_pull_down_enable(&mut self, value: bool) {
+        (self.0).PullDownEnable = if value { 1 } else { 0 }
+    }
+}
+
+impl Default for EepromHeader {
+    fn default() -> Self {
+        Self(FT_EEPROM_HEADER {
+            deviceType: DeviceType::Unknown as u32,
+            VendorId: 0x0403,
+            ProductId: 0x6000,
+            SerNumEnable: 1,
+            MaxPower: 150,
+            SelfPowered: 0,
+            RemoteWakeup: 0,
+            PullDownEnable: 0,
+        })
+    }
+}
+
+impl From<FT_EEPROM_HEADER> for EepromHeader {
+    fn from(val: FT_EEPROM_HEADER) -> EepromHeader {
+        EepromHeader(val)
+    }
+}
+
+impl From<EepromHeader> for FT_EEPROM_HEADER {
+    fn from(val: EepromHeader) -> FT_EEPROM_HEADER {
+        val.0
+    }
+}
+
+impl Eeprom232h {
+    /// Get the EEPROM header.
+    pub fn header(&self) -> EepromHeader {
+        EepromHeader((self.0).common)
+    }
+
+    /// Set the EEPROM header.
+    pub fn set_header(&mut self, header: EepromHeader) {
+        (self.0).common = header.into()
+    }
+
+    /// FT1248 clock polarity.
+    pub fn ft1248_cpol(&self) -> ClockPolarity {
+        (self.0).FT1248Cpol.into()
+    }
+
+    /// Set FT1248 clock polarity.
+    pub fn set_ft1248_cpol(&mut self, value: ClockPolarity) {
+        (self.0).FT1248Cpol = value as u8
+    }
+
+    /// FT1248 byte order.
+    pub fn ft1248_byteorder(&self) -> ByteOrder {
+        (self.0).FT1248Lsb.into()
+    }
+
+    /// Set FT1248 byte order.
+    pub fn set_ft1248_byteorder(&mut self, value: ByteOrder) {
+        (self.0).FT1248Lsb = value as u8
+    }
+
+    /// FT1248 flow control enable.
+    pub fn ft1248_flow_control(&self) -> bool {
+        (self.0).FT1248FlowControl != 0
+    }
+
+    /// Set FT1248 flow control enable.
+    pub fn set_ft1248_flow_control(&mut self, value: bool) {
+        (self.0).FT1248FlowControl = if value { 1 } else { 0 }
+    }
+
+    /// FT245 FIFO interface mode.
+    pub fn is_fifo(&self) -> bool {
+        (self.0).IsFifo != 0
+    }
+
+    /// Set FT245 FIFO interface mode.
+    pub fn set_is_fifo(&mut self, value: bool) {
+        (self.0).IsFifo = if value { 1 } else { 0 }
+    }
+
+    /// FT245 FIFO CPU target mode.
+    pub fn is_fifo_target(&self) -> bool {
+        (self.0).IsFifoTar != 0
+    }
+
+    /// Set FT245 FIFO CPU target mode.
+    pub fn set_is_fifo_target(&mut self, value: bool) {
+        (self.0).IsFifoTar = if value { 1 } else { 0 }
+    }
+
+    /// Fast serial interface mode.
+    pub fn is_fast_serial(&self) -> bool {
+        (self.0).IsFastSer != 0
+    }
+
+    /// Set Fast serial interface mode.
+    pub fn set_is_fast_serial(&mut self, value: bool) {
+        (self.0).IsFastSer = if value { 1 } else { 0 }
+    }
+
+    /// FT1248 interface mode.
+    pub fn is_ft1248(&self) -> bool {
+        (self.0).IsFT1248 != 0
+    }
+
+    /// Set FT1248 interface mode.
+    pub fn set_is_ft1248(&mut self, value: bool) {
+        (self.0).IsFT1248 = if value { 1 } else { 0 }
+    }
+
+    /// Power save enable.
+    ///
+    /// Use a pin to save power for self-powered designs.
+    pub fn power_save_enable(&self) -> bool {
+        (self.0).PowerSaveEnable != 0
+    }
+
+    /// Set power save enable.
+    pub fn set_power_save_enable(&mut self, value: bool) {
+        (self.0).PowerSaveEnable = if value { 1 } else { 0 }
+    }
 }
 
 macro_rules! impl_bus_pins {
@@ -911,31 +1300,31 @@ macro_rules! impl_bus_pins {
                     ///
                     /// `true` if the pins on this bus have slow slew.
                     pub fn [<$FIELD:lower _slow_slew>](&self) -> bool {
-                        self.eeprom.[<$FIELD:upper SlowSlew>] != 0
+                        (self.0).[<$FIELD:upper SlowSlew>] != 0
                     }
 
                     #[doc = "Set slow slew for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _slow_slew>](&mut self, value: bool) {
-                        self.eeprom.[<$FIELD:upper SlowSlew>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SlowSlew>] = if value { 1 } else { 0 }
                     }
 
                     #[doc = "Schmitt input for bus " $FIELD "."]
                     ///
                     /// `true` if the pins on this bus are Schmitt input.
                     pub fn [<$FIELD:lower _schmitt_input>](&self) -> bool {
-                        self.eeprom.[<$FIELD:upper SchmittInput>] != 0
+                        (self.0).[<$FIELD:upper SchmittInput>] != 0
                     }
 
                     #[doc = "Set Schmitt input for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _schmitt_input>](&mut self, value: bool) {
-                        self.eeprom.[<$FIELD:upper SchmittInput>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SchmittInput>] = if value { 1 } else { 0 }
                     }
 
                     #[doc = "Drive current for bus " $FIELD "."]
                     ///
                     /// This is the drive current for the pins on this bus.
                     pub fn [<$FIELD:lower _drive_current>](&self) -> Result<DriveCurrent, EepromValueError> {
-                        DriveCurrent::try_from(self.eeprom.[<$FIELD:upper DriveCurrent>])
+                        DriveCurrent::try_from((self.0).[<$FIELD:upper DriveCurrent>])
                     }
 
                     #[doc = "Drive current unchecked for bus " $FIELD "."]
@@ -946,32 +1335,15 @@ macro_rules! impl_bus_pins {
                     /// This is the **unchecked** raw value retrived from the EEPROM and it may
                     /// not be a valid value.
                     pub fn [<$FIELD:lower _drive_current_unchecked>](&self) -> u8 {
-                        self.eeprom.[<$FIELD:upper SchmittInput>]
+                        (self.0).[<$FIELD:upper SchmittInput>]
                     }
 
                     #[doc = "Set drive current for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _drive_current>](&mut self, value: DriveCurrent) {
-                        self.eeprom.[<$FIELD:upper SchmittInput>] = value as u8
+                        (self.0).[<$FIELD:upper SchmittInput>] = value as u8
                     }
                 }
             )*
-        }
-    };
-}
-
-macro_rules! set_string {
-    ($SELF:ident, $NAME:ident, $VALUE:expr, $($OTHER:ident,)+) => {
-        if $VALUE.len() > EepromStringsError::MAX_LEN
-            || $($SELF.$OTHER.len() + )* 0 + $VALUE.len() > EepromStringsError::MAX_TOTAL_LEN {
-            Err(EepromStringsError {
-                $NAME: $VALUE.len(),
-                $(
-                    $OTHER: $SELF.$OTHER.len(),
-                )*
-            })
-        } else {
-            $SELF.$NAME = $VALUE;
-            Ok(())
         }
     };
 }
@@ -981,7 +1353,7 @@ macro_rules! impl_driver_type {
         impl $NAME {
             /// Get the device driver type.
             pub fn driver_type(&self) -> Result<DriverType, EepromValueError> {
-                DriverType::try_from(self.eeprom.DriverType)
+                DriverType::try_from((self.0).DriverType)
             }
 
             /// Get the unchecked device driver type.
@@ -989,12 +1361,12 @@ macro_rules! impl_driver_type {
             /// This is the **unchecked** raw value retrieved from the
             /// EEPROM and it may not be a valid value.
             pub fn driver_type_unchecked(&self) -> u8 {
-                self.eeprom.DriverType
+                (self.0).DriverType
             }
 
             /// Set the device driver type.
             pub fn set_driver_type(&mut self, value: DriverType) {
-                self.eeprom.DriverType = value as u8
+                (self.0).DriverType = value as u8
             }
         }
     };
@@ -1005,7 +1377,7 @@ macro_rules! impl_driver_type {
                 $(
                     #[doc = "Get the driver type for port " $FIELD "."]
                     pub fn [<$FIELD:lower _driver_type>](&self) -> Result<DriverType, EepromValueError> {
-                        DriverType::try_from(self.eeprom.[<$FIELD:upper DriverType>])
+                        DriverType::try_from((self.0).[<$FIELD:upper DriverType>])
                     }
 
                     #[doc = "Get the unchecked driver type for port " $FIELD "."]
@@ -1013,259 +1385,14 @@ macro_rules! impl_driver_type {
                     /// This is the **unchecked** raw value retrieved from the
                     /// EEPROM and it may not be a valid value.
                     pub fn [<$FIELD:lower _driver_typ_uncheckede>](&self) -> u8 {
-                        self.eeprom.[<$FIELD:upper DriverType>]
+                        (self.0).[<$FIELD:upper DriverType>]
                     }
 
                     #[doc = "Set the driver type for port " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _driver_type>](&mut self, value: DriverType) {
-                        self.eeprom.[<$FIELD:upper DriverType>] = value as u8
+                        (self.0).[<$FIELD:upper DriverType>] = value as u8
                     }
                 )*
-            }
-        }
-    };
-}
-
-macro_rules! impl_header {
-    ($NAME:ident, $RAW:ident) => {
-        impl $NAME {
-            paste::item! {
-                #[doc = "Create a new `" $NAME "` EEPROM structure."]
-                pub fn new(
-                    eeprom: $RAW,
-                    manufacturer: String,
-                    manufacturer_id: String,
-                    description: String,
-                    serial_number: String,
-                ) -> $NAME {
-                    $NAME {
-                        eeprom,
-                        manufacturer,
-                        manufacturer_id,
-                        description,
-                        serial_number,
-                    }
-                }
-            }
-
-            /// Total length of the `manufacturer`, `manufacturer_id`,
-            /// `description`, and `serial_number` strings.
-            ///
-            /// Together these strings cannot exceed 96 characters.
-            pub fn string_len(&self) -> usize {
-                self.manufacturer.len()
-                    + self.manufacturer_id.len()
-                    + self.description.len()
-                    + self.serial_number.len()
-            }
-
-            /// Manufacturer string.
-            pub fn manufacturer(&self) -> String {
-                self.manufacturer.clone()
-            }
-
-            /// Set the manufacturer string.
-            ///
-            /// # Requirements
-            ///
-            /// * Less than or equal to 64 characters.
-            /// * The total length of the `manufacturer`, `manufacturer_id`,
-            ///   `description`, and `serial_number` strings can not exceed
-            ///   96 characters.
-            pub fn set_manufacturer(&mut self, value: String) -> Result<(), EepromStringsError> {
-                set_string!(
-                    self,
-                    manufacturer,
-                    value,
-                    manufacturer_id,
-                    description,
-                    serial_number,
-                )
-            }
-
-            /// Manufacturer ID string.
-            pub fn manufacturer_id(&self) -> String {
-                self.manufacturer_id.clone()
-            }
-
-            /// Set the manufacturer ID string.
-            ///
-            /// The first two characters of this string should be the same as
-            /// the first two characters of the device serial number.
-            /// For example, if your manufacturer ID is "FTDI" your serial
-            /// number should start with "FT".
-            ///
-            /// # Requirements
-            ///
-            /// * Less than or equal to 64 characters.
-            /// * The total length of the `manufacturer`, `manufacturer_id`,
-            ///   `description`, and `serial_number` strings can not exceed
-            ///   96 characters.
-            pub fn set_manufacturer_id(&mut self, value: String) -> Result<(), EepromStringsError> {
-                set_string!(
-                    self,
-                    manufacturer_id,
-                    value,
-                    manufacturer,
-                    description,
-                    serial_number,
-                )
-            }
-
-            /// Description string.
-            pub fn description(&self) -> String {
-                self.description.clone()
-            }
-
-            /// Set the description string.
-            ///
-            /// # Requirements
-            ///
-            /// * Less than or equal to 64 characters.
-            /// * The total length of the `manufacturer`, `manufacturer_id`,
-            ///   `description`, and `serial_number` strings can not exceed
-            ///   96 characters.
-            pub fn set_description(&mut self, value: String) -> Result<(), EepromStringsError> {
-                set_string!(
-                    self,
-                    description,
-                    value,
-                    manufacturer,
-                    manufacturer_id,
-                    serial_number,
-                )
-            }
-
-            /// Serial number string.
-            pub fn serial_number(&self) -> String {
-                self.serial_number.clone()
-            }
-
-            /// Set the manufacturer ID string.
-            ///
-            /// The first two characters of this string should be the same as
-            /// the first two characters of the device serial number.
-            /// For example, if your manufacturer ID is "FTDI" your serial
-            /// number should start with "FT".
-            ///
-            /// # Requirements
-            ///
-            /// * Less than or equal to 64 characters.
-            /// * The total length of the `manufacturer`, `manufacturer_id`,
-            ///   `description`, and `serial_number` strings can not exceed
-            ///   96 characters.
-            pub fn set_serial_number(&mut self, value: String) -> Result<(), EepromStringsError> {
-                set_string!(
-                    self,
-                    serial_number,
-                    value,
-                    manufacturer,
-                    manufacturer_id,
-                    description,
-                )
-            }
-
-            /// FTDI USB device vendor ID.
-            ///
-            /// This is typically `0x0403`.
-            pub fn vendor_id(&self) -> u16 {
-                self.eeprom.common.VendorId
-            }
-
-            /// Set the FTDI USB device vendor ID.
-            pub fn set_vendor_id(&mut self, value: u16) {
-                self.eeprom.common.VendorId = value
-            }
-
-            /// FTDI USB product ID.
-            ///
-            /// Typical FTDI product IDs:
-            /// * `0x6001` FT232AM/FT232BM/FT232R
-            /// * `0x6010` FT2232C/FT2232D/FT2232H
-            /// * `0x6011` FT4232/FT4232H
-            /// * `0x6014` FT232H
-            /// * `0x6015` FT230X/FT231X/FT234X
-            pub fn product_id(&self) -> u16 {
-                self.eeprom.common.ProductId
-            }
-
-            /// Set the FTDI USB product ID.
-            pub fn set_product_id(&mut self, value: u16) {
-                self.eeprom.common.ProductId = value
-            }
-
-            /// Serial Number Enable.
-            ///
-            /// `true` if the serial number is to be used.
-            ///
-            /// The documentation is unclear what *exactly* this means.
-            pub fn serial_number_enable(&self) -> bool {
-                self.eeprom.common.SerNumEnable != 0
-            }
-
-            /// Set Serial Number Enable.
-            pub fn set_serial_number_enable(&mut self, value: bool) {
-                self.eeprom.common.SerNumEnable = if value { 1 } else { 0 }
-            }
-
-            /// Maximum bus current.
-            ///
-            /// The unit for this value is milliamps, and the value range is
-            /// 0-500 mA.
-            pub fn max_current(&self) -> u16 {
-                self.eeprom.common.MaxPower
-            }
-
-            /// Set maximum bus current.
-            ///
-            /// Values greater than 500 mA (`500u16`) will result in panic.
-            pub fn set_max_current(&mut self, value: u16) {
-                assert!(value <= 500, "{} exceeds 500 mA limit", value);
-                self.eeprom.common.MaxPower = value
-            }
-
-            /// Device power source.
-            ///
-            /// * `true` if the device is self-powered.
-            /// * `false` if the device is powered by the bus.
-            pub fn self_powered(&self) -> bool {
-                self.eeprom.common.SelfPowered != 0
-            }
-
-            /// Set device power source.
-            pub fn set_self_powered(&mut self, value: bool) {
-                self.eeprom.common.SelfPowered = if value { 1 } else { 0 }
-            }
-
-            /// Remote wakeup capabilities.
-            ///
-            /// * `true` if the device is capable of remote wakeup.
-            /// * `false` if the device is not capable of remote wakeup.
-            pub fn remote_wakeup(&self) -> bool {
-                self.eeprom.common.RemoteWakeup != 0
-            }
-            /// Set device power source.
-            pub fn set_remote_wakeup(&mut self, value: bool) {
-                self.eeprom.common.RemoteWakeup = if value { 1 } else { 0 }
-            }
-
-            /// Pull down in suspend mode.
-            ///
-            /// * `true` if pull-down in suspend is enabled.
-            /// * `false` if pull-down in suspend is disabled.
-            pub fn pull_down_enable(&self) -> bool {
-                self.eeprom.common.PullDownEnable != 0
-            }
-
-            /// Set device power source.
-            pub fn set_pull_down_enable(&mut self, value: bool) {
-                self.eeprom.common.PullDownEnable = if value { 1 } else { 0 }
-            }
-        }
-
-        impl From<&$NAME> for $RAW {
-            fn from(value: &$NAME) -> $RAW {
-                value.eeprom.clone()
             }
         }
     };
@@ -1278,12 +1405,12 @@ macro_rules! impl_tx_data_enable {
                 paste::item! {
                     #[doc = "Use port " $FIELD " as RS485 TX data enable."]
                     pub fn [<$FIELD:lower _ri_is_tx_data_enable>](&self) -> bool {
-                        self.eeprom.[<$FIELD:upper RIIsTXDEN>] != 0
+                        (self.0).[<$FIELD:upper RIIsTXDEN>] != 0
                     }
 
                     #[doc = "Use port " $FIELD " as RS485 TX data enable."]
                     pub fn [<set_ $FIELD:lower _ri_is_tx_data_enable>](&mut self, value: bool) {
-                        self.eeprom.[<$FIELD:upper RIIsTXDEN>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper RIIsTXDEN>] = if value { 1 } else { 0 }
                     }
                 }
             )*
@@ -1305,17 +1432,17 @@ macro_rules! impl_cbus {
                     /// This is the **unchecked** raw value retrieved from the
                     /// EEPROM and it may not be a valid value.
                     pub fn [<$FIELD:lower _unchecked>](&self) -> u8 {
-                        self.eeprom.$FIELD
+                        (self.0).$FIELD
                     }
 
                     #[doc = "Get the value of the " $FIELD " pin."]
                     pub fn [<$FIELD:lower>](&self) -> Result<$ENUM, EepromValueError> {
-                        $ENUM::try_from(self.eeprom.$FIELD)
+                        $ENUM::try_from((self.0).$FIELD)
                     }
 
                     #[doc = "Get the value of the " $FIELD " pin."]
                     pub fn [<set_ $FIELD:lower>](&mut self, value: $ENUM) {
-                        self.eeprom.$FIELD = value as u8;
+                        (self.0).$FIELD = value as u8;
                     }
                 }
             )*
@@ -1324,14 +1451,12 @@ macro_rules! impl_cbus {
 }
 
 // this is where most of the boilerplate is implemented
-impl_header!(Eeprom232h, FT_EEPROM_232H);
 impl_bus_pins!(Eeprom232h, AD, AC);
 impl_cbus!(
     Eeprom232h, Cbus232h, Cbus0, Cbus1, Cbus2, Cbus3, Cbus4, Cbus5, Cbus6, Cbus7, Cbus8, Cbus9,
 );
 impl_driver_type!(Eeprom232h);
 
-impl_header!(Eeprom4232h, FT_EEPROM_4232H);
 impl_bus_pins!(Eeprom4232h, A, B, C, D);
 impl_tx_data_enable!(Eeprom4232h, A, B, C, D);
 impl_driver_type!(Eeprom4232h, A, B, C, D);

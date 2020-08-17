@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings, unsafe_code)]
+#![deny(missing_docs, unsafe_code)]
 
 use super::{BitMode, DeviceType, FtStatus, FtdiCommon, TimeoutError};
 use std::convert::From;

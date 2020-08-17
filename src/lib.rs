@@ -54,7 +54,7 @@
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 #![doc(html_root_url = "https://docs.rs/libftd2xx/0.13.0")]
-#![deny(missing_docs, warnings)]
+#![deny(missing_docs)]
 
 mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
@@ -66,8 +66,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, ModemStatus,
-    Parity, Speed, StopBits, Version,
+    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, EepromHeader,
+    EepromStrings, ModemStatus, Parity, Speed, StopBits, Version,
 };
 
 mod util;
@@ -1551,10 +1551,11 @@ pub trait FtdiCommon {
 }
 
 /// FTDI device-specific EEPROM trait.
-pub trait FtdiEeprom: FtdiCommon {
-    /// EEPROM data structure for the specific device.
-    type Eeprom;
-
+pub trait FtdiEeprom<
+    T: Default + std::fmt::Debug + std::convert::From<Eeprom>,
+    Eeprom: Default + std::fmt::Debug + std::convert::From<T>,
+>: FtdiCommon
+{
     /// Read from the FTD2XX device EEPROM.
     ///
     /// # Example
@@ -1567,11 +1568,54 @@ pub trait FtdiEeprom: FtdiCommon {
     ///
     /// let mut ftdi = Ftdi::new()?;
     /// let mut ft = Ft4232h::try_from(&mut ftdi)?;
-    /// let eeprom = ft.eeprom_read()?;
+    /// let (eeprom, eeprom_strings) = ft.eeprom_read()?;
     /// println!("FT4232H EEPROM contents: {:?}", eeprom);
+    /// println!("FT4232H EEPROM strings: {:?}", eeprom_strings);
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
-    fn eeprom_read(&mut self) -> Result<Self::Eeprom, FtStatus>;
+    fn eeprom_read(&mut self) -> Result<(Eeprom, EepromStrings), FtStatus> {
+        let mut manufacturer: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut manufacturer_id: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
+
+        let mut eeprom_data: T = Eeprom::default().into();
+        let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
+
+        trace!(
+            "FT_EEPROM_Read({:?}, _, {}, _, _, _, _)",
+            self.handle(),
+            eeprom_data_size
+        );
+        let status: FT_STATUS = unsafe {
+            FT_EEPROM_Read(
+                self.handle(),
+                &mut eeprom_data as *mut T as *mut c_void,
+                eeprom_data_size,
+                manufacturer.as_mut_ptr(),
+                manufacturer_id.as_mut_ptr(),
+                description.as_mut_ptr(),
+                serial_number.as_mut_ptr(),
+            )
+        };
+
+        if status != 0 {
+            Err(status.into())
+        } else {
+            Ok((
+                eeprom_data.into(),
+                EepromStrings::with_slices(
+                    &manufacturer,
+                    &manufacturer_id,
+                    &description,
+                    &serial_number,
+                )
+                // safe to unwrap since driver cannot return invalid strings
+                // in this case
+                .unwrap(),
+            ))
+        }
+    }
 
     /// Program the FTD2XX EEPROM.
     ///
@@ -1586,99 +1630,47 @@ pub trait FtdiEeprom: FtdiCommon {
     /// This example uses the FT232H.
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft4232h};
-    /// use std::convert::TryFrom;
+    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft232h};
     ///
-    /// let mut ftdi = Ftdi::with_serial_number("FTaaa")?;
-    /// let mut ft = Ft4232h::try_from(&mut ftdi)?;
-    /// let mut eeprom = ft.eeprom_read()?;
-    ///
-    /// let CURRENT: u16 = 150;
-    /// println!("Setting maximum current to {} mA", CURRENT);
-    /// eeprom.set_max_current(CURRENT);
-    /// ft.eeprom_program(&eeprom)?;
+    /// let mut ft = Ft232h::with_serial_number("FT4PWSEOA")?;
+    /// let (mut eeprom, strings) = ft.eeprom_read()?;
+    /// println!("Disabling FT245 FIFO interface");
+    /// eeprom.set_is_fifo(false);
+    /// ft.eeprom_program(eeprom, strings)?;
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
-    fn eeprom_program(&mut self, eeprom: &Self::Eeprom) -> Result<(), FtStatus>;
-}
+    fn eeprom_program(&mut self, eeprom: Eeprom, strings: EepromStrings) -> Result<(), FtStatus> {
+        let manufacturer = std::ffi::CString::new(strings.manufacturer()).unwrap();
+        let manufacturer_id = std::ffi::CString::new(strings.manufacturer_id()).unwrap();
+        let description = std::ffi::CString::new(strings.description()).unwrap();
+        let serial_number = std::ffi::CString::new(strings.serial_number()).unwrap();
+        let mut eeprom_data: T = eeprom.into();
+        let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
 
-macro_rules! impl_eeprom_for {
-    ($NAME:ident, $EEPROM:ident, $RAW:ident) => {
-        impl FtdiEeprom for $NAME {
-            type Eeprom = $EEPROM;
+        trace!(
+            "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
+            self.handle(),
+            eeprom_data,
+            eeprom_data_size,
+            strings.manufacturer(),
+            strings.manufacturer_id(),
+            strings.description(),
+            strings.serial_number(),
+        );
+        let status: FT_STATUS = unsafe {
+            FT_EEPROM_Program(
+                self.handle(),
+                &mut eeprom_data as *mut T as *mut c_void,
+                eeprom_data_size,
+                manufacturer.as_ptr() as *mut i8,
+                manufacturer_id.as_ptr() as *mut i8,
+                description.as_ptr() as *mut i8,
+                serial_number.as_ptr() as *mut i8,
+            )
+        };
 
-            fn eeprom_read(&mut self) -> Result<Self::Eeprom, FtStatus> {
-                let mut manufacturer: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut manufacturer_id: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
-
-                let mut eeprom_data: $RAW =
-                    unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-                eeprom_data.common.deviceType = Self::DEVICE_TYPE as u32;
-                let eeprom_data_size = u32::try_from(mem::size_of::<$RAW>()).unwrap();
-
-                trace!(
-                    "FT_EEPROM_Read({:?}, _, {}, _, _, _, _)",
-                    self.handle(),
-                    eeprom_data_size
-                );
-                let status: FT_STATUS = unsafe {
-                    FT_EEPROM_Read(
-                        self.handle(),
-                        &mut eeprom_data as *mut $RAW as *mut c_void,
-                        eeprom_data_size,
-                        manufacturer.as_mut_ptr(),
-                        manufacturer_id.as_mut_ptr(),
-                        description.as_mut_ptr(),
-                        serial_number.as_mut_ptr(),
-                    )
-                };
-
-                let eeprom = Self::Eeprom::new(
-                    eeprom_data,
-                    slice_into_string(&manufacturer),
-                    slice_into_string(&manufacturer_id),
-                    slice_into_string(&description),
-                    slice_into_string(&serial_number),
-                );
-
-                ft_result!(eeprom, status)
-            }
-
-            fn eeprom_program(&mut self, eeprom: &Self::Eeprom) -> Result<(), FtStatus> {
-                let manufacturer = std::ffi::CString::new(eeprom.manufacturer()).unwrap();
-                let manufacturer_id = std::ffi::CString::new(eeprom.manufacturer_id()).unwrap();
-                let description = std::ffi::CString::new(eeprom.description()).unwrap();
-                let serial_number = std::ffi::CString::new(eeprom.serial_number()).unwrap();
-                let eeprom_data_size = u32::try_from(mem::size_of::<$RAW>()).unwrap();
-
-                trace!(
-                    "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
-                    self.handle(),
-                    eeprom,
-                    eeprom_data_size,
-                    eeprom.manufacturer(),
-                    eeprom.manufacturer_id(),
-                    eeprom.description(),
-                    eeprom.serial_number(),
-                );
-                let status: FT_STATUS = unsafe {
-                    FT_EEPROM_Program(
-                        self.handle(),
-                        &mut eeprom.into() as *mut $RAW as *mut c_void,
-                        eeprom_data_size,
-                        manufacturer.as_ptr() as *mut i8,
-                        manufacturer_id.as_ptr() as *mut i8,
-                        description.as_ptr() as *mut i8,
-                        serial_number.as_ptr() as *mut i8,
-                    )
-                };
-
-                ft_result!((), status)
-            }
-        }
-    };
+        ft_result!((), status)
+    }
 }
 
 fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
@@ -1925,8 +1917,8 @@ impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
 impl_try_from_for!(Ft232h);
 impl_try_from_for!(Ft4232h);
 
-impl_eeprom_for!(Ft232h, Eeprom232h, FT_EEPROM_232H);
-impl_eeprom_for!(Ft4232h, Eeprom4232h, FT_EEPROM_4232H);
+impl FtdiEeprom<FT_EEPROM_232H, Eeprom232h> for Ft232h {}
+impl FtdiEeprom<FT_EEPROM_4232H, Eeprom4232h> for Ft4232h {}
 
 impl FtdiMpsse for Ft232h {}
 impl FtdiMpsse for Ft4232h {}
