@@ -310,7 +310,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// | Device Type              | Minimum | Maximum |
     /// |--------------------------|---------|---------|
     /// | FT2232D                  | 92 Hz   | 6 MHz   |
-    /// | FT4232H, FT2232H, FT232H | 460 Hz  | 30 MHz  |
+    /// | FT4232H, FT2232H, FT232H | 92 Hz   | 30 MHz  |
     ///
     /// Values outside of these limits will result in panic.
     ///
