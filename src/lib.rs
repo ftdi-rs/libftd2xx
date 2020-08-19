@@ -1630,14 +1630,14 @@ pub trait FtdiEeprom<
     /// This example uses the FT232H.
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft232h};
+    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft232h, Eeprom232h, EepromStrings, DriverType};
     ///
     /// let mut ft = Ft232h::with_serial_number("FT4PWSEOA")?;
-    /// let (mut eeprom, strings) = ft.eeprom_read()?;
-    /// println!("Disabling FT245 FIFO interface");
-    /// eeprom.set_is_fifo(false);
+    /// let strings = EepromStrings::with_strs("FTDI", "FT", "Hello World", "FT1234567")?;
+    /// let mut eeprom = Eeprom232h::default();
+    /// eeprom.set_driver_type(DriverType::D2XX);
     /// ft.eeprom_program(eeprom, strings)?;
-    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn eeprom_program(&mut self, eeprom: Eeprom, strings: EepromStrings) -> Result<(), FtStatus> {
         let manufacturer = std::ffi::CString::new(strings.manufacturer()).unwrap();

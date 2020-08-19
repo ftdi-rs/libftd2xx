@@ -320,6 +320,8 @@ impl EepromStringsError {
     }
 }
 
+impl Error for EepromStringsError {}
+
 impl fmt::Display for EepromStringsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
