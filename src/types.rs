@@ -1384,7 +1384,7 @@ macro_rules! impl_driver_type {
                     ///
                     /// This is the **unchecked** raw value retrieved from the
                     /// EEPROM and it may not be a valid value.
-                    pub fn [<$FIELD:lower _driver_typ_uncheckede>](&self) -> u8 {
+                    pub fn [<$FIELD:lower _driver_type_unchecked>](&self) -> u8 {
                         (self.0).[<$FIELD:upper DriverType>]
                     }
 
