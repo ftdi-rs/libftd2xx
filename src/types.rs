@@ -1122,7 +1122,7 @@ impl EepromHeader {
         (self.0).MaxPower
     }
 
-    /// Set maximum bus current.
+    /// Set maximum bus current in milliamps.
     ///
     /// Values greater than 500 mA (`500u16`) will result in panic.
     pub fn set_max_current(&mut self, value: u16) {
@@ -1132,13 +1132,16 @@ impl EepromHeader {
 
     /// Device power source.
     ///
-    /// * `true` if the device is self-powered.
+    /// * `true` if the device is self-powered (not powered by USB bus).
     /// * `false` if the device is powered by the bus.
     pub fn self_powered(&self) -> bool {
         (self.0).SelfPowered != 0
     }
 
     /// Set device power source.
+    ///
+    /// * `true` if the device is self-powered (not powered by USB bus).
+    /// * `false` if the device is powered by the bus.
     pub fn set_self_powered(&mut self, value: bool) {
         (self.0).SelfPowered = if value { 1 } else { 0 }
     }
@@ -1151,7 +1154,10 @@ impl EepromHeader {
         (self.0).RemoteWakeup != 0
     }
 
-    /// Set device power source.
+    /// Set remote wakeup capabilities.
+    ///
+    /// * `true` if the device is capable of remote wakeup.
+    /// * `false` if the device is not capable of remote wakeup.
     pub fn set_remote_wakeup(&mut self, value: bool) {
         (self.0).RemoteWakeup = if value { 1 } else { 0 }
     }
@@ -1164,7 +1170,10 @@ impl EepromHeader {
         (self.0).PullDownEnable != 0
     }
 
-    /// Set device power source.
+    /// Set pull down in suspend mode.
+    ///
+    /// * `true` if pull-down in suspend is enabled.
+    /// * `false` if pull-down in suspend is disabled.
     pub fn set_pull_down_enable(&mut self, value: bool) {
         (self.0).PullDownEnable = if value { 1 } else { 0 }
     }
