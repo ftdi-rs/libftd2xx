@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings, unsafe_code)]
+#![deny(missing_docs, unsafe_code)]
 
 use std::convert::From;
 use std::error::Error;
@@ -260,7 +260,7 @@ pub struct EepromValueError {
 
 impl EepromValueError {
     /// Create a new `EepromValueError`.
-    pub fn new(value: u8) -> EepromValueError {
+    pub const fn new(value: u8) -> EepromValueError {
         EepromValueError { value }
     }
 }
@@ -319,6 +319,8 @@ impl EepromStringsError {
         self.manufacturer + self.manufacturer_id + self.description + self.serial_number
     }
 }
+
+impl Error for EepromStringsError {}
 
 impl fmt::Display for EepromStringsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -38,7 +38,7 @@ before_script:
 script:
   - rustup target add "$TARGET"
   - cargo clippy --all-targets --all-features -- -D warnings
-  - cargo build --verbose --target "$TARGET" --all
+  - RUSTFLAGS="-D warnings" cargo build --verbose --target "$TARGET" --all
   - cargo test --verbose --target "$TARGET" --all
   - cargo package --verbose --target "$TARGET"
 deploy:

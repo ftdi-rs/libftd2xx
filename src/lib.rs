@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.13.0"
+//! libftd2xx = "~0.14.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,8 +53,8 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.13.0")]
-#![deny(missing_docs, warnings)]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.14.0")]
+#![deny(missing_docs)]
 
 mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
@@ -66,8 +66,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, EventMask,
-    ModemStatus, Parity, Speed, StopBits, Version,
+    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom232h, Eeprom4232h, EepromHeader,
+    EepromStrings, EventMask, ModemStatus, Parity, Speed, StopBits, Version,
 };
 
 mod util;
@@ -100,14 +100,12 @@ use std::mem;
 use std::time::Duration;
 use std::vec::Vec;
 
-macro_rules! ft_result {
-    ($value:expr, $status:expr) => {
-        if $status != 0 {
-            Err($status.into())
-        } else {
-            Ok($value)
-        }
-    };
+fn ft_result<T>(value: T, status: FT_STATUS) -> Result<T, FtStatus> {
+    if status != 0 {
+        Err(status.into())
+    } else {
+        Ok(value)
+    }
 }
 
 /// Returns the number of FTDI devices connected to the system.
@@ -137,7 +135,7 @@ pub fn num_devices() -> Result<u32, FtStatus> {
         )
     };
 
-    ft_result!(num_devs, status)
+    ft_result(num_devs, status)
 }
 
 /// A command to include a custom VID and PID combination within the internal
@@ -161,7 +159,7 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
     trace!("FT_SetVIDPID({}, {})", vid, pid);
     let status: FT_STATUS = unsafe { FT_SetVIDPID(vid.into(), pid.into()) };
-    ft_result!((), status)
+    ft_result((), status)
 }
 
 /// A command to retrieve the current VID and PID combination from within the
@@ -191,7 +189,7 @@ pub fn vid_pid() -> Result<(u32, u32), FtStatus> {
     let mut pid: u32 = 0;
     trace!("FT_GetVIDPID(_, _)");
     let status: FT_STATUS = unsafe { FT_GetVIDPID(&mut vid, &mut pid) };
-    ft_result!((vid, pid), status)
+    ft_result((vid, pid), status)
 }
 
 /// Returns the version of the underlying C library.
@@ -213,14 +211,14 @@ pub fn library_version() -> Result<Version, FtStatus> {
     trace!("FT_GetLibraryVersion(_)");
     let status: FT_STATUS = unsafe { FT_GetLibraryVersion(&mut version) };
 
-    ft_result!(Version::with_raw(version), status)
+    ft_result(Version::with_raw(version), status)
 }
 
 fn create_device_info_list() -> Result<u32, FtStatus> {
     let mut num_devices: u32 = 0;
     trace!("FT_CreateDeviceInfoList(_)");
     let status: FT_STATUS = unsafe { FT_CreateDeviceInfoList(&mut num_devices) };
-    ft_result!(num_devices, status)
+    ft_result(num_devices, status)
 }
 
 /// This function returns a device information vector with information about
@@ -305,7 +303,7 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
 pub fn rescan() -> Result<(), FtStatus> {
     trace!("FT_Rescan()");
     let status: FT_STATUS = unsafe { FT_Rescan() };
-    ft_result!((), status)
+    ft_result((), status)
 }
 
 /// Generic FTDI device.
@@ -390,7 +388,7 @@ pub trait FtdiCommon {
             )
         };
         let (vid, pid) = vid_pid_from_id(device_id);
-        ft_result!(
+        ft_result(
             DeviceInfo {
                 port_open: true,
                 speed: None,
@@ -400,7 +398,7 @@ pub trait FtdiCommon {
                 serial_number: slice_into_string(&serial_number),
                 description: slice_into_string(&description),
             },
-            status
+            status,
         )
     }
 
@@ -421,7 +419,7 @@ pub trait FtdiCommon {
         trace!("FT_GetDriverVersion({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetDriverVersion(self.handle(), &mut version) };
 
-        ft_result!(Version::with_raw(version), status)
+        ft_result(Version::with_raw(version), status)
     }
 
     /// This function sends a reset command to the device.
@@ -438,7 +436,7 @@ pub trait FtdiCommon {
     fn reset(&mut self) -> Result<(), FtStatus> {
         trace!("FT_ResetDevice({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_ResetDevice(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the USB request transfer size.
@@ -493,7 +491,7 @@ pub trait FtdiCommon {
         );
         let status: FT_STATUS =
             unsafe { FT_SetUSBParameters(self.handle(), in_transfer_size, in_transfer_size) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function sets the special characters for the device.
@@ -536,7 +534,7 @@ pub trait FtdiCommon {
                 u8::try_from(error_enable).unwrap(),
             )
         };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function sets the read and write timeouts for the device.
@@ -575,7 +573,7 @@ pub trait FtdiCommon {
         );
         let status: FT_STATUS =
             unsafe { FT_SetTimeouts(self.handle(), read_timeout_ms, write_timeout_ms) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This method allows the maximum time in milliseconds that a USB request
@@ -608,7 +606,7 @@ pub trait FtdiCommon {
         let timeout_ms = u32::try_from(timeout.as_millis()).expect("timeout integer overflow");
         trace!("FT_SetDeadmanTimeout({:?}, {})", self.handle(), timeout_ms);
         let status: FT_STATUS = unsafe { FT_SetDeadmanTimeout(self.handle(), timeout_ms) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the latency timer value.
@@ -649,7 +647,7 @@ pub trait FtdiCommon {
         let millis = u8::try_from(millis).unwrap();
         trace!("FT_SetLatencyTimer({:?}, {})", self.handle(), millis);
         let status: FT_STATUS = unsafe { FT_SetLatencyTimer(self.handle(), millis) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Get the current value of the latency timer.
@@ -670,7 +668,7 @@ pub trait FtdiCommon {
         let mut timer: u8 = 0;
         trace!("FT_GetLatencyTimer({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetLatencyTimer(self.handle(), &mut timer as *mut u8) };
-        ft_result!(Duration::from_millis(timer as u64), status)
+        ft_result(Duration::from_millis(timer as u64), status)
     }
 
     /// This function disables flow control for the device.
@@ -693,7 +691,7 @@ pub trait FtdiCommon {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle(), FT_FLOW_NONE as u16, 0, 0) };
 
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function sets RTS/CTS flow control for the device.
@@ -716,7 +714,7 @@ pub trait FtdiCommon {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle(), FT_FLOW_RTS_CTS as u16, 0, 0) };
 
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function sets DTS/DSR flow control for the device.
@@ -739,7 +737,7 @@ pub trait FtdiCommon {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle(), FT_FLOW_DTR_DSR as u16, 0, 0) };
 
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function sets XON/XOFF flow control for the device.
@@ -769,7 +767,7 @@ pub trait FtdiCommon {
         let status: FT_STATUS =
             unsafe { FT_SetFlowControl(self.handle(), FT_FLOW_XON_XOFF as u16, xon, xoff) };
 
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the baud rate for the device.
@@ -786,7 +784,7 @@ pub trait FtdiCommon {
     fn set_baud_rate(&mut self, baud_rate: u32) -> Result<(), FtStatus> {
         trace!("FT_SetBaudRate({:?}, {})", self.handle(), baud_rate);
         let status: FT_STATUS = unsafe { FT_SetBaudRate(self.handle(), baud_rate) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the data characteristics for the device.
@@ -825,7 +823,7 @@ pub trait FtdiCommon {
                 parity.into(),
             )
         };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the Data Terminal Ready (DTR) control signal.
@@ -842,7 +840,7 @@ pub trait FtdiCommon {
     fn set_dtr(&mut self) -> Result<(), FtStatus> {
         trace!("FT_SetDtr({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_SetDtr(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Clear the Data Terminal Ready (DTR) control signal.
@@ -859,7 +857,7 @@ pub trait FtdiCommon {
     fn clear_dtr(&mut self) -> Result<(), FtStatus> {
         trace!("FT_ClrtDtr({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_ClrDtr(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Set the Request to Send (RTS) control signal.
@@ -876,7 +874,7 @@ pub trait FtdiCommon {
     fn set_rts(&mut self) -> Result<(), FtStatus> {
         trace!("FT_SetRts({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_SetRts(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Clear the Request to Send (RTS) control signal.
@@ -893,7 +891,7 @@ pub trait FtdiCommon {
     fn clear_rts(&mut self) -> Result<(), FtStatus> {
         trace!("FT_ClrtRts({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_ClrRts(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Enables different chip modes.
@@ -949,7 +947,7 @@ pub trait FtdiCommon {
         );
         let status: FT_STATUS = unsafe { FT_SetBitMode(self.handle(), mask, mode as u8) };
 
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Get the instantaneous value of the data bus.
@@ -974,7 +972,7 @@ pub trait FtdiCommon {
         let mut mode: u8 = 0;
         trace!("FT_GetBitMode({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetBitMode(self.handle(), &mut mode) };
-        ft_result!(mode, status)
+        ft_result(mode, status)
     }
 
     /// Sets the BREAK condition for the device.
@@ -991,7 +989,7 @@ pub trait FtdiCommon {
     fn set_break_on(&mut self) -> Result<(), FtStatus> {
         trace!("FT_SetBreakOn({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_SetBreakOn(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Resets the BREAK condition for the device.
@@ -1008,7 +1006,7 @@ pub trait FtdiCommon {
     fn set_break_off(&mut self) -> Result<(), FtStatus> {
         trace!("FT_SetBreakOff({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_SetBreakOff(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Gets the number of bytes in the receive queue.
@@ -1032,7 +1030,7 @@ pub trait FtdiCommon {
         trace!("FT_GetQueueStatus({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetQueueStatus(self.handle(), &mut queue_status) };
 
-        ft_result!(usize::try_from(queue_status).unwrap(), status)
+        ft_result(usize::try_from(queue_status).unwrap(), status)
     }
 
     /// Gets the device status including number of characters in the receive
@@ -1064,13 +1062,13 @@ pub trait FtdiCommon {
             )
         };
 
-        ft_result!(
+        ft_result(
             DeviceStatus {
                 ammount_in_rx_queue,
                 ammount_in_tx_queue,
-                event_status
+                event_status,
             },
-            status
+            status,
         )
     }
 
@@ -1102,7 +1100,7 @@ pub trait FtdiCommon {
         let mask: u32 = event_mask.to_mask();
         trace!("FT_SetEventNotification({:?}, {}, _)", self.handle(), mask);
         let status: FT_STATUS = FT_SetEventNotification(self.handle(), mask, mtx);
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Read data from the device.
@@ -1249,7 +1247,7 @@ pub trait FtdiCommon {
     fn purge_tx(&mut self) -> Result<(), FtStatus> {
         trace!("FT_Purge({:?}, {})", self.handle(), FT_PURGE_TX);
         let status: FT_STATUS = unsafe { FT_Purge(self.handle(), FT_PURGE_TX) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function purges the receive buffers in the device.
@@ -1266,7 +1264,7 @@ pub trait FtdiCommon {
     fn purge_rx(&mut self) -> Result<(), FtStatus> {
         trace!("FT_Purge({:?}, {})", self.handle(), FT_PURGE_RX);
         let status: FT_STATUS = unsafe { FT_Purge(self.handle(), FT_PURGE_RX) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// This function purges the transmit and receive buffers in the device.
@@ -1287,7 +1285,7 @@ pub trait FtdiCommon {
             FT_PURGE_TX | FT_PURGE_RX
         );
         let status: FT_STATUS = unsafe { FT_Purge(self.handle(), FT_PURGE_TX | FT_PURGE_RX) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Close an open device.
@@ -1304,7 +1302,7 @@ pub trait FtdiCommon {
     fn close(&mut self) -> Result<(), FtStatus> {
         trace!("FT_Close({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_Close(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Get the COM port associated with a device.
@@ -1331,13 +1329,13 @@ pub trait FtdiCommon {
         let mut num: i32 = -1;
         trace!("FT_GetComPortNumber({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetComPortNumber(self.handle(), &mut num as *mut i32) };
-        ft_result!(
+        ft_result(
             if num == -1 {
                 None
             } else {
                 Some(u32::try_from(num).unwrap())
             },
-            status
+            status,
         )
     }
 
@@ -1361,7 +1359,7 @@ pub trait FtdiCommon {
     fn reset_port(&mut self) -> Result<(), FtStatus> {
         trace!("FT_ResetPort({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_ResetPort(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Send a cycle command to the USB port.
@@ -1396,7 +1394,7 @@ pub trait FtdiCommon {
     fn cycle_port(&mut self) -> Result<(), FtStatus> {
         trace!("FT_CyclePort({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_CyclePort(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Gets the modem status and line status from the device.
@@ -1415,7 +1413,7 @@ pub trait FtdiCommon {
         let mut modem_status: u32 = 0;
         trace!("FT_GetModemStatus({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_GetModemStatus(self.handle(), &mut modem_status) };
-        ft_result!(ModemStatus::new(modem_status), status)
+        ft_result(ModemStatus::new(modem_status), status)
     }
 
     /// Read a value from an EEPROM location.
@@ -1439,7 +1437,7 @@ pub trait FtdiCommon {
         let mut value: u16 = 0;
         trace!("FT_ReadEE({:?}, {}, _)", self.handle(), offset);
         let status: FT_STATUS = unsafe { FT_ReadEE(self.handle(), offset, &mut value) };
-        ft_result!(value, status)
+        ft_result(value, status)
     }
 
     /// Writes a value to an EEPROM location.
@@ -1472,7 +1470,7 @@ pub trait FtdiCommon {
             value
         );
         let status: FT_STATUS = unsafe { FT_WriteEE(self.handle(), offset, value) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Erases the entire contents of the EEPROM, including the user area.
@@ -1492,7 +1490,7 @@ pub trait FtdiCommon {
     fn eeprom_erase(&mut self) -> Result<(), FtStatus> {
         trace!("FT_EraseEE({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_EraseEE(self.handle()) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 
     /// Get the available size of the EEPROM user area in bytes.
@@ -1519,7 +1517,7 @@ pub trait FtdiCommon {
         let mut value: u32 = 0;
         trace!("FT_EE_UASize({:?}, _)", self.handle());
         let status: FT_STATUS = unsafe { FT_EE_UASize(self.handle(), &mut value) };
-        ft_result!(usize::try_from(value).unwrap(), status)
+        ft_result(usize::try_from(value).unwrap(), status)
     }
 
     /// Read the contents of the EEPROM user area.
@@ -1551,7 +1549,7 @@ pub trait FtdiCommon {
         trace!("FT_EE_UARead({:?}, _, {}, _)", self.handle(), len);
         let status: FT_STATUS =
             unsafe { FT_EE_UARead(self.handle(), buf.as_mut_ptr(), len, &mut num_read) };
-        ft_result!(usize::try_from(num_read).unwrap(), status)
+        ft_result(usize::try_from(num_read).unwrap(), status)
     }
 
     /// Write to the EEPROM user area.
@@ -1577,15 +1575,16 @@ pub trait FtdiCommon {
         trace!("FT_EE_UAWrite({:?}, _, {})", self.handle(), len);
         let status: FT_STATUS =
             unsafe { FT_EE_UAWrite(self.handle(), buf.as_ptr() as *mut u8, len) };
-        ft_result!((), status)
+        ft_result((), status)
     }
 }
 
 /// FTDI device-specific EEPROM trait.
-pub trait FtdiEeprom: FtdiCommon {
-    /// EEPROM data structure for the specific device.
-    type Eeprom;
-
+pub trait FtdiEeprom<
+    T: Default + std::fmt::Debug + std::convert::From<Eeprom>,
+    Eeprom: Default + std::fmt::Debug + std::convert::From<T>,
+>: FtdiCommon
+{
     /// Read from the FTD2XX device EEPROM.
     ///
     /// # Example
@@ -1598,11 +1597,53 @@ pub trait FtdiEeprom: FtdiCommon {
     ///
     /// let mut ftdi = Ftdi::new()?;
     /// let mut ft = Ft4232h::try_from(&mut ftdi)?;
-    /// let eeprom = ft.eeprom_read()?;
+    /// let (eeprom, eeprom_strings) = ft.eeprom_read()?;
     /// println!("FT4232H EEPROM contents: {:?}", eeprom);
+    /// println!("FT4232H EEPROM strings: {:?}", eeprom_strings);
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
-    fn eeprom_read(&mut self) -> Result<Self::Eeprom, FtStatus>;
+    fn eeprom_read(&mut self) -> Result<(Eeprom, EepromStrings), FtStatus> {
+        let mut manufacturer: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut manufacturer_id: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
+        let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
+
+        let mut eeprom_data: T = Eeprom::default().into();
+        let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
+
+        trace!(
+            "FT_EEPROM_Read({:?}, _, {}, _, _, _, _)",
+            self.handle(),
+            eeprom_data_size
+        );
+        let status: FT_STATUS = unsafe {
+            FT_EEPROM_Read(
+                self.handle(),
+                &mut eeprom_data as *mut T as *mut c_void,
+                eeprom_data_size,
+                manufacturer.as_mut_ptr(),
+                manufacturer_id.as_mut_ptr(),
+                description.as_mut_ptr(),
+                serial_number.as_mut_ptr(),
+            )
+        };
+
+        ft_result(
+            (
+                eeprom_data.into(),
+                EepromStrings::with_slices(
+                    &manufacturer,
+                    &manufacturer_id,
+                    &description,
+                    &serial_number,
+                )
+                // safe to unwrap since driver cannot return invalid strings
+                // in this case
+                .unwrap(),
+            ),
+            status,
+        )
+    }
 
     /// Program the FTD2XX EEPROM.
     ///
@@ -1617,99 +1658,47 @@ pub trait FtdiEeprom: FtdiCommon {
     /// This example uses the FT232H.
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft4232h};
-    /// use std::convert::TryFrom;
+    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft232h, Eeprom232h, EepromStrings, DriverType};
     ///
-    /// let mut ftdi = Ftdi::with_serial_number("FTaaa")?;
-    /// let mut ft = Ft4232h::try_from(&mut ftdi)?;
-    /// let mut eeprom = ft.eeprom_read()?;
-    ///
-    /// let CURRENT: u16 = 150;
-    /// println!("Setting maximum current to {} mA", CURRENT);
-    /// eeprom.set_max_current(CURRENT);
-    /// ft.eeprom_program(&eeprom)?;
-    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// let mut ft = Ft232h::with_serial_number("FT4PWSEOA")?;
+    /// let strings = EepromStrings::with_strs("FTDI", "FT", "Hello World", "FT1234567")?;
+    /// let mut eeprom = Eeprom232h::default();
+    /// eeprom.set_driver_type(DriverType::D2XX);
+    /// ft.eeprom_program(eeprom, strings)?;
+    /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
-    fn eeprom_program(&mut self, eeprom: &Self::Eeprom) -> Result<(), FtStatus>;
-}
+    fn eeprom_program(&mut self, eeprom: Eeprom, strings: EepromStrings) -> Result<(), FtStatus> {
+        let manufacturer = std::ffi::CString::new(strings.manufacturer()).unwrap();
+        let manufacturer_id = std::ffi::CString::new(strings.manufacturer_id()).unwrap();
+        let description = std::ffi::CString::new(strings.description()).unwrap();
+        let serial_number = std::ffi::CString::new(strings.serial_number()).unwrap();
+        let mut eeprom_data: T = eeprom.into();
+        let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
 
-macro_rules! impl_eeprom_for {
-    ($NAME:ident, $EEPROM:ident, $RAW:ident) => {
-        impl FtdiEeprom for $NAME {
-            type Eeprom = $EEPROM;
+        trace!(
+            "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
+            self.handle(),
+            eeprom_data,
+            eeprom_data_size,
+            strings.manufacturer(),
+            strings.manufacturer_id(),
+            strings.description(),
+            strings.serial_number(),
+        );
+        let status: FT_STATUS = unsafe {
+            FT_EEPROM_Program(
+                self.handle(),
+                &mut eeprom_data as *mut T as *mut c_void,
+                eeprom_data_size,
+                manufacturer.as_ptr() as *mut i8,
+                manufacturer_id.as_ptr() as *mut i8,
+                description.as_ptr() as *mut i8,
+                serial_number.as_ptr() as *mut i8,
+            )
+        };
 
-            fn eeprom_read(&mut self) -> Result<Self::Eeprom, FtStatus> {
-                let mut manufacturer: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut manufacturer_id: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut description: [i8; STRING_LEN] = [0; STRING_LEN];
-                let mut serial_number: [i8; STRING_LEN] = [0; STRING_LEN];
-
-                let mut eeprom_data: $RAW =
-                    unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-                eeprom_data.common.deviceType = Self::DEVICE_TYPE as u32;
-                let eeprom_data_size = u32::try_from(mem::size_of::<$RAW>()).unwrap();
-
-                trace!(
-                    "FT_EEPROM_Read({:?}, _, {}, _, _, _, _)",
-                    self.handle(),
-                    eeprom_data_size
-                );
-                let status: FT_STATUS = unsafe {
-                    FT_EEPROM_Read(
-                        self.handle(),
-                        &mut eeprom_data as *mut $RAW as *mut c_void,
-                        eeprom_data_size,
-                        manufacturer.as_mut_ptr(),
-                        manufacturer_id.as_mut_ptr(),
-                        description.as_mut_ptr(),
-                        serial_number.as_mut_ptr(),
-                    )
-                };
-
-                let eeprom = Self::Eeprom::new(
-                    eeprom_data,
-                    slice_into_string(&manufacturer),
-                    slice_into_string(&manufacturer_id),
-                    slice_into_string(&description),
-                    slice_into_string(&serial_number),
-                );
-
-                ft_result!(eeprom, status)
-            }
-
-            fn eeprom_program(&mut self, eeprom: &Self::Eeprom) -> Result<(), FtStatus> {
-                let manufacturer = std::ffi::CString::new(eeprom.manufacturer()).unwrap();
-                let manufacturer_id = std::ffi::CString::new(eeprom.manufacturer_id()).unwrap();
-                let description = std::ffi::CString::new(eeprom.description()).unwrap();
-                let serial_number = std::ffi::CString::new(eeprom.serial_number()).unwrap();
-                let eeprom_data_size = u32::try_from(mem::size_of::<$RAW>()).unwrap();
-
-                trace!(
-                    "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
-                    self.handle(),
-                    eeprom,
-                    eeprom_data_size,
-                    eeprom.manufacturer(),
-                    eeprom.manufacturer_id(),
-                    eeprom.description(),
-                    eeprom.serial_number(),
-                );
-                let status: FT_STATUS = unsafe {
-                    FT_EEPROM_Program(
-                        self.handle(),
-                        &mut eeprom.into() as *mut $RAW as *mut c_void,
-                        eeprom_data_size,
-                        manufacturer.as_ptr() as *mut i8,
-                        manufacturer_id.as_ptr() as *mut i8,
-                        description.as_ptr() as *mut i8,
-                        serial_number.as_ptr() as *mut i8,
-                    )
-                };
-
-                ft_result!((), status)
-            }
-        }
-    };
+        ft_result((), status)
+    }
 }
 
 fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
@@ -1718,7 +1707,7 @@ fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
     trace!("FT_OpenEx({}, {}, _)", arg, flag);
     let status: FT_STATUS =
         unsafe { FT_OpenEx(cstr_arg.as_ptr() as *mut c_void, flag, &mut handle) };
-    ft_result!(handle, status)
+    ft_result(handle, status)
 }
 
 impl Ftdi {
@@ -1771,7 +1760,7 @@ impl Ftdi {
         let mut handle: FT_HANDLE = std::ptr::null_mut();
         trace!("FT_Open({}, _)", index);
         let status: FT_STATUS = unsafe { FT_Open(index, &mut handle) };
-        ft_result!(Ftdi { handle }, status)
+        ft_result(Ftdi { handle }, status)
     }
 
     /// Open the device by its serial number and initialize the handle.
@@ -1956,8 +1945,8 @@ impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
 impl_try_from_for!(Ft232h);
 impl_try_from_for!(Ft4232h);
 
-impl_eeprom_for!(Ft232h, Eeprom232h, FT_EEPROM_232H);
-impl_eeprom_for!(Ft4232h, Eeprom4232h, FT_EEPROM_4232H);
+impl FtdiEeprom<FT_EEPROM_232H, Eeprom232h> for Ft232h {}
+impl FtdiEeprom<FT_EEPROM_4232H, Eeprom4232h> for Ft4232h {}
 
 impl FtdiMpsse for Ft232h {}
 impl FtdiMpsse for Ft4232h {}
