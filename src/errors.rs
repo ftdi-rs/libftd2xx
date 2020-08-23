@@ -260,7 +260,7 @@ pub struct EepromValueError {
 
 impl EepromValueError {
     /// Create a new `EepromValueError`.
-    pub fn new(value: u8) -> EepromValueError {
+    pub const fn new(value: u8) -> EepromValueError {
         EepromValueError { value }
     }
 }

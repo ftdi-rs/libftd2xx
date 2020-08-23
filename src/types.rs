@@ -323,7 +323,7 @@ impl Version {
     /// let version = Version::new(3, 1, 15);
     /// assert_eq!(version, Version{major: 3, minor: 1, build: 15});
     /// ```
-    pub fn new(major: u8, minor: u8, build: u8) -> Version {
+    pub const fn new(major: u8, minor: u8, build: u8) -> Version {
         Version {
             major,
             minor,
@@ -473,7 +473,7 @@ pub struct ModemStatus(u32);
 
 impl ModemStatus {
     /// Construct a new `ModemStatus` from a raw value.
-    pub fn new(status: u32) -> ModemStatus {
+    pub const fn new(status: u32) -> ModemStatus {
         ModemStatus(status)
     }
 
@@ -1133,7 +1133,7 @@ impl EepromHeader {
     /// Device power source.
     ///
     /// * `true` if the device is self-powered (not powered by USB bus).
-    /// * `false` if the device is powered by the bus.
+    /// * `false` if the device is powered by the USB bus.
     pub fn self_powered(&self) -> bool {
         (self.0).SelfPowered != 0
     }
@@ -1141,12 +1141,15 @@ impl EepromHeader {
     /// Set device power source.
     ///
     /// * `true` if the device is self-powered (not powered by USB bus).
-    /// * `false` if the device is powered by the bus.
+    /// * `false` if the device is powered by the USB bus.
     pub fn set_self_powered(&mut self, value: bool) {
         (self.0).SelfPowered = if value { 1 } else { 0 }
     }
 
     /// Remote wakeup capabilities.
+    ///
+    /// USB remote wakeup is the ability for the device to resume the PC from
+    /// USB suspend (sleep) state.
     ///
     /// * `true` if the device is capable of remote wakeup.
     /// * `false` if the device is not capable of remote wakeup.
@@ -1155,6 +1158,9 @@ impl EepromHeader {
     }
 
     /// Set remote wakeup capabilities.
+    ///
+    /// USB remote wakeup is the ability for the device to resume the PC from
+    /// USB suspend (sleep) state.
     ///
     /// * `true` if the device is capable of remote wakeup.
     /// * `false` if the device is not capable of remote wakeup.
