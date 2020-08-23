@@ -1645,7 +1645,7 @@ pub trait FtdiEeprom<
         let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
 
         trace!(
-            "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
+            r#"FT_EEPROM_Program({:?}, {:?}, {}, "{}", "{}", "{}", "{}")"#,
             self.handle(),
             eeprom_data,
             eeprom_data_size,
@@ -1673,7 +1673,7 @@ pub trait FtdiEeprom<
 fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
     let mut handle: FT_HANDLE = std::ptr::null_mut();
     let cstr_arg = std::ffi::CString::new(arg).unwrap();
-    trace!("FT_OpenEx({}, {}, _)", arg, flag);
+    trace!(r#"FT_OpenEx("{}", {}, _)"#, arg, flag);
     let status: FT_STATUS =
         unsafe { FT_OpenEx(cstr_arg.as_ptr() as *mut c_void, flag, &mut handle) };
     ft_result(handle, status)
