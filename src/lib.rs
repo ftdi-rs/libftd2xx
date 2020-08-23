@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.14.0"
+//! libftd2xx = "~0.15.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -53,7 +53,7 @@
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.14.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.15.0")]
 #![deny(missing_docs)]
 
 mod errors;
@@ -1676,7 +1676,7 @@ pub trait FtdiEeprom<
         let eeprom_data_size = u32::try_from(mem::size_of::<T>()).unwrap();
 
         trace!(
-            "FT_EEPROM_Program({:?}, {:?}, {}, {}, {}, {}, {})",
+            r#"FT_EEPROM_Program({:?}, {:?}, {}, "{}", "{}", "{}", "{}")"#,
             self.handle(),
             eeprom_data,
             eeprom_data_size,
@@ -1704,7 +1704,7 @@ pub trait FtdiEeprom<
 fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
     let mut handle: FT_HANDLE = std::ptr::null_mut();
     let cstr_arg = std::ffi::CString::new(arg).unwrap();
-    trace!("FT_OpenEx({}, {}, _)", arg, flag);
+    trace!(r#"FT_OpenEx("{}", {}, _)"#, arg, flag);
     let status: FT_STATUS =
         unsafe { FT_OpenEx(cstr_arg.as_ptr() as *mut c_void, flag, &mut handle) };
     ft_result(handle, status)
