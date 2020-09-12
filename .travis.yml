@@ -28,6 +28,8 @@ matrix:
     - env: TARGET=x86_64-pc-windows-msvc
       os: windows
       rust: nightly
+  allow_failures:
+    - rust: nightly
 before_script:
   - |
     if [ "$TRAVIS_RUST_VERSION" = nightly]; then
