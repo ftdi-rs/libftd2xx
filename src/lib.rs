@@ -38,16 +38,6 @@
 //! ```
 //! See [FTDI Drivers Installation Guide for Linux] for more details.
 //!
-//! # Maintainers Notes
-//! ## README Generation
-//! The README file is generated with [cargo-readme].
-//!
-//! ```bash
-//! cargo install cargo-readme
-//! cargo readme > README.md
-//! ```
-//!
-//! [cargo-readme]: https://github.com/livioribeiro/cargo-readme
 //! [D2XX Drivers Download Page]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [D2xx Programmers Guide V1.4]: https://www.ftdichip.com/Support/Documents/ProgramGuides/D2XX_Programmer's_Guide(FT_000071).pdf
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
