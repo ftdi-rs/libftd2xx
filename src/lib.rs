@@ -1759,7 +1759,7 @@ impl Ft232h {
     /// # Safety
     ///
     /// This is **unchecked** meaning a device type check will not be performed.
-    /// Mthods that require this specific device type may fail in unexpected
+    /// Methods that require this specific device type may fail in unexpected
     /// ways if the wrong device is used.
     ///
     /// # Example
@@ -1814,7 +1814,7 @@ impl Ft4232h {
     /// # Safety
     ///
     /// This is **unchecked** meaning a device type check will not be performed.
-    /// Mthods that require this specific device type may fail in unexpected
+    /// Methods that require this specific device type may fail in unexpected
     /// ways if the wrong device is used.
     ///
     /// # Example
