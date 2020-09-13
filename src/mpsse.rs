@@ -282,6 +282,12 @@ pub struct MpsseSettings {
     ///
     /// [`set_bit_mode`]: ./trait.FtdiCommon.html#method.set_bit_mode
     pub mask: u8,
+    /// Clock frequency.
+    ///
+    /// If not `None` this will call [`set_clock`] to set the clock frequency.
+    ///
+    /// [`set_clock`]: ./trait.FtdiCommon.html#method.set_clock
+    pub clock_frequency: Option<u32>,
 }
 
 impl std::default::Default for MpsseSettings {
@@ -293,6 +299,7 @@ impl std::default::Default for MpsseSettings {
             write_timeout: Duration::from_secs(1),
             latency_timer: Duration::from_millis(16),
             mask: 0x00,
+            clock_frequency: None,
         }
     }
 }
@@ -355,6 +362,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// 8. Enables loopback.
     /// 9. Synchronizes the MPSSE.
     /// 10. Disables loopback.
+    /// 11. Optionally sets the clock frequency.
     ///
     /// Upon failure cleanup is not guaranteed.
     ///
@@ -390,6 +398,9 @@ pub trait FtdiMpsse: FtdiCommon {
         self.enable_loopback()?;
         self.synchronize_mpsse()?;
         self.disable_loopback()?;
+        if let Some(frequency) = settings.clock_frequency {
+            self.set_clock(frequency)?;
+        }
 
         Ok(())
     }

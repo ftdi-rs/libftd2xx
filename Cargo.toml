@@ -1,6 +1,6 @@
 [package]
 name = "libftd2xx"
-version = "0.16.1" # remember to update html_root_url
+version = "0.17.0" # remember to update html_root_url
 authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
@@ -12,7 +12,7 @@ documentation = "https://docs.rs/libftd2xx"
 license = "MIT"
 
 [badges]
-maintenance = { status = "as-is" }
+maintenance = { status = "experimental" }
 
 [dependencies]
 libftd2xx-ffi = "~0.4.0"
