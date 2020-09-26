@@ -598,7 +598,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Example
     ///
     /// ```no_run
-    /// use libftd2xx::{Ft232h, FtdiMpsse, ClockDataOut};
+    /// use libftd2xx::{ClockDataOut, Ft232h, FtdiMpsse};
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
@@ -758,7 +758,7 @@ impl MpsseCmdBuilder {
     /// # Example
     ///
     /// ```no_run
-    /// use libftd2xx::{MpsseCmdBuilder, Ft232h, FtdiCommon, DeviceType};
+    /// use libftd2xx::{DeviceType, Ft232h, FtdiCommon, MpsseCmdBuilder};
     ///
     /// let cmd = MpsseCmdBuilder::new().set_clock(100_000, DeviceType::FT232H);
     ///
@@ -784,7 +784,7 @@ impl MpsseCmdBuilder {
     /// # Example
     ///
     /// ```no_run
-    /// use libftd2xx::{Ft232h, FtdiCommon, FtdiMpsse, MpsseCmdBuilder, DeviceType};
+    /// use libftd2xx::{DeviceType, Ft232h, FtdiCommon, FtdiMpsse, MpsseCmdBuilder};
     ///
     /// let cmd = MpsseCmdBuilder::new()
     ///     .set_clock(100_000, DeviceType::FT232H)

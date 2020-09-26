@@ -321,7 +321,14 @@ impl Version {
     /// use libftd2xx::Version;
     ///
     /// let version = Version::new(3, 1, 15);
-    /// assert_eq!(version, Version{major: 3, minor: 1, build: 15});
+    /// assert_eq!(
+    ///     version,
+    ///     Version {
+    ///         major: 3,
+    ///         minor: 1,
+    ///         build: 15
+    ///     }
+    /// );
     /// ```
     pub const fn new(major: u8, minor: u8, build: u8) -> Version {
         Version {

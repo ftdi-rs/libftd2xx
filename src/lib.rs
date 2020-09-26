@@ -345,8 +345,8 @@ pub struct Ftdi {
 /// Converting from an unknown FTDI device.
 ///
 /// ```no_run
+/// use libftd2xx::{Ft232h, Ftdi};
 /// use std::convert::TryFrom;
-/// use libftd2xx::{Ftdi, Ft232h};
 ///
 /// let mut ftdi = Ftdi::new()?;
 /// let ft232h: Ft232h = Ft232h::try_from(&mut ftdi)?;
@@ -363,8 +363,8 @@ pub struct Ft232h {
 /// Converting from an unknown FTDI device.
 ///
 /// ```no_run
+/// use libftd2xx::{Ft4232h, Ftdi};
 /// use std::convert::TryFrom;
-/// use libftd2xx::{Ftdi, Ft4232h};
 ///
 /// let mut ftdi = Ftdi::new()?;
 /// let ft4232h: Ft4232h = Ft4232h::try_from(&mut ftdi)?;
@@ -815,14 +815,10 @@ pub trait FtdiCommon {
     /// # Example
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiCommon, BitsPerWord, StopBits, Parity};
+    /// use libftd2xx::{BitsPerWord, Ftdi, FtdiCommon, Parity, StopBits};
     ///
     /// let mut ft = Ftdi::new()?;
-    /// ft.set_data_characteristics(
-    ///     BitsPerWord::Bits8,
-    ///     StopBits::Bits1,
-    ///     Parity::No
-    /// )?;
+    /// ft.set_data_characteristics(BitsPerWord::Bits8, StopBits::Bits1, Parity::No)?;
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     fn set_data_characteristics(
@@ -955,7 +951,7 @@ pub trait FtdiCommon {
     /// # Example
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, BitMode, FtdiCommon};
+    /// use libftd2xx::{BitMode, Ftdi, FtdiCommon};
     ///
     /// let mut ft = Ftdi::new()?;
     /// ft.set_bit_mode(0xFF, BitMode::AsyncBitbang)?;
@@ -1140,13 +1136,16 @@ pub trait FtdiCommon {
     ///
     /// let valid_data = match ft.read(&mut buf) {
     ///     Err(e) => match e {
-    ///         TimeoutError::Timeout{actual: actual, expected: expected} => {
+    ///         TimeoutError::Timeout {
+    ///             actual: actual,
+    ///             expected: expected,
+    ///         } => {
     ///             eprintln!("Read timeout occured after 5s! {:?}", e);
     ///             &buf[0..actual]
     ///         }
     ///         TimeoutError::FtStatus(status) => {
     ///             panic!("FTDI Status Error: {:?}", status);
-    ///         },
+    ///         }
     ///     },
     ///     _ => &buf[0..buf.len()],
     /// };
@@ -1422,7 +1421,10 @@ pub trait FtdiCommon {
     /// const LOCATION: u32 = 0x0;
     /// let mut ft = Ftdi::new()?;
     /// let value = ft.eeprom_word_read(LOCATION)?;
-    /// println!("The value at EEPROM address 0x{:X} is 0x{:04X}", LOCATION, value);
+    /// println!(
+    ///     "The value at EEPROM address 0x{:X} is 0x{:04X}",
+    ///     LOCATION, value
+    /// );
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     fn eeprom_word_read(&mut self, offset: u32) -> Result<u16, FtStatus> {
@@ -1584,7 +1586,7 @@ pub trait FtdiEeprom<
     /// This example uses the FT232H.
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft4232h};
+    /// use libftd2xx::{Ft4232h, Ftdi, FtdiEeprom};
     /// use std::convert::TryFrom;
     ///
     /// let mut ftdi = Ftdi::new()?;
@@ -1650,7 +1652,7 @@ pub trait FtdiEeprom<
     /// This example uses the FT232H.
     ///
     /// ```no_run
-    /// use libftd2xx::{Ftdi, FtdiEeprom, Ft232h, Eeprom232h, EepromStrings, DriverType};
+    /// use libftd2xx::{DriverType, Eeprom232h, EepromStrings, Ft232h, Ftdi, FtdiEeprom};
     ///
     /// let mut ft = Ft232h::with_serial_number("FT4PWSEOA")?;
     /// let strings = EepromStrings::with_strs("FTDI", "FT", "Hello World", "FT1234567")?;
@@ -1800,9 +1802,7 @@ impl Ft232h {
     /// ```no_run
     /// use libftd2xx::Ft232h;
     ///
-    /// let mut ft = unsafe {
-    ///     Ft232h::with_serial_number_unchecked("FT5AVX6B")?
-    /// };
+    /// let mut ft = unsafe { Ft232h::with_serial_number_unchecked("FT5AVX6B")? };
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft232h, FtStatus> {
@@ -1855,9 +1855,7 @@ impl Ft4232h {
     /// ```no_run
     /// use libftd2xx::Ft4232h;
     ///
-    /// let mut ft = unsafe {
-    ///     Ft4232h::with_serial_number_unchecked("FT4PWSEOA")?
-    /// };
+    /// let mut ft = unsafe { Ft4232h::with_serial_number_unchecked("FT4PWSEOA")? };
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft4232h, FtStatus> {
