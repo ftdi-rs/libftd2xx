@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Removed
 
+## [0.19.0]
+### Changed
+- Changed the argumenets of the `clock_data_in` method in `MpsseCmdBuilder` to
+  allow take a data length instead of a `u8` buffer.
+
 ## [0.18.0]
 ### Added
 - Added `MpsseCmdBuilder` to enable writing commands in batches.
@@ -23,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.18.0...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.19.0...HEAD
+[0.19.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.19.0
 [0.18.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.18.0
 [0.17.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.17.0

@@ -1066,15 +1066,21 @@ impl MpsseCmdBuilder {
     ///
     /// This will clock in bytes on TDO/DI.
     /// No data is clocked out of the device on TDI/DO.
-    pub fn clock_data_in(mut self, mode: ClockDataIn, data: &mut [u8]) -> Self {
-        let mut len = data.len();
-        if len == 0 {
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - Data clocking mode.
+    /// * `data_len` - Number of bytes to clock in.
+    pub fn clock_data_in(mut self, mode: ClockDataIn, mut data_len: u16) -> Self {
+        if data_len == 0 {
             return self;
         }
-        len -= 1;
-        assert!(len <= 65536);
-        self.0
-            .extend_from_slice(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8]);
+        data_len -= 1;
+        self.0.extend_from_slice(&[
+            mode.into(),
+            (data_len & 0xFF) as u8,
+            ((data_len >> 8) & 0xFF) as u8,
+        ]);
         self
     }
 
