@@ -959,7 +959,7 @@ pub trait FtdiCommon {
     /// ```
     fn set_bit_mode(&mut self, mask: u8, mode: BitMode) -> Result<(), FtStatus> {
         trace!(
-            "FT_SetBitMode({:?}, {}, {})",
+            "FT_SetBitMode({:?}, 0x{:02X}, 0x{:02X})",
             self.handle(),
             mask,
             mode as u8
