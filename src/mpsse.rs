@@ -1085,7 +1085,7 @@ impl MpsseCmdBuilder {
     }
 
     /// Clock data in and out at the same time.
-    pub fn clock_data(mut self, mode: ClockData, data: &mut [u8]) -> Self {
+    pub fn clock_data(mut self, mode: ClockData, data: &[u8]) -> Self {
         let mut len = data.len();
         if len == 0 {
             return self;
