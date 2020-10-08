@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2020-10-07
+### Added
+- Added methods to `MpsseCmdBuilder` for clocking data bits in and out.
+
+### Fixed
+- Modified `clock_data_in` in `MpsseCmdBuilder` to accept `usize` instead of
+  `u16` to allow for the maximum command size (65536) to be used.
+
 ## [0.20.0] - 2020-10-05
 ### Changed
 - Changed logging in `set_bit_mode` to hex.
@@ -30,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.20.0...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.21.0...HEAD
+[0.21.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.21.0
 [0.20.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.20.0
 [0.19.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.19.0
 [0.18.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.18.0

@@ -26,7 +26,7 @@ enum MpsseCmd {
 ///
 /// This is an argument to the [`clock_data_out`] method.
 ///
-/// [`clock_data_out`]: ./trait.FtdiMpsse.html#method.clock_data_out
+/// [`clock_data_out`]: ./struct.MpsseCmdBuilder.html#method.clock_data_out
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockDataOut {
@@ -62,11 +62,51 @@ impl From<ClockDataOut> for u8 {
     }
 }
 
+/// Modes for clocking bits out of the FTDI device.
+///
+/// This is an argument to the [`clock_bits_out`] method.
+///
+/// [`clock_bits_out`]: ./struct.MpsseCmdBuilder.html#method.clock_bits_out
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockBitsOut {
+    /// Positive clock edge MSB first.
+    ///
+    /// The data is sent MSB first (bit 7 first).
+    ///
+    /// The data will change to the next bit on the rising edge of the CLK pin.
+    MsbPos = 0x12,
+    /// Negative clock edge MSB first.
+    ///
+    /// The data is sent MSB first (bit 7 first).
+    ///
+    /// The data will change to the next bit on the falling edge of the CLK pin.
+    MsbNeg = 0x13,
+    /// Positive clock edge LSB first (bit 0 first).
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will change to the next bit on the rising edge of the CLK pin.
+    LsbPos = 0x1A,
+    /// Negative clock edge LSB first (bit 0 first).
+    ///
+    /// The first bit in will be the LSB of the first byte and so on.
+    ///
+    /// The data will change to the next bit on the falling edge of the CLK pin.
+    LsbNeg = 0x1B,
+}
+
+impl From<ClockBitsOut> for u8 {
+    fn from(value: ClockBitsOut) -> u8 {
+        value as u8
+    }
+}
+
 /// Modes for clocking data into the FTDI device.
 ///
 /// This is an argument to the [`clock_data_in`] method.
 ///
-/// [`clock_data_in`]: ./trait.FtdiMpsse.html#method.clock_data_in
+/// [`clock_data_in`]: ./struct.MpsseCmdBuilder.html#method.clock_data_in
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockDataIn {
@@ -102,11 +142,63 @@ impl From<ClockDataIn> for u8 {
     }
 }
 
+/// Modes for clocking data bits into the FTDI device.
+///
+/// This is an argument to the [`clock_bits_in`] method.
+///
+/// [`clock_bits_in`]: ./struct.MpsseCmdBuilder.html#method.clock_bits_in
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockBitsIn {
+    /// Positive clock edge MSB first.
+    ///
+    /// The data will be shifted up so that the first bit in may not be in bit 7
+    /// but from 6 downwards depending on the number of bits to shift
+    /// (i.e. a length of 1 bit will have the data bit sampled in bit 0 of the
+    /// byte sent back to the PC).
+    ///
+    /// The data will be sampled on the rising edge of the CLK pin.
+    MsbPos = 0x22,
+    /// Negative clock edge MSB first.
+    ///
+    /// The data will be shifted up so that the first bit in may not be in bit 7
+    /// but from 6 downwards depending on the number of bits to shift
+    /// (i.e. a length of 1 bit will have the data bit sampled in bit 0 of the
+    /// byte sent back to the PC).
+    ///
+    /// The data will be sampled on the falling edge of the CLK pin.
+    MsbNeg = 0x26,
+    /// Positive clock edge LSB first.
+    ///
+    /// The data will be shifted down so that the first bit in may not be in bit
+    /// 0 but from 1 upwards depending on the number of bits to shift
+    /// (i.e. a length of 1 bit will have the data bit sampled in bit 7 of the
+    /// byte sent back to the PC).
+    ///
+    /// The data will be sampled on the rising edge of the CLK pin.
+    LsbPos = 0x2A,
+    /// Negative clock edge LSB first.
+    ///
+    /// The data will be shifted down so that thefirst bit in may not be in bit
+    /// 0 but from 1 upwards depending on the number of bits to shift
+    /// (i.e. a length of 1 bit will have the data bit sampled in bit 7 of the
+    /// byte sent back to the PC).
+    ///
+    /// The data will be sampled on the falling edge of the CLK pin.
+    LsbNeg = 0x2E,
+}
+
+impl From<ClockBitsIn> for u8 {
+    fn from(value: ClockBitsIn) -> u8 {
+        value as u8
+    }
+}
+
 /// Modes for clocking data in and out of the FTDI device.
 ///
 /// This is an argument to the [`clock_data`] method.
 ///
-/// [`clock_data`]: ./trait.FtdiMpsse.html#method.clock_data
+/// [`clock_data`]: ./struct.MpsseCmdBuilder.html#method.clock_data
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockData {
@@ -122,6 +214,30 @@ pub enum ClockData {
 
 impl From<ClockData> for u8 {
     fn from(value: ClockData) -> u8 {
+        value as u8
+    }
+}
+
+/// Modes for clocking data bits in and out of the FTDI device.
+///
+/// This is an argument to the [`clock_bits`] method.
+///
+/// [`clock_bits`]: ./struct.MpsseCmdBuilder.html#method.clock_bits
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ClockBits {
+    /// MSB first, data in on positive edge, data out on negative edge.
+    MsbPosIn = 0x33,
+    /// MSB first, data in on negative edge, data out on positive edge.
+    MsbNegIn = 0x36,
+    /// LSB first, data in on positive edge, data out on negative edge.
+    LsbPosIn = 0x3B,
+    /// LSB first, data in on negative edge, data out on positive edge.
+    LsbNegIn = 0x3E,
+}
+
+impl From<ClockBits> for u8 {
+    fn from(value: ClockBits) -> u8 {
         value as u8
     }
 }
@@ -1049,13 +1165,15 @@ impl MpsseCmdBuilder {
     ///
     /// This will clock out bytes on TDI/DO.
     /// No data is clocked into the device on TDO/DI.
+    ///
+    /// This will panic for data lengths greater than `u16::MAX + 1`.
     pub fn clock_data_out(mut self, mode: ClockDataOut, data: &[u8]) -> Self {
         let mut len = data.len();
+        assert!(len <= 65536, "data length cannot exceed u16::MAX + 1");
         if len == 0 {
             return self;
         }
         len -= 1;
-        assert!(len <= 65536);
         self.0
             .extend_from_slice(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8]);
         self.0.extend_from_slice(&data);
@@ -1070,31 +1188,84 @@ impl MpsseCmdBuilder {
     /// # Arguments
     ///
     /// * `mode` - Data clocking mode.
-    /// * `data_len` - Number of bytes to clock in.
-    pub fn clock_data_in(mut self, mode: ClockDataIn, mut data_len: u16) -> Self {
-        if data_len == 0 {
-            return self;
-        }
-        data_len -= 1;
-        self.0.extend_from_slice(&[
-            mode.into(),
-            (data_len & 0xFF) as u8,
-            ((data_len >> 8) & 0xFF) as u8,
-        ]);
-        self
-    }
-
-    /// Clock data in and out at the same time.
-    pub fn clock_data(mut self, mode: ClockData, data: &[u8]) -> Self {
-        let mut len = data.len();
+    /// * `len` - Number of bytes to clock in.
+    ///           This will panic for values greater than `u16::MAX + 1`.
+    pub fn clock_data_in(mut self, mode: ClockDataIn, mut len: usize) -> Self {
+        assert!(len <= 65536, "data length cannot exceed u16::MAX + 1");
         if len == 0 {
             return self;
         }
         len -= 1;
-        assert!(len <= 65536);
+        self.0
+            .extend_from_slice(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8]);
+        self
+    }
+
+    /// Clock data in and out simultaneously.
+    ///
+    /// This will panic for data lengths greater than `u16::MAX + 1`.
+    pub fn clock_data(mut self, mode: ClockData, data: &[u8]) -> Self {
+        let mut len = data.len();
+        assert!(len <= 65536, "data length cannot exceed u16::MAX + 1");
+        if len == 0 {
+            return self;
+        }
+        len -= 1;
         self.0
             .extend_from_slice(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8]);
         self.0.extend_from_slice(&data);
+        self
+    }
+
+    /// Clock data bits out.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - Bit clocking mode.
+    /// * `data` - Data bits.
+    /// * `len` - Number of bits to clock out.
+    ///           This will panic for values greater than 8.
+    pub fn clock_bits_out(mut self, mode: ClockBitsOut, data: u8, mut len: u8) -> Self {
+        assert!(len <= 8, "data length cannot exceed 8");
+        if len == 0 {
+            return self;
+        }
+        len -= 1;
+        self.0.extend_from_slice(&[mode.into(), len, data]);
+        self
+    }
+
+    /// Clock data bits in.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - Bit clocking mode.
+    /// * `len` - Number of bits to clock in.
+    ///           This will panic for values greater than 8.
+    pub fn clock_bits_in(mut self, mode: ClockBitsIn, mut len: u8) -> Self {
+        assert!(len <= 8, "data length cannot exceed 8");
+        if len == 0 {
+            return self;
+        }
+        len -= 1;
+        self.0.extend_from_slice(&[mode.into(), len]);
+        self
+    }
+
+    /// Clock data bits in and out simultaneously.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - Bit clocking mode.
+    /// * `len` - Number of bits to clock in.
+    ///           This will panic for values greater than 8.
+    pub fn clock_bits(mut self, mode: ClockBits, data: u8, mut len: u8) -> Self {
+        assert!(len <= 8, "data length cannot exceed 8");
+        if len == 0 {
+            return self;
+        }
+        len -= 1;
+        self.0.extend_from_slice(&[mode.into(), len, data]);
         self
     }
 }
