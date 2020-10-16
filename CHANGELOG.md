@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2020-10-15
+### Added
+- Added `list_devices_fs` to work around vendor driver bug.
+- Added `DeviceType::with_pid`.
+
+### Changed
+- `Speed`, `DeviceType`, and `DeviceInfo` derive `Ord` and `PartialOrd`.
+- The return vector from `list_devices` is now sorted.
 
 ## [0.21.1] - 2020-10-08
 ### Fixed

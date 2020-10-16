@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.21.1"
+//! libftd2xx = "~0.22.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -74,7 +74,7 @@
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.21.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.22.0")]
 #![deny(missing_docs)]
 
 mod errors;
@@ -120,9 +120,15 @@ use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
 use log::trace;
 use std::convert::TryFrom;
 use std::ffi::c_void;
+use std::fs;
+use std::io;
 use std::mem;
+use std::path::Path;
 use std::time::Duration;
 use std::vec::Vec;
+
+/// FTDI USB vendor id.
+pub const FTDI_VID: u16 = 0x0403;
 
 fn ft_result<T>(value: T, status: FT_STATUS) -> Result<T, FtStatus> {
     if status != 0 {
@@ -304,6 +310,128 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
                 description: slice_into_string(&info_node.Description),
             });
         }
+        devices.sort_unstable();
+        Ok(devices)
+    }
+}
+
+/// Lists FTDI devices using the Linux file system.
+///
+/// There is a bug in the vendor driver where the `serial_number` and
+/// `description` fields may be blank on the FT4232H and FT2232H when only
+/// some of the ports are unbound from the `ftdi_sio` linux kernel module.
+///
+/// This will not work if you have a custom VID/PID programmed onto your FTDI
+/// device.
+///
+/// # Limitations
+///
+/// * `port_open` will always be `false`.
+/// * `speed` will currently be `None`.
+/// * This will return an empty vector if `/sys/bus/usb/devices` does not exist.
+///
+/// # Example
+///
+/// ```no_run
+/// use libftd2xx::list_devices_fs;
+///
+/// let mut devices = list_devices_fs()?;
+///
+/// while let Some(device) = devices.pop() {
+///     println!("device: {:?}", device);
+/// }
+/// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
+/// ```
+#[allow(clippy::redundant_field_names)]
+pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
+    let sys_bus_usb_devices = Path::new("/sys/bus/usb/devices");
+    let mut devices: Vec<DeviceInfo> = Vec::new();
+    if sys_bus_usb_devices.is_dir() {
+        for entry in fs::read_dir(sys_bus_usb_devices)? {
+            let entry = entry?;
+            let path = entry.path();
+            let mut vendor_path = path.clone();
+            vendor_path.push("idVendor");
+            if vendor_path.is_file() {
+                let vid: String = fs::read_to_string(vendor_path)?;
+                let vid: u16 = u16::from_str_radix(vid.trim(), 16)
+                    .expect("idVendor file contains non-hex digits");
+                if vid != FTDI_VID {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+
+            let mut product_path = path.clone();
+            product_path.push("idProduct");
+            let pid: String = fs::read_to_string(product_path)?;
+            let pid: u16 = u16::from_str_radix(pid.trim(), 16)
+                .expect("idProduct file contains non-hex digits");
+
+            let device_type: DeviceType = match DeviceType::with_pid(pid) {
+                Some(device_type) => device_type,
+                None => continue,
+            };
+
+            let serial: String = {
+                let mut serial_path = path.clone();
+                serial_path.push("serial");
+                let mut data: String = fs::read_to_string(serial_path)?;
+                let ch = data.pop(); // remove newline
+                debug_assert_eq!(ch, Some('\n'));
+                data
+            };
+
+            let description: String = {
+                let mut product_path = path.clone();
+                product_path.push("product");
+                let mut data: String = fs::read_to_string(product_path)?;
+                let ch = data.pop(); // remove newline
+                debug_assert_eq!(ch, Some('\n'));
+                data
+            };
+
+            let port_letters: Option<&'static [char]> = match device_type {
+                DeviceType::FT2232H => Some(&['A', 'B']),
+                DeviceType::FT4232H => Some(&['A', 'B', 'C', 'D']),
+                _ => None,
+            };
+
+            if let Some(port_letters) = port_letters {
+                for letter in port_letters {
+                    let mut port_serial = serial.clone();
+                    port_serial.push(*letter);
+                    let mut port_description = description.clone();
+                    port_description.push(' ');
+                    port_description.push(*letter);
+                    devices.push(DeviceInfo {
+                        port_open: false,
+                        speed: None,
+                        device_type: device_type,
+                        product_id: pid,
+                        vendor_id: FTDI_VID,
+                        serial_number: port_serial,
+                        description: port_description,
+                    })
+                }
+            } else {
+                devices.push(DeviceInfo {
+                    port_open: false,
+                    speed: None,
+                    device_type: device_type,
+                    product_id: pid,
+                    vendor_id: FTDI_VID,
+                    serial_number: serial,
+                    description: description,
+                })
+            }
+        }
+
+        devices.sort_unstable();
+        Ok(devices)
+    } else {
+        // windows
         Ok(devices)
     }
 }

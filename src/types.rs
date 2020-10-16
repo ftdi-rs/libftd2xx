@@ -164,7 +164,7 @@ const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
 ///
 /// [`DeviceInfo`]: ./struct.DeviceInfo.html
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u32)]
 pub enum DeviceType {
     /// FTDI BM device.
@@ -208,6 +208,36 @@ pub enum DeviceType {
     FT4222H_3 = DEVICE_4222H_3,
     /// FT4222 device.
     FT4222_PROG = DEVICE_4222_PROG,
+}
+
+impl DeviceType {
+    /// Get a device type with a USB product ID.
+    ///
+    /// This is not entirely accurate since soem devices share the same PID.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::DeviceType;
+    ///
+    /// let my_device: Option<DeviceType> = DeviceType::with_pid(0x6014);
+    /// assert_eq!(my_device, Some(DeviceType::FT232H));
+    /// ```
+    pub const fn with_pid(pid: u16) -> Option<DeviceType> {
+        if pid == 0x6001 {
+            Some(DeviceType::FTAM)
+        } else if pid == 0x6010 {
+            Some(DeviceType::FT2232H)
+        } else if pid == 0x6011 {
+            Some(DeviceType::FT4232H)
+        } else if pid == 0x6014 {
+            Some(DeviceType::FT232H)
+        } else if pid == 0x6015 {
+            Some(DeviceType::FT_X_SERIES)
+        } else {
+            None
+        }
+    }
 }
 
 impl Default for DeviceType {
@@ -436,7 +466,7 @@ fn bit_mode_sanity() {
 /// This is used in the [`DeviceInfo`] struct.
 ///
 /// [`DeviceInfo`]: ./struct.DeviceInfo.html
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum Speed {
     /// High speed USB.
@@ -541,7 +571,7 @@ impl ModemStatus {
 ///
 /// [`list_devices`]: ./fn.list_devices.html
 /// [`device_info`]: ./struct.Ftdi.html#method.device_info
-#[derive(Clone, Eq, PartialEq, Default)]
+#[derive(Clone, Eq, PartialEq, Default, Ord, PartialOrd)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
     pub port_open: bool,
