@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.22.0"
+//! libftd2xx = "~0.23.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -74,7 +74,7 @@
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.22.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.23.0")]
 #![deny(missing_docs)]
 
 mod errors;

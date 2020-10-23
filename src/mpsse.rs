@@ -513,10 +513,14 @@ pub trait FtdiMpsse: FtdiCommon {
         self.set_bit_mode(settings.mask, BitMode::Mpsse)?;
         self.enable_loopback()?;
         self.synchronize_mpsse()?;
-        self.disable_loopback()?;
+
+        // bundle the disable loopback and clock divisor writes together
+        // to save some time
+        let mut mpsse_cmd = MpsseCmdBuilder::new().disable_loopback();
         if let Some(frequency) = settings.clock_frequency {
-            self.set_clock(frequency)?;
+            mpsse_cmd = mpsse_cmd.set_clock(frequency, Self::DEVICE_TYPE);
         }
+        self.write(mpsse_cmd.as_slice())?;
 
         Ok(())
     }
@@ -550,28 +554,19 @@ pub trait FtdiMpsse: FtdiCommon {
     /// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
     fn synchronize_mpsse(&mut self) -> Result<(), TimeoutError> {
         self.purge_rx()?;
+        debug_assert_eq!(self.queue_status()?, 0);
         self.write(&[ECHO_CMD_2])?;
 
-        let mut num_bytes: usize = 0;
-        while num_bytes == 0 {
-            num_bytes = self.queue_status()?;
-        }
-
-        let mut buf = vec![0; num_bytes].into_boxed_slice();
+        // the FTDI MPSSE basics polls the queue status here
+        // we purged the RX buffer so the response should always be 2 bytes
+        // this allows us to leverage the timeout built into read
+        let mut buf: [u8; 2] = [0; 2];
         self.read(&mut buf)?;
 
-        let mut command_echoed = false;
-        for count in 0..(num_bytes - 1) {
-            if buf[count] == 0xFA && buf[count + 1] == ECHO_CMD_2 {
-                command_echoed = true;
-                break;
-            }
-        }
-
-        if !command_echoed {
-            Err(TimeoutError::from(FtStatus::OTHER_ERROR))
-        } else {
+        if buf[0] == 0xFA && buf[1] == ECHO_CMD_2 {
             Ok(())
+        } else {
+            Err(TimeoutError::from(FtStatus::OTHER_ERROR))
         }
     }
 
