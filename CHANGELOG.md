@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.23.0] - 2020-10-23
 ### Changed
-- `synchronize_mpsse` will now timeout if no read data is recieved and a read
+- `synchronize_mpsse` will now timeout if no read data is received and a read
   timeout has been set.
 
 ## [0.22.0] - 2020-10-15
