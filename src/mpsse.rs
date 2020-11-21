@@ -402,7 +402,7 @@ pub struct MpsseSettings {
     ///
     /// If not `None` this will call [`set_clock`] to set the clock frequency.
     ///
-    /// [`set_clock`]: ./trait.FtdiCommon.html#method.set_clock
+    /// [`set_clock`]: crate::FtdiMpsse::set_clock
     pub clock_frequency: Option<u32>,
 }
 

@@ -487,9 +487,7 @@ impl From<u32> for Speed {
 
 /// FTDI device status.
 ///
-/// This is returned by [`status`].
-///
-/// [`status`]: ./struct.Ftdi.html#method.status
+/// This is returned by [`status`](crate::FtdiCommon::status).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DeviceStatus {
     /// Number of characters in the receive queue.
@@ -502,9 +500,7 @@ pub struct DeviceStatus {
 
 /// FTDI modem status.
 ///
-/// This is returned by [`modem_status`].
-///
-/// [`device_info`]: ./struct.Ftdi.html#method.device_info
+/// This is returned by [`modem_status`](crate::FtdiCommon::modem_status).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ModemStatus(u32);
 
@@ -832,8 +828,8 @@ cbus_enum!(
 ///
 /// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
 ///
-/// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
-/// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct EepromStrings {
     manufacturer: String,
@@ -1018,8 +1014,8 @@ impl EepromStrings {
 ///
 /// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
 ///
-/// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
-/// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
 #[derive(Debug, Copy, Clone)]
 pub struct Eeprom232h(FT_EEPROM_232H);
 
@@ -1053,8 +1049,8 @@ impl Default for Eeprom232h {
 ///
 /// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
 ///
-/// [`eeprom_read`]: ./trait.FtdiEeprom.html#tymethod.eeprom_read
-/// [`eeprom_program`]: ./trait.FtdiEeprom.html#tymethod.eeprom_program
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
 #[derive(Debug, Copy, Clone)]
 pub struct Eeprom4232h(FT_EEPROM_4232H);
 
