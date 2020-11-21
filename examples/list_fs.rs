@@ -1,5 +1,5 @@
 #![deny(unsafe_code, warnings)]
-use libftd2xx::{list_devices_fs};
+use libftd2xx::list_devices_fs;
 
 fn main() -> std::io::Result<()> {
     let mut devices = list_devices_fs()?;
