@@ -171,6 +171,8 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 /// A command to include a custom VID and PID combination within the internal
 /// device list table.
 ///
+/// This function is available on Linux only.
+///
 /// This will allow the driver to load for the specified VID and PID
 /// combination.
 ///
@@ -194,6 +196,8 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 
 /// A command to retrieve the current VID and PID combination from within the
 /// internal device list table.
+///
+/// This function is available on Linux only.
 ///
 /// This `vid` and `pid` are set by [`set_vid_pid`].
 ///
@@ -437,6 +441,8 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
 }
 
 /// Rescan devices on the system.
+///
+/// This function is available on Windows only.
 ///
 /// This can be of used when trying to recover devices programatically.
 ///
@@ -1222,7 +1228,8 @@ pub trait FtdiCommon {
 
     /// Read data from the device.
     ///
-    /// This function does not return until the the buffer has been filled.
+    /// This method does not return until the buffer has been filled, if no
+    /// timeout has been set.
     /// The number of bytes in the receive queue can be determined by calling
     /// [`queue_status`], and then an buffer equal to the length of that
     /// value can be passed to [`read`] so that the function reads the device
@@ -1427,7 +1434,7 @@ pub trait FtdiCommon {
 
     /// Get the COM port associated with a device.
     ///
-    /// This method is only avaliable when using the Windows CDM driver as both
+    /// This method is only available when using the Windows CDM driver as both
     /// the D2XX and VCP drivers can be installed at the same time.
     ///
     /// If no COM port is associated with the device `None` is returned.
@@ -1461,6 +1468,8 @@ pub trait FtdiCommon {
 
     /// Send a reset command to the port.
     ///
+    /// This method is available on Windows only.
+    ///
     /// This function is used to attempt to recover the device upon failure.
     /// For the equivalent of a unplug-replug event use [`cycle_port`].
     ///
@@ -1484,6 +1493,8 @@ pub trait FtdiCommon {
 
     /// Send a cycle command to the USB port.
     ///
+    /// This method is available on Windows only.
+    ///
     /// The effect of this method is the same as disconnecting then
     /// reconnecting the device from the USB port.
     /// Possible use of this method is situations where a fatal error has
@@ -1495,7 +1506,7 @@ pub trait FtdiCommon {
     ///
     /// As the current session is not restored when the driver is reloaded,
     /// the application must be able to recover after calling this method.
-    /// It is the responisbility of the application to close the handle after
+    /// It is the responsibility of the application to close the handle after
     /// successfully calling this method.
     ///
     /// For FT4232H, FT2232H and FT2232 devices, `cycle_port` will only work
