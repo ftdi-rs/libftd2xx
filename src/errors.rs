@@ -18,10 +18,10 @@ use libftd2xx_ffi::{
 
 /// FTDI timeout errors.
 ///
-/// This is used by the [`read`] and [`write`] functions.
+/// This is used by the [`read_all`] and [`write_all`] methods.
 ///
-/// [`read`]: trait.FtdiCommon.html#method.read
-/// [`write`]: trait.FtdiCommon.html#method.read
+/// [`read_all`]: trait.FtdiCommon.html#method.read_all
+/// [`write_all`]: trait.FtdiCommon.html#method.read_all
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum TimeoutError {
     /// FTDI status errors.

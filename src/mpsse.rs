@@ -461,7 +461,7 @@ pub trait FtdiMpsse: FtdiCommon {
         buf.push((value & 0xFF) as u8);
         buf.push(((value >> 8) & 0xFF) as u8);
 
-        self.write(&buf.as_slice())
+        self.write_all(&buf.as_slice())
     }
 
     /// Initialize the MPSSE.
@@ -520,7 +520,7 @@ pub trait FtdiMpsse: FtdiCommon {
         if let Some(frequency) = settings.clock_frequency {
             mpsse_cmd = mpsse_cmd.set_clock(frequency, Self::DEVICE_TYPE);
         }
-        self.write(mpsse_cmd.as_slice())?;
+        self.write_all(mpsse_cmd.as_slice())?;
 
         Ok(())
     }
@@ -555,13 +555,13 @@ pub trait FtdiMpsse: FtdiCommon {
     fn synchronize_mpsse(&mut self) -> Result<(), TimeoutError> {
         self.purge_rx()?;
         debug_assert_eq!(self.queue_status()?, 0);
-        self.write(&[ECHO_CMD_2])?;
+        self.write_all(&[ECHO_CMD_2])?;
 
         // the FTDI MPSSE basics polls the queue status here
         // we purged the RX buffer so the response should always be 2 bytes
         // this allows us to leverage the timeout built into read
         let mut buf: [u8; 2] = [0; 2];
-        self.read(&mut buf)?;
+        self.read_all(&mut buf)?;
 
         if buf[0] == 0xFA && buf[1] == ECHO_CMD_2 {
             Ok(())
@@ -583,7 +583,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn enable_loopback(&mut self) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::EnableLoopback.into()])
+        self.write_all(&[MpsseCmd::EnableLoopback.into()])
     }
 
     /// Disable the MPSSE loopback state.
@@ -599,7 +599,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn disable_loopback(&mut self) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::DisableLoopback.into()])
+        self.write_all(&[MpsseCmd::DisableLoopback.into()])
     }
 
     /// Set the pin direction and state of the lower byte (0-7) GPIO pins on the
@@ -626,7 +626,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn set_gpio_lower(&mut self, state: u8, direction: u8) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::SetDataBitsLowbyte.into(), state, direction])
+        self.write_all(&[MpsseCmd::SetDataBitsLowbyte.into(), state, direction])
     }
 
     /// Get the pin state state of the lower byte (0-7) GPIO pins on the MPSSE
@@ -647,12 +647,12 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn gpio_lower(&mut self) -> Result<u8, TimeoutError> {
-        self.write(&[
+        self.write_all(&[
             MpsseCmd::GetDataBitsLowbyte.into(),
             MpsseCmd::SendImmediate.into(),
         ])?;
         let mut buf: [u8; 1] = [0];
-        self.read(&mut buf)?;
+        self.read_all(&mut buf)?;
         Ok(buf[0])
     }
 
@@ -678,7 +678,7 @@ pub trait FtdiMpsse: FtdiCommon {
     ///
     /// [`set_gpio_lower`]: #method.set_gpio_lower
     fn set_gpio_upper(&mut self, state: u8, direction: u8) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::SetDataBitsHighbyte.into(), state, direction])
+        self.write_all(&[MpsseCmd::SetDataBitsHighbyte.into(), state, direction])
     }
 
     /// Get the pin state state of the upper byte (8-15) GPIO pins on the MPSSE
@@ -692,12 +692,12 @@ pub trait FtdiMpsse: FtdiCommon {
     /// [`gpio_lower`]: #method.gpio_lower
     /// [`set_gpio_upper`]: #method.set_gpio_upper
     fn gpio_upper(&mut self) -> Result<u8, TimeoutError> {
-        self.write(&[
+        self.write_all(&[
             MpsseCmd::GetDataBitsHighbyte.into(),
             MpsseCmd::SendImmediate.into(),
         ])?;
         let mut buf: [u8; 1] = [0];
-        self.read(&mut buf)?;
+        self.read_all(&mut buf)?;
         Ok(buf[0])
     }
 
@@ -729,7 +729,7 @@ pub trait FtdiMpsse: FtdiCommon {
         assert!(len <= 65536);
         let mut payload = vec![mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8];
         payload.extend_from_slice(&data);
-        self.write(&payload.as_slice())
+        self.write_all(&payload.as_slice())
     }
 
     /// Clock data in.
@@ -743,8 +743,8 @@ pub trait FtdiMpsse: FtdiCommon {
         }
         len -= 1;
         assert!(len <= 65536);
-        self.write(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8])?;
-        self.read(data)
+        self.write_all(&[mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8])?;
+        self.read_all(data)
     }
 
     /// Clock data in and out at the same time.
@@ -757,8 +757,8 @@ pub trait FtdiMpsse: FtdiCommon {
         assert!(len <= 65536);
         let mut payload = vec![mode.into(), (len & 0xFF) as u8, ((len >> 8) & 0xFF) as u8];
         payload.extend_from_slice(&data);
-        self.write(&payload.as_slice())?;
-        self.read(data)
+        self.write_all(&payload.as_slice())?;
+        self.read_all(data)
     }
 }
 
@@ -794,7 +794,7 @@ pub trait Ftx232hMpsse: FtdiMpsse {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn enable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::Enable3PhaseClocking.into()])
+        self.write_all(&[MpsseCmd::Enable3PhaseClocking.into()])
     }
 
     /// Disable 3 phase data clocking.
@@ -817,7 +817,7 @@ pub trait Ftx232hMpsse: FtdiMpsse {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn disable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
-        self.write(&[MpsseCmd::Disable3PhaseClocking.into()])
+        self.write_all(&[MpsseCmd::Disable3PhaseClocking.into()])
     }
 }
 
@@ -826,15 +826,16 @@ pub trait Ftx232hMpsse: FtdiMpsse {
 /// For details about the MPSSE read the [FTDI MPSSE Basics].
 ///
 /// This structure is a `Vec<u8>` that the methods push bytewise commands onto.
-/// These commands can then be written to the device with the [`write`] method.
+/// These commands can then be written to the device with the [`write_all`]
+/// method.
 ///
 /// This is useful for creating commands that need to do multiple operations
-/// quickly, since individual [`write`] calls can be expensive.
+/// quickly, since individual [`write_all`] calls can be expensive.
 /// For example, this can be used to set a GPIO low and clock data out for
 /// SPI operations.
 ///
 /// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
-/// [`write`]: ./trait.FtdiCommon.html#method.write
+/// [`write_all`]: ./trait.FtdiCommon.html#method.write_all
 pub struct MpsseCmdBuilder(pub Vec<u8>);
 
 impl MpsseCmdBuilder {
@@ -874,7 +875,7 @@ impl MpsseCmdBuilder {
     /// let cmd = MpsseCmdBuilder::new().set_clock(100_000, DeviceType::FT232H);
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn as_slice(&self) -> &[u8] {
@@ -903,7 +904,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn set_clock(mut self, frequency: u32, device_type: DeviceType) -> Self {
@@ -932,7 +933,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn enable_loopback(mut self) -> Self {
@@ -951,7 +952,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn disable_loopback(mut self) -> Self {
@@ -979,7 +980,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn disable_3phase_data_clocking(mut self) -> Self {
@@ -1010,7 +1011,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn enable_3phase_data_clocking(mut self) -> Self {
@@ -1041,7 +1042,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn set_gpio_lower(mut self, state: u8, direction: u8) -> Self {
@@ -1079,7 +1080,7 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     pub fn set_gpio_upper(mut self, state: u8, direction: u8) -> Self {
@@ -1100,9 +1101,9 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// let mut buf: [u8; 1] = [0; 1];
-    /// ft.read(&mut buf)?;
+    /// ft.read_all(&mut buf)?;
     /// println!("GPIO lower state: 0x{:02X}", buf[0]);
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
@@ -1126,9 +1127,9 @@ impl MpsseCmdBuilder {
     ///
     /// let mut ft = Ft232h::with_serial_number("FT5AVX6B")?;
     /// ft.initialize_mpsse_default()?;
-    /// ft.write(cmd.as_slice())?;
+    /// ft.write_all(cmd.as_slice())?;
     /// let mut buf: [u8; 1] = [0; 1];
-    /// ft.read(&mut buf)?;
+    /// ft.read_all(&mut buf)?;
     /// println!("GPIO upper state: 0x{:02X}", buf[0]);
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```

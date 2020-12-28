@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.23.0"
+//! libftd2xx = "~0.24.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -74,7 +74,7 @@
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.23.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.24.0")]
 #![deny(missing_docs)]
 
 mod errors;
@@ -1226,20 +1226,53 @@ pub trait FtdiCommon {
         )
     }
 
+    /// Read data from the device, returning the number of bytes read.
+    ///
+    /// See [`read_all`] for more information about reading from the device.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// const BUF_SIZE: usize = 256;
+    /// let mut buf: [u8; BUF_SIZE] = [0; BUF_SIZE];
+    /// let mut ft = Ftdi::new()?;
+    /// let bytes_read: usize = ft.read(&mut buf)?;
+    /// assert_eq!(bytes_read, BUF_SIZE);
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    ///
+    /// [`read_all`]: #method.read_all
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, FtStatus> {
+        let mut bytes_returned: u32 = 0;
+        let len: u32 = u32::try_from(buf.len()).unwrap();
+        trace!("FT_Read({:?}, _, {}, _)", self.handle(), len);
+        let status: FT_STATUS = unsafe {
+            FT_Read(
+                self.handle(),
+                buf.as_mut_ptr() as *mut c_void,
+                len,
+                &mut bytes_returned,
+            )
+        };
+        ft_result(usize::try_from(bytes_returned).unwrap(), status)
+    }
+
     /// Read data from the device.
     ///
     /// This method does not return until the buffer has been filled, if no
     /// timeout has been set.
     /// The number of bytes in the receive queue can be determined by calling
     /// [`queue_status`], and then an buffer equal to the length of that
-    /// value can be passed to [`read`] so that the function reads the device
-    /// and returns immediately.
+    /// value can be passed to [`read_all`] so that the function reads the
+    /// device and returns immediately.
     ///
     /// When a read timeout value has been specified in a previous call to
-    /// [`set_timeouts`], [`read`] returns when the timer expires or when the
-    /// buffer has been filled, whichever occurs first.
-    /// If the timeout occurred, [`read`] reads available data into the buffer
-    /// and returns [`TimeoutError`] error.
+    /// [`set_timeouts`], [`read_all`] returns when the timer expires or when
+    /// the buffer has been filled, whichever occurs first.
+    /// If the timeout occurred, [`read_all`] reads available data into the
+    /// buffer and returns the [`TimeoutError`] error.
     ///
     /// # Examples
     ///
@@ -1253,7 +1286,7 @@ pub trait FtdiCommon {
     /// let rx_bytes = ft.queue_status()?;
     ///
     /// if rx_bytes > 0 {
-    ///     ft.read(&mut buf[0..rx_bytes])?;
+    ///     ft.read_all(&mut buf[0..rx_bytes])?;
     /// }
     /// # Ok::<(), libftd2xx::TimeoutError>(())
     /// ```
@@ -1270,7 +1303,7 @@ pub trait FtdiCommon {
     ///
     /// ft.set_timeouts(Duration::from_millis(5000), Duration::from_millis(0))?;
     ///
-    /// let valid_data = match ft.read(&mut buf) {
+    /// let valid_data = match ft.read_all(&mut buf) {
     ///     Err(e) => match e {
     ///         TimeoutError::Timeout {
     ///             actual: actual,
@@ -1288,28 +1321,12 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::TimeoutError>(())
     /// ```
     ///
-    /// [`read`]: #method.read
+    /// [`read_all`]: #method.read_all
     /// [`queue_status`]: #method.queue_status
     /// [`set_timeouts`]: #method.set_timeouts
     /// [`TimeoutError`]: ./enum.TimeoutError.html
-    fn read(&mut self, buf: &mut [u8]) -> Result<(), TimeoutError> {
-        let mut bytes_returned: u32 = 0;
-        let len: u32 = u32::try_from(buf.len()).unwrap();
-        trace!("FT_Read({:?}, _, {}, _)", self.handle(), len);
-        let status: FT_STATUS = unsafe {
-            FT_Read(
-                self.handle(),
-                buf.as_mut_ptr() as *mut c_void,
-                len,
-                &mut bytes_returned,
-            )
-        };
-
-        if status != 0 {
-            return Err(TimeoutError::FtStatus(status.into()));
-        }
-
-        let num_read = usize::try_from(bytes_returned).unwrap();
+    fn read_all(&mut self, buf: &mut [u8]) -> Result<(), TimeoutError> {
+        let num_read = self.read(buf)?;
         if num_read != buf.len() {
             Err(TimeoutError::Timeout {
                 expected: buf.len(),
@@ -1330,10 +1347,36 @@ pub trait FtdiCommon {
     /// const BUF_SIZE: usize = 256;
     /// let buf: [u8; BUF_SIZE] = [0; BUF_SIZE];
     /// let mut ft = Ftdi::new()?;
-    /// ft.write(&buf)?;
+    /// ft.write_all(&buf)?;
     /// # Ok::<(), libftd2xx::TimeoutError>(())
     /// ```
-    fn write(&mut self, buf: &[u8]) -> Result<(), TimeoutError> {
+    fn write_all(&mut self, buf: &[u8]) -> Result<(), TimeoutError> {
+        let num_written = self.write(buf)?;
+        if num_written != buf.len() {
+            Err(TimeoutError::Timeout {
+                expected: buf.len(),
+                actual: num_written,
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Write data to the device, returning how many bytes were written.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// const BUF_SIZE: usize = 256;
+    /// let buf: [u8; BUF_SIZE] = [0; BUF_SIZE];
+    /// let mut ft = Ftdi::new()?;
+    /// let bytes_written: usize = ft.write(&buf)?;
+    /// assert_eq!(bytes_written, BUF_SIZE);
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    fn write(&mut self, buf: &[u8]) -> Result<usize, FtStatus> {
         let mut bytes_written: u32 = 0;
         let len: u32 = u32::try_from(buf.len()).unwrap();
         trace!("FT_Write({:?}, _, {}, _)", self.handle(), len);
@@ -1345,19 +1388,7 @@ pub trait FtdiCommon {
                 &mut bytes_written,
             )
         };
-        if status != 0 {
-            return Err(TimeoutError::FtStatus(status.into()));
-        }
-
-        let num_written = usize::try_from(bytes_written).unwrap();
-        if num_written != buf.len() {
-            Err(TimeoutError::Timeout {
-                expected: buf.len(),
-                actual: num_written,
-            })
-        } else {
-            Ok(())
-        }
+        ft_result(usize::try_from(bytes_written).unwrap(), status)
     }
 
     /// This function purges the transmit buffers in the device.
