@@ -123,6 +123,7 @@ use std::ffi::c_void;
 use std::fs;
 use std::io;
 use std::mem;
+use std::os::raw::c_char;
 use std::path::Path;
 use std::time::Duration;
 use std::vec::Vec;
@@ -310,8 +311,8 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
                 device_type: info_node.Type.into(),
                 product_id: pid,
                 vendor_id: vid,
-                serial_number: slice_into_string(&info_node.SerialNumber),
-                description: slice_into_string(&info_node.Description),
+                serial_number: slice_into_string(info_node.SerialNumber.as_ref()),
+                description: slice_into_string(info_node.Description.as_ref()),
             });
         }
         devices.sort_unstable();
@@ -540,8 +541,8 @@ pub trait FtdiCommon {
                 self.handle(),
                 &mut device_type,
                 &mut device_id,
-                serial_number.as_mut_ptr(),
-                description.as_mut_ptr(),
+                serial_number.as_mut_ptr() as *mut c_char,
+                description.as_mut_ptr() as *mut c_char,
                 std::ptr::null_mut(),
             )
         };
@@ -553,8 +554,8 @@ pub trait FtdiCommon {
                 device_type: device_type.into(),
                 product_id: pid,
                 vendor_id: vid,
-                serial_number: slice_into_string(&serial_number),
-                description: slice_into_string(&description),
+                serial_number: slice_into_string(serial_number.as_ref()),
+                description: slice_into_string(description.as_ref()),
             },
             status,
         )
@@ -1786,10 +1787,10 @@ pub trait FtdiEeprom<
                 self.handle(),
                 &mut eeprom_data as *mut T as *mut c_void,
                 eeprom_data_size,
-                manufacturer.as_mut_ptr(),
-                manufacturer_id.as_mut_ptr(),
-                description.as_mut_ptr(),
-                serial_number.as_mut_ptr(),
+                manufacturer.as_mut_ptr() as *mut c_char,
+                manufacturer_id.as_mut_ptr() as *mut c_char,
+                description.as_mut_ptr() as *mut c_char,
+                serial_number.as_mut_ptr() as *mut c_char,
             )
         };
 
@@ -1855,10 +1856,10 @@ pub trait FtdiEeprom<
                 self.handle(),
                 &mut eeprom_data as *mut T as *mut c_void,
                 eeprom_data_size,
-                manufacturer.as_ptr() as *mut i8,
-                manufacturer_id.as_ptr() as *mut i8,
-                description.as_ptr() as *mut i8,
-                serial_number.as_ptr() as *mut i8,
+                manufacturer.as_ptr() as *mut c_char,
+                manufacturer_id.as_ptr() as *mut c_char,
+                description.as_ptr() as *mut c_char,
+                serial_number.as_ptr() as *mut c_char,
             )
         };
 

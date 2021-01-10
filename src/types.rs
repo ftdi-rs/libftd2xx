@@ -862,10 +862,10 @@ impl EepromStrings {
         serial_number: &[i8],
     ) -> Result<Self, EepromStringsError> {
         let mut ret = Self::default();
-        ret.set_manufacturer(slice_into_string(manufacturer))?;
-        ret.set_manufacturer_id(slice_into_string(manufacturer_id))?;
-        ret.set_description(slice_into_string(description))?;
-        ret.set_serial_number(slice_into_string(serial_number))?;
+        ret.set_manufacturer(slice_into_string(manufacturer.as_ref()))?;
+        ret.set_manufacturer_id(slice_into_string(manufacturer_id.as_ref()))?;
+        ret.set_description(slice_into_string(description.as_ref()))?;
+        ret.set_serial_number(slice_into_string(serial_number.as_ref()))?;
         Ok(ret)
     }
     /// Total length of the `manufacturer`, `manufacturer_id`,

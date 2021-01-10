@@ -13,14 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: ["x86_64-unknown-linux-musl", "x86_64-unknown-linux-gnu"]
+        target:
+          - "aarch64-unknown-linux-gnu"
+          - "aarch64-unknown-linux-musl"
+          - "x86_64-unknown-linux-gnu"
+          - "x86_64-unknown-linux-musl"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: RUSTFLAGS="-D warnings" cargo build
+      - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }}
 
   windows_build:
     name: Windows Build
@@ -47,7 +51,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: cargo test
+      - run: cargo test --target ${{ matrix.target }}
 
   windows_test:
     name: Windows Unit Tests

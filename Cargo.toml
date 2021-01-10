@@ -15,9 +15,9 @@ license = "MIT"
 maintenance = { status = "experimental" }
 
 [dependencies]
-libftd2xx-ffi = "~0.5.0"
-paste = "~1.0.0"
+libftd2xx-ffi = "~0.5.1"
 log = "~0.4.11"
+paste = "^1.0.0"
 
 [dev-dependencies]
 version-sync = "~0.9.1"
