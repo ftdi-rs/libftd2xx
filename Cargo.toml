@@ -1,6 +1,6 @@
 [package]
 name = "libftd2xx"
-version = "0.24.0" # remember to update html_root_url
+version = "0.24.1" # remember to update html_root_url
 authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
@@ -21,3 +21,6 @@ paste = "^1.0.0"
 
 [dev-dependencies]
 version-sync = "~0.9.1"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
