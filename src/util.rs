@@ -34,8 +34,7 @@ where
     // Safety: The trait bounds for T are only implemented for u8 and i8, which
     // are equal size, and are therefore safe to transmute.
     debug_assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<u8>());
-    String::from_utf8_lossy(unsafe { std::mem::transmute::<&[T], &[u8]>(&array[0..idx]) })
-        .to_string()
+    String::from_utf8_lossy(unsafe { &*(&array[0..idx] as *const [T] as *const [u8]) }).to_string()
 }
 
 #[cfg(test)]
