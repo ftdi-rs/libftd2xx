@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.24.0"
+//! libftd2xx = "~0.24.1"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -69,7 +69,8 @@
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.24.0")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.24.1")]
 #![deny(missing_docs)]
 
 mod errors;
@@ -167,7 +168,7 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 /// A command to include a custom VID and PID combination within the internal
 /// device list table.
 ///
-/// This function is available on Linux only.
+/// This function is available on Linux or mac only.
 ///
 /// This will allow the driver to load for the specified VID and PID
 /// combination.
@@ -183,7 +184,8 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 /// assert_eq!(pid, 0x1234);
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
-#[cfg(any(target_os = "linux", target_os = "mac"))]
+#[cfg(any(unix, doc))]
+#[cfg_attr(docsrs, doc(cfg(unix)))]
 pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
     trace!("FT_SetVIDPID({}, {})", vid, pid);
     let status: FT_STATUS = unsafe { FT_SetVIDPID(vid.into(), pid.into()) };
@@ -193,7 +195,7 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 /// A command to retrieve the current VID and PID combination from within the
 /// internal device list table.
 ///
-/// This function is available on Linux only.
+/// This function is available on Linux or mac only.
 ///
 /// This `vid` and `pid` are set by [`set_vid_pid`].
 ///
@@ -213,7 +215,8 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 /// ```
 ///
 /// [`set_vid_pid`]: ./fn.set_vid_pid.html
-#[cfg(any(target_os = "linux", target_os = "mac"))]
+#[cfg(any(unix, doc))]
+#[cfg_attr(docsrs, doc(cfg(unix)))]
 pub fn vid_pid() -> Result<(u32, u32), FtStatus> {
     let mut vid: u32 = 0;
     let mut pid: u32 = 0;
@@ -453,7 +456,8 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
 /// libftd2xx::rescan()?;
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
-#[cfg(target_os = "windows")]
+#[cfg(all(any(windows, doc), not(doctest)))]
+#[cfg_attr(docsrs, doc(cfg(windows)))]
 pub fn rescan() -> Result<(), FtStatus> {
     trace!("FT_Rescan()");
     let status: FT_STATUS = unsafe { FT_Rescan() };
@@ -1478,7 +1482,8 @@ pub trait FtdiCommon {
     /// }
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
-    #[cfg(target_os = "windows")]
+    #[cfg(all(any(windows, doc), not(doctest)))]
+    #[cfg_attr(docsrs, doc(cfg(windows)))]
     fn com_port_number(&mut self) -> Result<Option<u32>, FtStatus> {
         let mut num: i32 = -1;
         trace!("FT_GetComPortNumber({:?}, _)", self.handle());
@@ -1498,7 +1503,8 @@ pub trait FtdiCommon {
     /// This method is available on Windows only.
     ///
     /// This function is used to attempt to recover the device upon failure.
-    /// For the equivalent of a unplug-replug event use [`cycle_port`].
+    /// For the equivalent of a unplug-replug event use
+    /// [`FtdiCommon::cycle_port`].
     ///
     /// # Example
     ///
@@ -1509,9 +1515,8 @@ pub trait FtdiCommon {
     /// ft.reset_port()?;
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
-    ///
-    /// [`cycle_port`]: #cycle_port
-    #[cfg(target_os = "windows")]
+    #[cfg(all(any(windows, doc), not(doctest)))]
+    #[cfg_attr(docsrs, doc(cfg(windows)))]
     fn reset_port(&mut self) -> Result<(), FtStatus> {
         trace!("FT_ResetPort({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_ResetPort(self.handle()) };
@@ -1548,7 +1553,8 @@ pub trait FtdiCommon {
     /// ft.cycle_port()?;
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
-    #[cfg(target_os = "windows")]
+    #[cfg(all(any(windows, doc), not(doctest)))]
+    #[cfg_attr(docsrs, doc(cfg(windows)))]
     fn cycle_port(&mut self) -> Result<(), FtStatus> {
         trace!("FT_CyclePort({:?})", self.handle());
         let status: FT_STATUS = unsafe { FT_CyclePort(self.handle()) };
