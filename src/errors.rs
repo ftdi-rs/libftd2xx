@@ -28,9 +28,9 @@ pub enum TimeoutError {
     FtStatus(FtStatus),
     /// Timeout errors.
     Timeout {
-        /// Number of bytes read or written.
+        /// Actual number of bytes read or written.
         actual: usize,
-        /// Number of bytes that attempted to read or write.
+        /// Expected number of bytes read or written.
         expected: usize,
     },
 }
