@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Changed
+- Updated `libftd2xx-ffi` dependency from 0.5.1 to 0.6.0.  This updates the vendor library from 1.4.8 to 1.4.22 for Linux targets.
+
 ## [0.24.1] - 2021-01-30
 ### Changed
 - Streamlined `udev` rules recommendations.
