@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.24.1"
+//! libftd2xx = "~0.25.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -70,7 +70,7 @@
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.24.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.25.0")]
 #![deny(missing_docs)]
 
 mod errors;
