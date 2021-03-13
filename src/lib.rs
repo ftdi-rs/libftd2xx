@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.25.0"
+//! libftd2xx = "~0.25.1"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -70,7 +70,7 @@
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.25.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.25.1")]
 #![deny(missing_docs)]
 
 mod errors;
@@ -366,9 +366,12 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
                 continue;
             }
 
-            let mut product_path = path.clone();
-            product_path.push("idProduct");
-            let pid: String = fs::read_to_string(product_path)?;
+            let mut id_product_path = path.clone();
+            id_product_path.push("idProduct");
+            if !id_product_path.exists() {
+                continue;
+            }
+            let pid: String = fs::read_to_string(id_product_path)?;
             let pid: u16 = u16::from_str_radix(pid.trim(), 16)
                 .expect("idProduct file contains non-hex digits");
 
@@ -380,6 +383,9 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
             let serial: String = {
                 let mut serial_path = path.clone();
                 serial_path.push("serial");
+                if !serial_path.exists() {
+                    continue;
+                }
                 let mut data: String = fs::read_to_string(serial_path)?;
                 let ch = data.pop(); // remove newline
                 debug_assert_eq!(ch, Some('\n'));
@@ -389,6 +395,9 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
             let description: String = {
                 let mut product_path = path.clone();
                 product_path.push("product");
+                if !product_path.exists() {
+                    continue;
+                }
                 let mut data: String = fs::read_to_string(product_path)?;
                 let ch = data.pop(); // remove newline
                 debug_assert_eq!(ch, Some('\n'));
