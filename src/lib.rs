@@ -478,6 +478,7 @@ pub fn rescan() -> Result<(), FtStatus> {
 /// This structure can be used for all FTDI devices.
 /// A device-specific structure is only necessary to access the EEPROM traits
 /// for that device.
+#[derive(Debug)]
 pub struct Ftdi {
     handle: FT_HANDLE,
 }
@@ -496,6 +497,7 @@ pub struct Ftdi {
 /// let ft232h: Ft232h = Ft232h::try_from(&mut ftdi)?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
 /// ```
+#[derive(Debug)]
 pub struct Ft232h {
     handle: FT_HANDLE,
 }
@@ -514,6 +516,7 @@ pub struct Ft232h {
 /// let ft4232h: Ft4232h = Ft4232h::try_from(&mut ftdi)?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
 /// ```
+#[derive(Debug)]
 pub struct Ft4232h {
     handle: FT_HANDLE,
 }
