@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.26.0] - 2021-03-20
 ### Added
 - Added `Debug` for all FTDI device structures.
 
@@ -91,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.25.1...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.26.0...HEAD
+[0.26.0]: https://github.com/newAM/libftd2xx-rs/compare/0.25.1...0.26.0
 [0.25.1]: https://github.com/newAM/libftd2xx-rs/compare/0.25.0...0.25.1
 [0.25.0]: https://github.com/newAM/libftd2xx-rs/compare/0.24.1...0.25.0
 [0.24.1]: https://github.com/newAM/libftd2xx-rs/compare/0.24.0...0.24.1

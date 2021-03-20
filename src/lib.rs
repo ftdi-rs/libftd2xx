@@ -10,7 +10,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! libftd2xx = "~0.25.1"
+//! libftd2xx = "~0.26.0"
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -76,7 +76,7 @@
 //! [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
 //! [`embedded-hal`]: https://crates.io/crates/embedded-hal
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.25.1")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.26.0")]
 #![deny(missing_docs)]
 
 mod errors;
