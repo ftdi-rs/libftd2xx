@@ -30,6 +30,10 @@ let info = ft.device_info()?;
 println!("Device information: {:?}", info);
 ```
 
+This crate is just a wrapper around the FTD2XX driver; I2C, SPI, and GPIO
+examples using the [`embedded-hal`] traits can be found in
+[`ftd2xx-embedded-hal`].
+
 ### One-time Linux Setup
 To access the FTDI USB device as a regular user you need to update the
 [udev] rules.
@@ -75,3 +79,5 @@ See [FTDI Drivers Installation Guide for Linux] for more details.
 [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
 [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 [udev]: https://en.wikipedia.org/wiki/Udev
+[`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
+[`embedded-hal`]: https://crates.io/crates/embedded-hal
