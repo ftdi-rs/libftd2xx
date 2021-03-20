@@ -2020,8 +2020,8 @@ impl Ft232h {
     /// Ft232h::with_description("Hello")?;
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
-    pub fn with_description(serial_number: &str) -> Result<Ft232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_description(serial_number)?;
+    pub fn with_description(description: &str) -> Result<Ft232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_description(description)?;
         Ft232h::try_from(&mut unknown)
     }
 }
@@ -2073,8 +2073,8 @@ impl Ft4232h {
     /// Ft4232h::with_description("FT4232H-56Q MiniModule A")?;
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
-    pub fn with_description(serial_number: &str) -> Result<Ft4232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_description(serial_number)?;
+    pub fn with_description(description: &str) -> Result<Ft4232h, DeviceTypeError> {
+        let mut unknown = Ftdi::with_description(description)?;
         Ft4232h::try_from(&mut unknown)
     }
 }
