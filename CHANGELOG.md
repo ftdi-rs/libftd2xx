@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Changed the `with_description` argument name from `serial_number` to
   `description`.
+- Changed `Ft232h` and `Ft4232h` `TryFrom` traits from a borrow to a move.
 
 ## [0.25.1] - 2021-03-13
 ### Fixed

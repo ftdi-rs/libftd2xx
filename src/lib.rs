@@ -114,7 +114,7 @@ use libftd2xx_ffi::{FT_CyclePort, FT_GetComPortNumber, FT_Rescan, FT_ResetPort};
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
 
 use log::trace;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::ffi::c_void;
 use std::fs;
 use std::io;
@@ -491,10 +491,9 @@ pub struct Ftdi {
 ///
 /// ```no_run
 /// use libftd2xx::{Ft232h, Ftdi};
-/// use std::convert::TryFrom;
+/// use std::convert::TryInto;
 ///
-/// let mut ftdi = Ftdi::new()?;
-/// let ft232h: Ft232h = Ft232h::try_from(&mut ftdi)?;
+/// let ft232h: Ft232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
 /// ```
 #[derive(Debug)]
@@ -510,10 +509,9 @@ pub struct Ft232h {
 ///
 /// ```no_run
 /// use libftd2xx::{Ft4232h, Ftdi};
-/// use std::convert::TryFrom;
+/// use std::convert::TryInto;
 ///
-/// let mut ftdi = Ftdi::new()?;
-/// let ft4232h: Ft4232h = Ft4232h::try_from(&mut ftdi)?;
+/// let ft4232h: Ft4232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
 /// ```
 #[derive(Debug)]
@@ -1772,10 +1770,9 @@ pub trait FtdiEeprom<
     ///
     /// ```no_run
     /// use libftd2xx::{Ft4232h, Ftdi, FtdiEeprom};
-    /// use std::convert::TryFrom;
+    /// use std::convert::TryInto;
     ///
-    /// let mut ftdi = Ftdi::new()?;
-    /// let mut ft = Ft4232h::try_from(&mut ftdi)?;
+    /// let mut ft: Ft4232h = Ftdi::new()?.try_into()?;
     /// let (eeprom, eeprom_strings) = ft.eeprom_read()?;
     /// println!("FT4232H EEPROM contents: {:?}", eeprom);
     /// println!("FT4232H EEPROM strings: {:?}", eeprom_strings);
@@ -2006,8 +2003,7 @@ impl Ft232h {
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
     pub fn with_serial_number(serial_number: &str) -> Result<Ft232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_serial_number(serial_number)?;
-        Ft232h::try_from(&mut unknown)
+        Ftdi::with_serial_number(serial_number)?.try_into()
     }
 
     /// Open a `Ft232h` device by its device description.
@@ -2021,8 +2017,7 @@ impl Ft232h {
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
     pub fn with_description(description: &str) -> Result<Ft232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_description(description)?;
-        Ft232h::try_from(&mut unknown)
+        Ftdi::with_description(description)?.try_into()
     }
 }
 
@@ -2059,8 +2054,7 @@ impl Ft4232h {
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
     pub fn with_serial_number(serial_number: &str) -> Result<Ft4232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_serial_number(serial_number)?;
-        Ft4232h::try_from(&mut unknown)
+        Ftdi::with_serial_number(serial_number)?.try_into()
     }
 
     /// Open a `Ft4232h` device by its device description.
@@ -2074,8 +2068,7 @@ impl Ft4232h {
     /// # Ok::<(), libftd2xx::DeviceTypeError>(())
     /// ```
     pub fn with_description(description: &str) -> Result<Ft4232h, DeviceTypeError> {
-        let mut unknown = Ftdi::with_description(description)?;
-        Ft4232h::try_from(&mut unknown)
+        Ftdi::with_description(description)?.try_into()
     }
 }
 
@@ -2093,10 +2086,10 @@ macro_rules! impl_boilerplate_for {
 
 macro_rules! impl_try_from_for {
     ($DEVICE:ident) => {
-        impl TryFrom<&mut Ftdi> for $DEVICE {
+        impl TryFrom<Ftdi> for $DEVICE {
             type Error = DeviceTypeError;
 
-            fn try_from(ft: &mut Ftdi) -> Result<Self, Self::Error> {
+            fn try_from(mut ft: Ftdi) -> Result<Self, Self::Error> {
                 let device_type: DeviceType = ft.device_info()?.device_type;
                 if device_type != Self::DEVICE_TYPE {
                     Err(DeviceTypeError::DeviceType {
