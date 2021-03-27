@@ -170,6 +170,7 @@ const DEVICE_LIST_NOT_READY: FT_STATUS = FT_DEVICE_LIST_NOT_READY as FT_STATUS;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[allow(non_camel_case_types, missing_docs)]
 #[repr(u32)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum FtStatus {
     INVALID_HANDLE = INVALID_HANDLE,
     DEVICE_NOT_FOUND = DEVICE_NOT_FOUND,

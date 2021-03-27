@@ -166,6 +166,7 @@ const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u32)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum DeviceType {
     /// FTDI BM device.
     FTBM = DEVICE_BM,
@@ -648,6 +649,7 @@ const DRIVER_TYPE_VCP: u8 = FT_DRIVER_TYPE_VCP as u8;
 /// This is used in EEPROM structures.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum DriverType {
     /// FTDI D2XX driver.
     D2XX = DRIVER_TYPE_D2XX,
@@ -718,6 +720,7 @@ impl From<u8> for ClockPolarity {
 /// FT1248 byte order.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ByteOrder {
     /// LSB first.
     LSB,
