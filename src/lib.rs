@@ -5,12 +5,14 @@
 //!
 //! # Usage
 //! Simply add this crate as a dependency in your `Cargo.toml`.
-//! On Linux the static library is distributed in the [libftd2xx-ffi] crate with
-//! permission from FTDI.
 //!
 //! ```toml
-//! [dependencies]
-//! libftd2xx = "~0.26.0"
+//! [dependencies.libftd2xx]
+//! version = "~0.27.0"
+//! # statically link the vendor library, defaults to dynamic if not set
+//! # this will make things "just work" on Linux
+//! # not recommended on Windows due to legacy library requirements
+//! features = ["static"]
 //! ```
 //!
 //! This is a basic example to get your started.
@@ -28,9 +30,9 @@
 //! examples using the [`embedded-hal`] traits can be found in
 //! [`ftd2xx-embedded-hal`].
 //!
-//! ## One-time Linux Setup
-//! To access the FTDI USB device as a regular user you need to update the
-//! [udev] rules.
+//! ## udev rules
+//! To access the FTDI USB device as a regular user on Linux you need to update
+//! the [udev] rules.
 //!
 //! Create a file called `/etc/udev/rules.d/99-ftdi.rules` with:
 //! ```text
@@ -47,10 +49,31 @@
 //! sudo udevadm trigger
 //! ```
 //!
-//! ## One-time Windows Setup
-//! Unlike Linux the Windows vendor driver is dynamically linked.
+//! ## Linking
+//!
+//! By default this crate with use dynamic linking for the vendor library.
+//! Use the `static` feature flag to enable static linking.
+//!
+//! ### Dynamic Linking on Linux
+//!
+//! The shared object `libftd2xx.so` must exist on your system.
+//! See [FTDI Drivers Installation Guide for Linux] for instructions.
+//!
+//! ### Static Linking on Linux
+//!
+//! No special considerations are needed, the static library is distributed with
+//! permission from FTDI in the [libftd2xx-ffi] crate.
+//!
+//! ### Dynamic Linking on Windows
+//!
 //! The FTD2XX DLL must exist on your system PATH.
 //! The easiest way to install this is with the vendor provided [setup executable].
+//!
+//! ### Static Linking on Windows
+//!
+//! You must set the "LIBMSVC_PATH" environment variable to link with
+//! `legacy_stdio_definitions.lib` (vendor library requirement).
+//! See [libftd2xx-ffi] for more information.
 //!
 //! # References
 //!
@@ -67,7 +90,7 @@
 //! See [FTDI Drivers Installation Guide for Linux] for more details.
 //!
 //! [D2XX Drivers Download Page]: https://www.ftdichip.com/Drivers/D2XX.htm
-//! [D2xx Programmers Guide V1.4]: https://www.ftdichip.com/Support/Documents/ProgramGuides/D2XX_Programmer's_Guide(FT_000071).pdf
+//! [D2xx Programmers Guide V1.4]: https://ftdichip.com/document/programming-guides/
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
 //! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
@@ -76,7 +99,7 @@
 //! [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
 //! [`embedded-hal`]: https://crates.io/crates/embedded-hal
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.26.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.27.0")]
 #![deny(missing_docs)]
 
 mod errors;
