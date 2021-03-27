@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2021-03-27
+### Added
+- Added the static feature flag to enable switching between static and dynamic
+  linking of the vendor library.
+
+### Changed
+- Changed the default linking strategy on Linux targets to dynamic.
+  **Note:** To retain previous functionality with dynamic linking on Windows and
+   static linking on Linux use cargo's [resolver version] 2.
+
 ## [0.26.0] - 2021-03-20
 ### Added
 - Added `Debug` for all FTDI device structures.
@@ -91,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.26.0...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.27.0...HEAD
+[0.27.0]: https://github.com/newAM/libftd2xx-rs/compare/0.26.0...0.27.0
 [0.26.0]: https://github.com/newAM/libftd2xx-rs/compare/0.25.1...0.26.0
 [0.25.1]: https://github.com/newAM/libftd2xx-rs/compare/0.25.0...0.25.1
 [0.25.0]: https://github.com/newAM/libftd2xx-rs/compare/0.24.1...0.25.0
@@ -105,3 +116,4 @@ A changelog was not kept for prior releases.
 [0.19.0]: https://github.com/newAM/libftd2xx-rs/compare/0.18.0...0.19.0
 [0.18.0]: https://github.com/newAM/libftd2xx-rs/compare/0.17.0...0.18.0
 [0.17.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.17.0
+[resolver version]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions

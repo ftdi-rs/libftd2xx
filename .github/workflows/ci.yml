@@ -51,7 +51,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --all-features --target ${{ matrix.target }}
 
   windows_test:
     name: Windows Unit Tests
