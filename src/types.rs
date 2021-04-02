@@ -45,7 +45,7 @@ use libftd2xx_ffi::{
 use libftd2xx_ffi::{FT_DRIVER_TYPE_D2XX, FT_DRIVER_TYPE_VCP};
 
 // FT_EEPROM_
-use libftd2xx_ffi::{FT_EEPROM_232H, FT_EEPROM_4232H, FT_EEPROM_HEADER};
+use libftd2xx_ffi::{FT_EEPROM_2232H, FT_EEPROM_232H, FT_EEPROM_4232H, FT_EEPROM_HEADER};
 
 use super::{EepromStringsError, EepromValueError};
 use crate::util::slice_into_string;
@@ -1045,6 +1045,55 @@ impl Default for Eeprom232h {
             ADDriveCurrent: 4,
             ..FT_EEPROM_232H::default()
         })
+    }
+}
+
+/// EEPROM structure for the FT2232H.
+///
+/// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
+///
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
+#[derive(Debug, Copy, Clone)]
+pub struct Eeprom2232h(FT_EEPROM_2232H);
+
+impl From<Eeprom2232h> for FT_EEPROM_2232H {
+    fn from(val: Eeprom2232h) -> FT_EEPROM_2232H {
+        val.0
+    }
+}
+
+impl From<FT_EEPROM_2232H> for Eeprom2232h {
+    fn from(val: FT_EEPROM_2232H) -> Eeprom2232h {
+        Eeprom2232h(val)
+    }
+}
+
+impl Default for Eeprom2232h {
+    fn default() -> Self {
+        let mut header = EepromHeader::default();
+        header.set_device_type(DeviceType::FT2232H);
+        header.set_product_id(0x6011);
+        Self(FT_EEPROM_2232H {
+            common: header.0,
+            ALDriveCurrent: 4,
+            BLDriveCurrent: 4,
+            AHDriveCurrent: 4,
+            BHDriveCurrent: 4,
+            ..FT_EEPROM_2232H::default()
+        })
+    }
+}
+
+impl Eeprom2232h {
+    /// Get the EEPROM header.
+    pub fn header(&self) -> EepromHeader {
+        EepromHeader((self.0).common)
+    }
+
+    /// Set the EEPROM header.
+    pub fn set_header(&mut self, header: EepromHeader) {
+        (self.0).common = header.into()
     }
 }
 
