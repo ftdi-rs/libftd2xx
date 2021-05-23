@@ -142,6 +142,9 @@ use libftd2xx_ffi::{FT_CyclePort, FT_GetComPortNumber, FT_Rescan, FT_ResetPort};
 #[cfg(any(target_os = "linux", target_os = "mac"))]
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
 
+#[cfg(any(target_os = "macos"))]
+use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
+
 use log::trace;
 use std::convert::{TryFrom, TryInto};
 use std::ffi::c_void;
