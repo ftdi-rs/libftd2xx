@@ -15,6 +15,8 @@ enum MpsseCmd {
     DisableLoopback = 0x85,
     SetClockFrequency = 0x86,
     SendImmediate = 0x87,
+    WaitOnIOHigh = 0x88,
+    WaitOnIOLow = 0x89,
     DisableClockDivide = 0x8A,
     EnableClockDivide = 0x8B,
     Enable3PhaseClocking = 0x8C,
@@ -1154,6 +1156,50 @@ impl MpsseCmdBuilder {
     /// ```
     pub fn send_immediate(mut self) -> Self {
         self.0.push(MpsseCmd::SendImmediate.into());
+        self
+    }
+
+    /// Make controller wait until GPIOL1 or I/O1 is high before running further commands.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::{ClockData, MpsseCmdBuilder};
+    ///
+    /// // Assume a "chip ready" signal is connected to GPIOL1. This signal is pulled high
+    /// // shortly after AD3 (chip select) is pulled low. Data will not be clocked out until
+    /// // the chip is ready.
+    /// let cmd = MpsseCmdBuilder::new()
+    ///     .set_gpio_lower(0x0, 0xb)
+    ///     .wait_on_io_high()
+    ///     .clock_data(ClockData::MsbPosIn, &[0x12, 0x34, 0x56])
+    ///     .set_gpio_lower(0x8, 0xb)
+    ///     .send_immediate();
+    /// ```
+    pub fn wait_on_io_high(mut self) -> Self {
+        self.0.push(MpsseCmd::WaitOnIOHigh.into());
+        self
+    }
+
+    /// Make controller wait until GPIOL1 or I/O1 is low before running further commands.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use libftd2xx::{ClockData, MpsseCmdBuilder};
+    ///
+    /// // Assume a "chip ready" signal is connected to GPIOL1. This signal is pulled low
+    /// // shortly after AD3 (chip select) is pulled low. Data will not be clocked out until
+    /// // the chip is ready.
+    /// let cmd = MpsseCmdBuilder::new()
+    ///     .set_gpio_lower(0x0, 0xb)
+    ///     .wait_on_io_low()
+    ///     .clock_data(ClockData::MsbPosIn, &[0x12, 0x34, 0x56])
+    ///     .set_gpio_lower(0x8, 0xb)
+    ///     .send_immediate();
+    /// ```
+    pub fn wait_on_io_low(mut self) -> Self {
+        self.0.push(MpsseCmd::WaitOnIOLow.into());
         self
     }
 
