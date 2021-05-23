@@ -598,11 +598,15 @@ pub struct DeviceInfo {
     ///
     /// This is assumed to be UTF-8.
     /// Data that is not UTF-8 will appear as the replacement character �.
+    ///
+    /// If device is not fitted with a configured EEPROM, this will be empty.
     pub serial_number: String,
     /// Device description.
     ///
     /// This is assumed to be UTF-8.
     /// Data that is not UTF-8 will appear as the replacement character �.
+    ///
+    /// If device is not fitted with a configured EEPROM, this will be empty.
     pub description: String,
 }
 

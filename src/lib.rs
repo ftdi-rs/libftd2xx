@@ -132,8 +132,8 @@ use libftd2xx_ffi::{
     FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters,
     FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_2232H, FT_EEPROM_232H,
     FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
-    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
-    FT_PURGE_TX, FT_STATUS,
+    FT_LIST_NUMBER_ONLY, FT_OK, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_OTHER_ERROR,
+    FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -603,6 +603,9 @@ pub trait FtdiCommon {
             )
         };
         let (vid, pid) = vid_pid_from_id(device_id);
+        // If the device is not fitted with a configured EEPROM, FT_GetDeviceInfo returns
+        // FT_OTHER_ERROR. In this case, all returned values except for serial_number and
+        // description are valid.
         ft_result(
             DeviceInfo {
                 port_open: true,
@@ -610,10 +613,19 @@ pub trait FtdiCommon {
                 device_type: device_type.into(),
                 product_id: pid,
                 vendor_id: vid,
-                serial_number: slice_into_string(serial_number.as_ref()),
-                description: slice_into_string(description.as_ref()),
+                serial_number: match status {
+                    FT_OK => slice_into_string(serial_number.as_ref()),
+                    _ => String::default(),
+                },
+                description: match status {
+                    FT_OK => slice_into_string(description.as_ref()),
+                    _ => String::default(),
+                },
             },
-            status,
+            match status {
+                FT_OTHER_ERROR => FT_OK,
+                n => n,
+            },
         )
     }
 
