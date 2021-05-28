@@ -649,9 +649,6 @@ pub trait FtdiCommon {
             )
         };
         let (vid, pid) = vid_pid_from_id(device_id);
-        // If the device is not fitted with a configured EEPROM, FT_GetDeviceInfo returns
-        // FT_OTHER_ERROR. In this case, all returned values except for serial_number and
-        // description are valid.
         ft_result(
             DeviceInfo {
                 port_open: true,
