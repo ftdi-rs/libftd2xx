@@ -574,6 +574,54 @@ pub trait FtdiCommon {
     /// Get the FTDI device handle.
     fn handle(&mut self) -> FT_HANDLE;
 
+    /// Identify device type.
+    ///
+    /// This will attempt to identify the device using the the [`device_info`]
+    /// method, if that method fails it will then try to determine the device type
+    /// from the value stored in the EEPROM.
+    /// If the EEPROM value does not match a known device this function returns
+    /// [`FtStatus::OTHER_ERROR`], though there may be other conditions in the
+    /// vendor driver that also return this code.
+    ///
+    /// This is not a native function in `libftd2xx`, this works around a bug in
+    /// `libftd2xx`, see https://github.com/newAM/libftd2xx-rs/pull/37 for more
+    /// information.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::{Ftdi, FtdiCommon};
+    ///
+    /// let mut ft = Ftdi::new()?;
+    /// let dev_type = ft.device_type()?;
+    /// println!("Device type: {:?}", dev_type);
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    ///
+    /// [`device_info`]: crate::FtdiCommon::device_info
+    fn device_type(&mut self) -> Result<DeviceType, FtStatus> {
+        if let Ok(info) = self.device_info() {
+            Ok(info.device_type)
+        } else {
+            match self.eeprom_word_read(0x3)? {
+                0x0200 => Ok(DeviceType::FTAM),
+                0x0400 => Ok(DeviceType::FTBM),
+                // ??? => Ok(DeviceType::FT100AX),
+                0x0500 => Ok(DeviceType::FT2232C),
+                0x0600 => Ok(DeviceType::FT232R),
+                0x0700 => Ok(DeviceType::FT2232H),
+                0x0800 => Ok(DeviceType::FT4232H),
+                0x0900 => Ok(DeviceType::FT232H),
+                0x1000 => Ok(DeviceType::FT_X_SERIES),
+                0x1700 => Ok(DeviceType::FT4222H_3),
+                0x1800 => Ok(DeviceType::FT4222H_0),
+                0x1900 => Ok(DeviceType::FT4222H_1_2),
+                0x2100 => Ok(DeviceType::FT4222_PROG),
+                _ => Err(FtStatus::OTHER_ERROR),
+            }
+        }
+    }
+
     /// Get device information for an open device.
     ///
     /// # Example
@@ -2170,6 +2218,14 @@ impl Ft4232h {
     }
 }
 
+impl FtdiCommon for Ftdi {
+    const DEVICE_TYPE: DeviceType = DeviceType::Unknown;
+
+    fn handle(&mut self) -> FT_HANDLE {
+        self.handle
+    }
+}
+
 macro_rules! impl_boilerplate_for {
     ($DEVICE:ident, $TYPE:expr) => {
         impl FtdiCommon for $DEVICE {
@@ -2177,6 +2233,10 @@ macro_rules! impl_boilerplate_for {
 
             fn handle(&mut self) -> FT_HANDLE {
                 self.handle
+            }
+
+            fn device_type(&mut self) -> Result<DeviceType, FtStatus> {
+                Ok(Self::DEVICE_TYPE)
             }
         }
     };
@@ -2188,7 +2248,7 @@ macro_rules! impl_try_from_for {
             type Error = DeviceTypeError;
 
             fn try_from(mut ft: Ftdi) -> Result<Self, Self::Error> {
-                let device_type: DeviceType = ft.device_info()?.device_type;
+                let device_type: DeviceType = ft.device_type()?;
                 if device_type != Self::DEVICE_TYPE {
                     Err(DeviceTypeError::DeviceType {
                         expected: $DEVICE::DEVICE_TYPE,
@@ -2204,7 +2264,6 @@ macro_rules! impl_try_from_for {
     };
 }
 
-impl_boilerplate_for!(Ftdi, DeviceType::Unknown);
 impl_boilerplate_for!(Ft232h, DeviceType::FT232H);
 impl_boilerplate_for!(Ft2232h, DeviceType::FT2232H);
 impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
