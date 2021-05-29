@@ -597,6 +597,8 @@ pub trait FtdiCommon {
     /// println!("Device type: {:?}", dev_type);
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
+    ///
+    /// [`device_info`]: crate::FtdiCommon::device_info
     fn device_type(&mut self) -> Result<DeviceType, FtStatus> {
         if let Ok(info) = self.device_info() {
             Ok(info.device_type)
