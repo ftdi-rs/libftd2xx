@@ -58,7 +58,7 @@ pub const STRING_LEN: usize = 64;
 ///
 /// This is used by the [`set_data_characteristics`] method.
 ///
-/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+/// [`set_data_characteristics`]: crate::FtdiCommon::set_data_characteristics
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum BitsPerWord {
@@ -84,7 +84,7 @@ impl Default for BitsPerWord {
 ///
 /// This is used by the [`set_data_characteristics`] method.
 ///
-/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+/// [`set_data_characteristics`]: crate::FtdiCommon::set_data_characteristics
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum StopBits {
@@ -110,7 +110,7 @@ impl Default for StopBits {
 ///
 /// This is used by the [`set_data_characteristics`] method.
 ///
-/// [`set_data_characteristics`]: ./trait.FtdiCommon.html#method.set_data_characteristics
+/// [`set_data_characteristics`]: crate::FtdiCommon::set_data_characteristics
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum Parity {
@@ -161,8 +161,6 @@ const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
 /// which device with the FTD2XX driver.
 ///
 /// This is used in the [`DeviceInfo`] struct.
-///
-/// [`DeviceInfo`]: ./struct.DeviceInfo.html
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u32)]
@@ -282,8 +280,8 @@ impl From<u32> for DeviceType {
 ///
 /// This is returned by [`library_version`] and [`driver_version`].
 ///
-/// [`library_version`]: ./fn.library_version.html
-/// [`driver_version`]: ./struct.Ftdi.html#method.driver_version
+/// [`library_version`]: crate::library_version
+/// [`driver_version`]: crate::Ftdi::driver_version
 /// [SemVer]: https://semver.org/
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Version {
@@ -408,7 +406,7 @@ impl Version {
 ///
 /// This structure is passed to [`set_bit_mode`] to set the bit mode.
 ///
-/// [`set_bit_mode`]: ./struct.Ftdi.html#method.set_bit_mode
+/// [`set_bit_mode`]: crate::Ftdi::set_bit_mode
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum BitMode {
@@ -465,8 +463,6 @@ fn bit_mode_sanity() {
 /// USB device speed.
 ///
 /// This is used in the [`DeviceInfo`] struct.
-///
-/// [`DeviceInfo`]: ./struct.DeviceInfo.html
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum Speed {
@@ -566,8 +562,8 @@ impl ModemStatus {
 ///
 /// This is returned by [`list_devices`] and [`device_info`].
 ///
-/// [`list_devices`]: ./fn.list_devices.html
-/// [`device_info`]: ./struct.Ftdi.html#method.device_info
+/// [`list_devices`]: crate::list_devices
+/// [`device_info`]: crate::Ftdi::device_info
 #[derive(Clone, Eq, PartialEq, Default, Ord, PartialOrd)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
@@ -577,7 +573,7 @@ pub struct DeviceInfo {
     /// This will be `None` when getting the information of an open device with
     /// the [`device_info`] function.
     ///
-    /// [`device_info`]: ./struct.Ftdi.html#method.device_info
+    /// [`device_info`]: crate::Ftdi::device_info
     pub speed: Option<Speed>,
     /// FTDI device type.
     pub device_type: DeviceType,
