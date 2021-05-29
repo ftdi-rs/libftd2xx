@@ -1,8 +1,12 @@
 on:
   push:
+    branches:
+      - main
+    tags:
+      - '*'
   pull_request:
   schedule:
-    - cron: "13 3 * * *"
+    - cron: "41 3 * * *"
 
 name: CI
 
@@ -86,9 +90,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo install cargo-deadlinks
-      - run: cargo doc
-      - run: cargo deadlinks
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   format_check:
     name: Rust Format
