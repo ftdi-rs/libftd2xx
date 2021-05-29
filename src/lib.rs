@@ -242,8 +242,6 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 /// println!("PID: 0x{:04X}", vid);
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
-///
-/// [`set_vid_pid`]: ./fn.set_vid_pid.html
 #[cfg(any(unix, doc))]
 #[cfg_attr(docsrs, doc(cfg(unix)))]
 pub fn vid_pid() -> Result<(u32, u32), FtStatus> {
@@ -584,7 +582,7 @@ pub trait FtdiCommon {
     /// vendor driver that also return this code.
     ///
     /// This is not a native function in `libftd2xx`, this works around a bug in
-    /// `libftd2xx`, see https://github.com/newAM/libftd2xx-rs/pull/37 for more
+    /// `libftd2xx`, see <https://github.com/newAM/libftd2xx-rs/pull/37> for more
     /// information.
     ///
     /// # Example
@@ -724,7 +722,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`set_usb_parameters`]: #method.set_usb_parameters
+    /// [`set_usb_parameters`]: FtdiCommon::set_usb_parameters
     fn set_usb_parameters(&mut self, in_transfer_size: u32) -> Result<(), FtStatus> {
         const MAX: u32 = 64 * 1024;
         const MIN: u32 = 64;
@@ -1186,7 +1184,6 @@ pub trait FtdiCommon {
     /// [Bit Mode Functions for the FT2232]: https://www.ftdichip.com/Support/Documents/AppNotes/AN2232C-02_FT2232CBitMode.pdf
     /// [FT232B/FT245B Bit Bang Mode]: https://www.ftdichip.com/Support/Documents/AppNotes/AN232B-01_BitBang.pdf
     /// [FTDI website]: https://www.ftdichip.com/Support/Documents/AppNotes.htm
-    /// [`BitMode`]: ./enum.BitMode.html
     ///
     /// # Example
     ///
@@ -1225,8 +1222,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`set_bit_mode`]: #method.set_bit_mode
-    /// [`BitMode`]: ./enum.BitMode.html
+    /// [`set_bit_mode`]: FtdiCommon::set_bit_mode
     fn bit_mode(&mut self) -> Result<u8, FtStatus> {
         let mut mode: u8 = 0;
         trace!("FT_GetBitMode({:?}, _)", self.handle());
@@ -1348,7 +1344,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`read_all`]: #method.read_all
+    /// [`read_all`]: FtdiCommon::read_all
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, FtStatus> {
         let mut bytes_returned: u32 = 0;
         let len: u32 = u32::try_from(buf.len()).unwrap();
@@ -1426,10 +1422,10 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::TimeoutError>(())
     /// ```
     ///
-    /// [`read_all`]: #method.read_all
-    /// [`queue_status`]: #method.queue_status
-    /// [`set_timeouts`]: #method.set_timeouts
-    /// [`TimeoutError`]: ./enum.TimeoutError.html
+    /// [`read_all`]: FtdiCommon::read_all
+    /// [`queue_status`]: FtdiCommon::queue_status
+    /// [`set_timeouts`]: FtdiCommon::set_timeouts
+    /// [`TimeoutError`]: TimeoutError
     fn read_all(&mut self, buf: &mut [u8]) -> Result<(), TimeoutError> {
         let num_read = self.read(buf)?;
         if num_read != buf.len() {
@@ -1814,7 +1810,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`eeprom_user_size`]: #method.eeprom_user_size
+    /// [`eeprom_user_size`]: FtdiCommon::eeprom_user_size
     fn eeprom_user_read(&mut self, buf: &mut [u8]) -> Result<usize, FtStatus> {
         let mut num_read: u32 = 0;
         let len: u32 = u32::try_from(buf.len()).unwrap();
@@ -1841,7 +1837,7 @@ pub trait FtdiCommon {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`eeprom_user_size`]: #method.eeprom_user_size
+    /// [`eeprom_user_size`]: FtdiCommon::eeprom_user_size
     fn eeprom_user_write(&mut self, buf: &[u8]) -> Result<(), FtStatus> {
         let len: u32 = u32::try_from(buf.len()).unwrap();
         trace!("FT_EE_UAWrite({:?}, _, {})", self.handle(), len);
@@ -2001,8 +1997,8 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`with_index`]: #method.with_index
-    /// [`with_serial_number`]: #method.with_serial_number
+    /// [`with_index`]: Ftdi::with_index
+    /// [`with_serial_number`]: Ftdi::with_serial_number
     pub fn new() -> Result<Ftdi, FtStatus> {
         Ftdi::with_index(0)
     }
@@ -2026,7 +2022,7 @@ impl Ftdi {
     /// # Ok::<(), libftd2xx::FtStatus>(())
     /// ```
     ///
-    /// [`with_serial_number`]: #method.with_serial_number
+    /// [`with_serial_number`]: Ftdi::with_serial_number
     pub fn with_index(index: i32) -> Result<Ftdi, FtStatus> {
         let mut handle: FT_HANDLE = std::ptr::null_mut();
         trace!("FT_Open({}, _)", index);

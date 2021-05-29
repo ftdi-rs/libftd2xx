@@ -28,7 +28,7 @@ enum MpsseCmd {
 ///
 /// This is an argument to the [`clock_data_out`] method.
 ///
-/// [`clock_data_out`]: ./struct.MpsseCmdBuilder.html#method.clock_data_out
+/// [`clock_data_out`]: MpsseCmdBuilder::clock_data_out
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockDataOut {
@@ -68,7 +68,7 @@ impl From<ClockDataOut> for u8 {
 ///
 /// This is an argument to the [`clock_bits_out`] method.
 ///
-/// [`clock_bits_out`]: ./struct.MpsseCmdBuilder.html#method.clock_bits_out
+/// [`clock_bits_out`]: MpsseCmdBuilder::clock_bits_out
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockBitsOut {
@@ -108,7 +108,7 @@ impl From<ClockBitsOut> for u8 {
 ///
 /// This is an argument to the [`clock_data_in`] method.
 ///
-/// [`clock_data_in`]: ./struct.MpsseCmdBuilder.html#method.clock_data_in
+/// [`clock_data_in`]: MpsseCmdBuilder::clock_data_in
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockDataIn {
@@ -148,7 +148,7 @@ impl From<ClockDataIn> for u8 {
 ///
 /// This is an argument to the [`clock_bits_in`] method.
 ///
-/// [`clock_bits_in`]: ./struct.MpsseCmdBuilder.html#method.clock_bits_in
+/// [`clock_bits_in`]: MpsseCmdBuilder::clock_bits_in
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockBitsIn {
@@ -200,7 +200,7 @@ impl From<ClockBitsIn> for u8 {
 ///
 /// This is an argument to the [`clock_data`] method.
 ///
-/// [`clock_data`]: ./struct.MpsseCmdBuilder.html#method.clock_data
+/// [`clock_data`]: MpsseCmdBuilder::clock_data
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockData {
@@ -224,7 +224,7 @@ impl From<ClockData> for u8 {
 ///
 /// This is an argument to the [`clock_bits`] method.
 ///
-/// [`clock_bits`]: ./struct.MpsseCmdBuilder.html#method.clock_bits
+/// [`clock_bits`]: MpsseCmdBuilder::clock_bits
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ClockBits {
@@ -356,40 +356,40 @@ mod clock_divisor {
 ///
 /// Used by [`initialize_mpsse`].
 ///
-/// [`initialize_mpsse`]: ./trait.FtdiMpsse.html#method.initialize_mpsse
+/// [`initialize_mpsse`]: FtdiMpsse::initialize_mpsse
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct MpsseSettings {
     /// Reset the MPSSE on initialization.
     ///
     /// This calls [`reset`] if `true`.
     ///
-    /// [`reset`]: ./trait.FtdiCommon.html#method.reset
+    /// [`reset`]: FtdiCommon::reset
     pub reset: bool,
     /// USB in transfer size in bytes.
     ///
     /// This gets passed to [`set_usb_parameters`].
     ///
-    /// [`set_usb_parameters`]: ./trait.FtdiCommon.html#method.set_usb_parameters
+    /// [`set_usb_parameters`]: FtdiCommon::set_usb_parameters
     pub in_transfer_size: u32,
     /// Read timeout.
     ///
     /// This gets passed along with [`write_timeout`] to [`set_timeouts`].
     ///
-    /// [`set_timeouts`]: ./trait.FtdiCommon.html#method.set_timeouts
-    /// [`write_timeout`]: #structfield.write_timeout
+    /// [`set_timeouts`]: FtdiCommon::set_timeouts
+    /// [`write_timeout`]: MpsseSettings::write_timeout
     pub read_timeout: Duration,
     /// Write timeout.
     ///
     /// This gets passed along with [`read_timeout`] to [`set_timeouts`].
     ///
-    /// [`set_timeouts`]: ./trait.FtdiCommon.html#method.set_timeouts
-    /// [`read_timeout`]: #structfield.read_timeout
+    /// [`set_timeouts`]: FtdiCommon::set_timeouts
+    /// [`read_timeout`]: MpsseSettings::read_timeout
     pub write_timeout: Duration,
     /// Latency timer.
     ///
     /// This gets passed to [`set_latency_timer`].
     ///
-    /// [`set_latency_timer`]: ./trait.FtdiCommon.html#method.set_latency_timer
+    /// [`set_latency_timer`]: FtdiCommon::set_latency_timer
     pub latency_timer: Duration,
     /// Bitmode mask.
     ///
@@ -398,7 +398,7 @@ pub struct MpsseSettings {
     ///
     /// This gets passed to [`set_bit_mode`].
     ///
-    /// [`set_bit_mode`]: ./trait.FtdiCommon.html#method.set_bit_mode
+    /// [`set_bit_mode`]: FtdiCommon::set_bit_mode
     pub mask: u8,
     /// Clock frequency.
     ///
@@ -499,7 +499,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     ///
-    /// [`reset`]: ./trait.FtdiCommon.html#method.reset
+    /// [`reset`]: FtdiCommon::reset
     fn initialize_mpsse(&mut self, settings: &MpsseSettings) -> Result<(), TimeoutError> {
         if settings.reset {
             self.reset()?;
@@ -542,8 +542,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     ///
-    /// [`initialize_mpsse`]: #method.initialize_mpsse
-    /// [`MpsseSettings`]: ./struct.MpsseSettings.html
+    /// [`initialize_mpsse`]: FtdiMpsse::initialize_mpsse
     fn initialize_mpsse_default(&mut self) -> Result<(), TimeoutError> {
         self.initialize_mpsse(&MpsseSettings::default())
     }
@@ -678,7 +677,7 @@ pub trait FtdiMpsse: FtdiCommon {
     /// These pins confusingly map to the first four bits in the direction and
     /// state masks.
     ///
-    /// [`set_gpio_lower`]: #method.set_gpio_lower
+    /// [`set_gpio_lower`]: FtdiMpsse::set_gpio_lower
     fn set_gpio_upper(&mut self, state: u8, direction: u8) -> Result<(), TimeoutError> {
         self.write_all(&[MpsseCmd::SetDataBitsHighbyte.into(), state, direction])
     }
@@ -691,8 +690,8 @@ pub trait FtdiMpsse: FtdiCommon {
     /// See [`set_gpio_upper`] for additional information about physical pin
     /// mappings.
     ///
-    /// [`gpio_lower`]: #method.gpio_lower
-    /// [`set_gpio_upper`]: #method.set_gpio_upper
+    /// [`gpio_lower`]: FtdiMpsse::gpio_lower
+    /// [`set_gpio_upper`]: FtdiMpsse::set_gpio_upper
     fn gpio_upper(&mut self) -> Result<u8, TimeoutError> {
         self.write_all(&[
             MpsseCmd::GetDataBitsHighbyte.into(),
@@ -837,7 +836,7 @@ pub trait Ftx232hMpsse: FtdiMpsse {
 /// SPI operations.
 ///
 /// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
-/// [`write_all`]: ./trait.FtdiCommon.html#method.write_all
+/// [`write_all`]: FtdiCommon::write_all
 pub struct MpsseCmdBuilder(pub Vec<u8>);
 
 impl MpsseCmdBuilder {
@@ -1136,7 +1135,7 @@ impl MpsseCmdBuilder {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     ///
-    /// [`set_gpio_upper`]: #method.set_gpio_upper
+    /// [`set_gpio_upper`]: FtdiMpsse::set_gpio_upper
     pub fn gpio_upper(mut self) -> Self {
         self.0.push(MpsseCmd::GetDataBitsHighbyte.into());
         self

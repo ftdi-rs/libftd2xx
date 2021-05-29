@@ -20,8 +20,8 @@ use libftd2xx_ffi::{
 ///
 /// This is used by the [`read_all`] and [`write_all`] methods.
 ///
-/// [`read_all`]: trait.FtdiCommon.html#method.read_all
-/// [`write_all`]: trait.FtdiCommon.html#method.read_all
+/// [`read_all`]: crate::FtdiCommon::read_all
+/// [`write_all`]: crate::FtdiCommon::write_all
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum TimeoutError {
     /// FTDI status errors.
@@ -164,9 +164,6 @@ const DEVICE_LIST_NOT_READY: FT_STATUS = FT_DEVICE_LIST_NOT_READY as FT_STATUS;
 ///
 /// This is also used in the [`TimeoutError`], and [`DeviceTypeError`]
 /// enumerations.
-///
-/// [`DeviceTypeError`]: ./enum.DeviceTypeError.html
-/// [`TimeoutError`]: ./enum.TimeoutError.html
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[allow(non_camel_case_types, missing_docs)]
 #[repr(u32)]
@@ -248,11 +245,11 @@ fn ft_status_display() {
 /// Some EEPROM values, such as the [`DriveCurrent`] have a fixed range of valid
 /// values.  However, the EEPROM may not be programmed with valid values.
 ///
-/// [`Cbus232h`]: ./enum.Cbus232h.html
-/// [`Cbus232r`]: ./enum.Cbus232r.html
-/// [`CbusX`]: ./enum.CbusX.html
-/// [`DriveCurrent`]: ./enum.DriveCurrent.html
-/// [`DriverType`]: ./enum.DriverType.html
+/// [`Cbus232h`]: crate::Cbus232h
+/// [`Cbus232r`]: crate::Cbus232r
+/// [`CbusX`]: crate::CbusX
+/// [`DriveCurrent`]: crate::DriveCurrent
+/// [`DriverType`]: crate::DriverType
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct EepromValueError {
     /// Invalid value.
@@ -288,9 +285,9 @@ fn drive_current_error_display() {
 
 /// EEPROM strings error.
 ///
-/// This error is used by `set_manufacturer`, `set_manufacturer_id`,
-/// `set_description`, and `set_serial_number` methods on EEPROM structures when
-/// the length of these strings exceeds the maximums.
+/// This error is used by [`set_manufacturer`], [`set_manufacturer_id`],
+/// [`set_description`], and [`set_serial_number`] methods on EEPROM
+/// structures when the length of these strings exceeds the maximums.
 ///
 /// There are two limits to these strings:
 ///
@@ -298,6 +295,11 @@ fn drive_current_error_display() {
 /// * The total length of the `manufacturer`, `manufacturer_id`,
 ///   `description`, and `serial_number` strings can not exceed
 ///   96 characters.
+///
+/// [`set_manufacturer`]: crate::EepromStrings::set_manufacturer
+/// [`set_manufacturer_id`]: crate::EepromStrings::set_manufacturer_id
+/// [`set_description`]: crate::EepromStrings::set_description
+/// [`set_serial_number`]: crate::EepromStrings::set_serial_number
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct EepromStringsError {
     /// Manufacturer string length.
