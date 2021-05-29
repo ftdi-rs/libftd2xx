@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2021-05-29
+### Added
+- Added a `device_type` function to work around a bug in native `device_info`
+  function.
+- Added `wait_on_io_high` and `wait_on_io_low` MPSSE commands.
+
+### Changed
+- Changed the `TryFrom<Ftdi>` trait implementations to use the new `device_type`
+  function instead of `device_info`.
+
 ## [0.28.0] - 2021-04-03
 ### Added
 - Added support for the FT2232H.
@@ -104,7 +114,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.28.0...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.29.0...HEAD
+[0.29.0]: https://github.com/newAM/libftd2xx-rs/compare/0.28.0...0.29.0
 [0.28.0]: https://github.com/newAM/libftd2xx-rs/compare/0.27.0...0.28.0
 [0.27.0]: https://github.com/newAM/libftd2xx-rs/compare/0.26.0...0.27.0
 [0.26.0]: https://github.com/newAM/libftd2xx-rs/compare/0.25.1...0.26.0
