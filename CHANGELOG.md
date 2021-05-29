@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.29.0] - 2021-05-29
 ### Added
-- Added a `device_type` function to work around a bug in native `device_info`
-  function.
+- Added a `device_type` function to work around a bug in the native
+  `device_info` function.
 - Added `wait_on_io_high` and `wait_on_io_low` MPSSE commands.
 
 ### Changed
