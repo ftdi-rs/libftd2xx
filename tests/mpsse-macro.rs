@@ -162,6 +162,16 @@ fn all_commands_const() {
 }
 
 #[test]
+#[should_panic(expected = "data length cannot exceed u16::MAX + 1")]
+fn clock_data_assert() {
+    mpsse! {
+        let (_data, DATA_READ_LEN) = {
+            clock_data_in(ClockDataIn::MsbPos, (u16::MAX as usize) + 2);
+        };
+    }
+}
+
+#[test]
 #[should_panic(expected = "data length cannot exceed 8")]
 fn clock_bits_out_assert() {
     mpsse! {
@@ -189,4 +199,64 @@ fn clock_bits_assert() {
             clock_bits(ClockBits::MsbPosIn, 42, 9);
         };
     }
+}
+
+#[test]
+fn user_abstracted_macro() {
+    macro_rules! mpsse {
+        // Practical abstraction of CS line for SPI devices.
+        (@intern $passthru:tt cs_low(); $($tail:tt)*) => {
+            mpsse!(@intern $passthru set_gpio_lower(0x0, 0xb); $($tail)*);
+        };
+        (@intern $passthru:tt cs_high(); $($tail:tt)*) => {
+            mpsse!(@intern $passthru set_gpio_lower(0x8, 0xb); $($tail)*);
+        };
+
+        // Hypothetical device-specific command. Leverages both user and libftd2xx commands.
+        (@intern $passthru:tt
+            const $idx_id:ident = command_42([$($data:expr),* $(,)*]);
+            $($tail:tt)*) => {
+            mpsse!(@intern $passthru
+                cs_low();
+                const $idx_id = clock_data(::libftd2xx::ClockData::MsbPosIn, [0x42, $($data,)*]);
+                cs_high();
+                $($tail)*);
+        };
+
+        // Everything else handled by libftd2xx crate implementation.
+        ($($tokens:tt)*) => {
+            ::libftd2xx::mpsse!($($tokens)*);
+        };
+    }
+
+    mpsse! {
+        const (COMMAND_DATA, READ_LEN) = {
+            wait_on_io_high();
+            const COMMAND_42_RESULT_RANGE = command_42([11, 22, 33]);
+            send_immediate();
+        };
+    }
+    assert_eq!(COMMAND_DATA.len(), 15);
+    assert_eq!(
+        COMMAND_DATA,
+        [
+            MpsseCmd::WaitOnIOHigh as u8,
+            MpsseCmd::SetDataBitsLowbyte as u8,
+            0x0,
+            0xb,
+            ClockData::MsbPosIn as u8,
+            4 as u8,
+            0 as u8,
+            0x42 as u8,
+            11 as u8,
+            22 as u8,
+            33 as u8,
+            MpsseCmd::SetDataBitsLowbyte as u8,
+            0x8,
+            0xb,
+            MpsseCmd::SendImmediate as u8,
+        ]
+    );
+    assert_eq!(READ_LEN, 4);
+    assert_eq!(COMMAND_42_RESULT_RANGE, 0..4);
 }

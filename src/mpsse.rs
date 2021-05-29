@@ -7,8 +7,16 @@ use std::time::Duration;
 /// MPSSE opcodes.
 ///
 /// Exported for use by [`mpsse`] macro. May also be used for manual command array construction.
+///
+/// Data clocking MPSSE commands are broken out into separate enums for API ergonomics:
+/// * [`ClockDataOut`]
+/// * [`ClockBitsOut`]
+/// * [`ClockDataIn`]
+/// * [`ClockBitsIn`]
+/// * [`ClockData`]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
+#[non_exhaustive]
 pub enum MpsseCmd {
     /// Used by [`set_gpio_lower`][`MpsseCmdBuilder::set_gpio_lower`].
     SetDataBitsLowbyte = 0x80,
@@ -852,6 +860,9 @@ pub trait Ftx232hMpsse: FtdiMpsse {
 /// For example, this can be used to set a GPIO low and clock data out for
 /// SPI operations.
 ///
+/// If dynamic command layout is not required, the [`mpsse`] macro can build
+/// command `[u8; N]` arrays at compile-time.
+///
 /// [FTDI MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
 /// [`write_all`]: FtdiCommon::write_all
 pub struct MpsseCmdBuilder(pub Vec<u8>);
@@ -1332,7 +1343,7 @@ impl MpsseCmdBuilder {
 ///
 /// Alternative to [`MpsseCmdBuilder`]. Parses a specialized grammar that gathers MPSSE commands
 /// into pseudo-statements contained within zero or more assigned blocks. The pseudo-assignment
-/// syntax of each block creates a fixed-length `u8` array that is bound with `let` or
+/// syntax of each block creates a fixed-length `[u8; N]` array that is bound with `let` or
 /// `const`[^const_note].
 ///
 /// [^const_note]: In `const` bindings, all values used as command parameters and data must be const.
@@ -1370,7 +1381,7 @@ impl MpsseCmdBuilder {
 /// * [`clock_bits(mode: ClockBits, data: u8, len: u8) -> usize`][`MpsseCmdBuilder::clock_bits`]
 ///
 /// Command pseudo-statements that read data from the device may optionally have the form:
-/// ```no_run
+/// ```
 /// # use libftd2xx::{mpsse, ClockDataIn};
 /// mpsse! {
 ///     // command_data and DATA_IN_RANGE are both declared in the scope of the macro expansion.
@@ -1393,6 +1404,54 @@ impl MpsseCmdBuilder {
 ///
 /// `const_assert` lacks the ability to provide meaningful compile errors, so it may be useful
 /// to temporarily use a `let` binding within function scope to diagnose failing macro expansions.
+///
+/// # User Abstractions
+///
+/// With macro shadowing, it is possible to extend the macro with additional rules for abstract,
+/// device-specific commands.
+///
+/// Comments within the implementation of this macro contain hints on how to implement these rules.
+///
+/// For example, a SPI device typically delineates transfers with the CS line. Fundamental
+/// commands like `cs_high` and `cs_low` can be implmented this way, along with other
+/// device-specific abstractions.
+///
+/// ```
+/// # use libftd2xx::mpsse;
+/// macro_rules! mpsse {
+///     // Practical abstraction of CS line for SPI devices.
+///     (@intern $passthru:tt cs_low(); $($tail:tt)*) => {
+///         mpsse!(@intern $passthru set_gpio_lower(0x0, 0xb); $($tail)*);
+///     };
+///     (@intern $passthru:tt cs_high(); $($tail:tt)*) => {
+///         mpsse!(@intern $passthru set_gpio_lower(0x8, 0xb); $($tail)*);
+///     };
+///
+///     // Hypothetical device-specific command. Leverages both user and libftd2xx commands.
+///     (@intern $passthru:tt
+///         const $idx_id:ident = command_42([$($data:expr),* $(,)*]);
+///         $($tail:tt)*) => {
+///         mpsse!(@intern $passthru
+///                cs_low();
+///                const $idx_id = clock_data(::libftd2xx::ClockData::MsbPosIn, [0x42, $($data,)*]);
+///                cs_high();
+///                $($tail)*);
+///     };
+///
+///     // Everything else handled by libftd2xx crate implementation.
+///     ($($tokens:tt)*) => {
+///         ::libftd2xx::mpsse!($($tokens)*);
+///     };
+/// }
+///
+/// mpsse! {
+///     const (COMMAND_DATA, READ_LEN) = {
+///         wait_on_io_high();
+///         const COMMAND_42_RESULT_RANGE = command_42([11, 22, 33]);
+///         send_immediate();
+///     };
+/// }
+/// ```
 ///
 /// # Example
 ///
@@ -1432,7 +1491,7 @@ macro_rules! mpsse {
     //
     // Temporarily running a let expansion can be helpful to diagnose errors.
     (@assert ((let, $_id:tt, $_read_len_id:tt), $_read_len:expr), $e:expr, $msg:expr) => {
-        assert!($e, $msg);
+        ::std::assert!($e, $msg);
     };
     (@assert ((const, $_id:tt, $_read_len_id:tt), $_read_len:expr), $e:expr, $_msg:expr) => {
         ::static_assertions::const_assert!($e);
