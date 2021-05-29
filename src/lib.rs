@@ -108,7 +108,7 @@ pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus
 mod mpsse;
 pub use mpsse::{
     ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, FtdiMpsse,
-    Ftx232hMpsse, MpsseCmdBuilder, MpsseSettings,
+    Ftx232hMpsse, MpsseCmd, MpsseCmdBuilder, MpsseSettings,
 };
 
 mod types;
