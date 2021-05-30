@@ -205,22 +205,29 @@ fn clock_bits_assert() {
 fn user_abstracted_macro() {
     macro_rules! mpsse {
         // Practical abstraction of CS line for SPI devices.
-        (@intern $passthru:tt cs_low(); $($tail:tt)*) => {
-            mpsse!(@intern $passthru set_gpio_lower(0x0, 0xb); $($tail)*);
+        ($passthru:tt {cs_low(); $($tail:tt)*} -> [$($out:tt)*]) => {
+            mpsse!($passthru {
+                set_gpio_lower(0x0, 0xb);
+                $($tail)*
+            } -> [$($out)*]);
         };
-        (@intern $passthru:tt cs_high(); $($tail:tt)*) => {
-            mpsse!(@intern $passthru set_gpio_lower(0x8, 0xb); $($tail)*);
+        ($passthru:tt {cs_high(); $($tail:tt)*} -> [$($out:tt)*]) => {
+            mpsse!($passthru {
+                set_gpio_lower(0x8, 0xb);
+                $($tail)*
+            } -> [$($out)*]);
         };
 
         // Hypothetical device-specific command. Leverages both user and libftd2xx commands.
-        (@intern $passthru:tt
-            const $idx_id:ident = command_42([$($data:expr),* $(,)*]);
-            $($tail:tt)*) => {
-            mpsse!(@intern $passthru
+        ($passthru:tt
+         {const $idx_id:ident = command_42([$($data:expr),* $(,)*]); $($tail:tt)*} ->
+         [$($out:tt)*]) => {
+            mpsse!($passthru {
                 cs_low();
                 const $idx_id = clock_data(::libftd2xx::ClockData::MsbPosIn, [0x42, $($data,)*]);
                 cs_high();
-                $($tail)*);
+                $($tail)*
+            } -> [$($out)*]);
         };
 
         // Everything else handled by libftd2xx crate implementation.

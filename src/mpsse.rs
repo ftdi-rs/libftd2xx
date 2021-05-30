@@ -1420,22 +1420,29 @@ impl MpsseCmdBuilder {
 /// # use libftd2xx::mpsse;
 /// macro_rules! mpsse {
 ///     // Practical abstraction of CS line for SPI devices.
-///     (@intern $passthru:tt cs_low(); $($tail:tt)*) => {
-///         mpsse!(@intern $passthru set_gpio_lower(0x0, 0xb); $($tail)*);
+///     ($passthru:tt {cs_low(); $($tail:tt)*} -> [$($out:tt)*]) => {
+///         mpsse!($passthru {
+///             set_gpio_lower(0x0, 0xb);
+///             $($tail)*
+///         } -> [$($out)*]);
 ///     };
-///     (@intern $passthru:tt cs_high(); $($tail:tt)*) => {
-///         mpsse!(@intern $passthru set_gpio_lower(0x8, 0xb); $($tail)*);
+///     ($passthru:tt {cs_high(); $($tail:tt)*} -> [$($out:tt)*]) => {
+///         mpsse!($passthru {
+///             set_gpio_lower(0x8, 0xb);
+///             $($tail)*
+///         } -> [$($out)*]);
 ///     };
 ///
 ///     // Hypothetical device-specific command. Leverages both user and libftd2xx commands.
-///     (@intern $passthru:tt
-///         const $idx_id:ident = command_42([$($data:expr),* $(,)*]);
-///         $($tail:tt)*) => {
-///         mpsse!(@intern $passthru
-///                cs_low();
-///                const $idx_id = clock_data(::libftd2xx::ClockData::MsbPosIn, [0x42, $($data,)*]);
-///                cs_high();
-///                $($tail)*);
+///     ($passthru:tt
+///      {const $idx_id:ident = command_42([$($data:expr),* $(,)*]); $($tail:tt)*} ->
+///      [$($out:tt)*]) => {
+///         mpsse!($passthru {
+///             cs_low();
+///             const $idx_id = clock_data(::libftd2xx::ClockData::MsbPosIn, [0x42, $($data,)*]);
+///             cs_high();
+///             $($tail)*
+///         } -> [$($out)*]);
 ///     };
 ///
 ///     // Everything else handled by libftd2xx crate implementation.
@@ -1490,10 +1497,10 @@ macro_rules! mpsse {
     // macro depth, but still ensures safe command construction.
     //
     // Temporarily running a let expansion can be helpful to diagnose errors.
-    (@assert ((let, $_id:tt, $_read_len_id:tt), $_read_len:expr), $e:expr, $msg:expr) => {
+    (@assert ((let, $_user_passthru:tt), $_read_len:expr), $e:expr, $msg:expr) => {
         ::std::assert!($e, $msg);
     };
-    (@assert ((const, $_id:tt, $_read_len_id:tt), $_read_len:expr), $e:expr, $_msg:expr) => {
+    (@assert ((const, $_user_passthru:tt), $_read_len:expr), $e:expr, $_msg:expr) => {
         ::static_assertions::const_assert!($e);
     };
 
@@ -1502,139 +1509,142 @@ macro_rules! mpsse {
 
     // let command_data = { command1(); command2(); ... commandN(); };
     (let $id:ident = {$($commands:tt)*}; $($tail:tt)*) => {
-        mpsse!(@intern ((let, $id, _), 0) $($commands)*);
+        mpsse!(((let, ($id, _)), 0) {$($commands)*} -> []);
         mpsse!($($tail)*);
     };
 
     // const COMMAND_DATA = { command1(); command2(); ... commandN(); };
     (const $id:ident = {$($commands:tt)*}; $($tail:tt)*) => {
-        mpsse!(@intern ((const, $id, _), 0) $($commands)*);
+        mpsse!(((const, ($id, _)), 0) {$($commands)*} -> []);
         mpsse!($($tail)*);
     };
 
     // let (command_data, READ_LEN) = { command1(); command2(); ... commandN(); };
     (let ($id:ident, $read_len_id:ident) = {$($commands:tt)*}; $($tail:tt)*) => {
-        mpsse!(@intern ((let, $id, $read_len_id), 0) $($commands)*);
+        mpsse!(((let, ($id, $read_len_id)), 0) {$($commands)*} -> []);
         mpsse!($($tail)*);
     };
 
     // const (COMMAND_DATA, READ_LEN) = { command1(); command2(); ... commandN(); };
     (const ($id:ident, $read_len_id:ident) = {$($commands:tt)*}; $($tail:tt)*) => {
-        mpsse!(@intern ((const, $id, $read_len_id), 0) $($commands)*);
+        mpsse!(((const, ($id, $read_len_id)), 0) {$($commands)*} -> []);
         mpsse!($($tail)*);
     };
 
-    // Recursively shift off function "statements" to the left and append resulting u8 elements at
-    // the end. Recursion ends when only u8 elements remain.
+    // Rules generally follow a structure based on three root token trees:
+    // (<passthru>) {<input>} -> [<output>]
+    //
+    // "Statements" are recursively shifted off the front of the input and the resulting u8 tokens
+    // are appended to the output. Recursion ends when the input token tree is empty.
     //
     // Rules have the following form:
-    // (@intern $passthru:tt <FUNCTION NAME>(); $($tail:tt)*)
+    // ($passthru:tt {<FUNCTION NAME>(); $($tail:tt)*} -> [$($out:tt)*])
     //
     // For functions that perform data reads, cumulative read_len can be accessed with this form:
-    // (@intern ($passthru:tt, $read_len:expr) <FUNCTION NAME>(); $($tail:tt)*)
+    // (($passthru:tt, $read_len:expr) {<FUNCTION NAME>(); $($tail:tt)*} -> [$($out:tt)*])
     //
     // Additionally, the following form is used to provide the invoker with a usize index or
     // range to later access a specific data read `const READ_INDEX = <FUNCTION NAME>();`:
-    // (@intern ($passthru:tt, $read_len:expr) const $idx_id:ident = <FUNCTION NAME>(); $($tail:tt)*)
+    // (($passthru:tt, $read_len:expr) {const $idx_id:ident = <FUNCTION NAME>(); $($tail:tt)*} -> [$($out:tt)*])
 
-    (@intern $passthru:tt enable_loopback(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::EnableLoopback as u8,);
+    ($passthru:tt {enable_loopback(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::EnableLoopback as u8,]);
     };
-    (@intern $passthru:tt disable_loopback(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::DisableLoopback as u8,);
+    ($passthru:tt {disable_loopback(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::DisableLoopback as u8,]);
     };
-    (@intern $passthru:tt enable_3phase_data_clocking(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::Enable3PhaseClocking as u8,);
+    ($passthru:tt {enable_3phase_data_clocking(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::Enable3PhaseClocking as u8,]);
     };
-    (@intern $passthru:tt disable_3phase_data_clocking(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::Disable3PhaseClocking as u8,);
+    ($passthru:tt {disable_3phase_data_clocking(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::Disable3PhaseClocking as u8,]);
     };
-    (@intern $passthru:tt set_gpio_lower($state:expr, $direction:expr); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::SetDataBitsLowbyte as u8, $state, $direction,);
+    ($passthru:tt {set_gpio_lower($state:expr, $direction:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::SetDataBitsLowbyte as u8, $state as u8, $direction as u8,]);
     };
-    (@intern $passthru:tt set_gpio_upper($state:expr, $direction:expr); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::SetDataBitsHighbyte as u8, $state, $direction,);
+    ($passthru:tt {set_gpio_upper($state:expr, $direction:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::SetDataBitsHighbyte as u8, $state as u8, $direction as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) gpio_lower(); $($tail:tt)*) => {
-        mpsse!(@intern ($passthru, $read_len + 1) $($tail)* $crate::MpsseCmd::GetDataBitsLowbyte as u8,);
+    (($passthru:tt, $read_len:expr) {gpio_lower(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!(($passthru, $read_len + 1) {$($tail)*} -> [$($out)* $crate::MpsseCmd::GetDataBitsLowbyte as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $idx_id:ident = gpio_lower(); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $idx_id:ident = gpio_lower(); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
-        mpsse!(@intern ($passthru, $read_len) gpio_lower(); $($tail)*);
+        mpsse!(($passthru, $read_len) {gpio_lower(); $($tail)*} -> [$($out)*]);
     };
-    (@intern ($passthru:tt, $read_len:expr) gpio_upper(); $($tail:tt)*) => {
-        mpsse!(@intern ($passthru, $read_len + 1) $($tail)* $crate::MpsseCmd::GetDataBitsHighbyte as u8,);
+    (($passthru:tt, $read_len:expr) {gpio_upper(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!(($passthru, $read_len + 1) {$($tail)*} -> [$($out)* $crate::MpsseCmd::GetDataBitsHighbyte as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $idx_id:ident = gpio_upper(); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $idx_id:ident = gpio_upper(); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
-        mpsse!(@intern ($passthru, $read_len) gpio_upper(); $($tail)*);
+        mpsse!(($passthru, $read_len) {gpio_upper(); $($tail)*} -> [$($out)*]);
     };
-    (@intern $passthru:tt send_immediate(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::SendImmediate as u8,);
+    ($passthru:tt {send_immediate(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::SendImmediate as u8,]);
     };
-    (@intern $passthru:tt wait_on_io_high(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::WaitOnIOHigh as u8,);
+    ($passthru:tt {wait_on_io_high(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::WaitOnIOHigh as u8,]);
     };
-    (@intern $passthru:tt wait_on_io_low(); $($tail:tt)*) => {
-        mpsse!(@intern $passthru $($tail)* $crate::MpsseCmd::WaitOnIOLow as u8,);
+    ($passthru:tt {wait_on_io_low(); $($tail:tt)*} -> [$($out:tt)*]) => {
+        mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::WaitOnIOLow as u8,]);
     };
-    (@intern $passthru:tt clock_data_out($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*) => {
+    ($passthru:tt {clock_data_out($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert $passthru, mpsse!(@count_elements $($data,)*) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
-        mpsse!(@intern $passthru $($tail)* $mode as $crate::ClockDataOut as u8,
+        mpsse!($passthru {$($tail)*} -> [$($out)* $mode as $crate::ClockDataOut as u8,
         (mpsse!(@count_elements $($data,)*) & 0xFF_usize) as u8,
         ((mpsse!(@count_elements $($data,)*) >> 8) & 0xFF_usize) as u8,
-        $($data as u8,)*);
+        $($data as u8,)*]);
     };
-    (@intern ($passthru:tt, $read_len:expr) clock_data_in($mode:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {clock_data_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert ($passthru, $read_len), ($len) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
-        mpsse!(@intern ($passthru, $read_len + ($len)) $($tail)* $mode as $crate::ClockDataIn as u8,
+        mpsse!(($passthru, $read_len + ($len)) {$($tail)*} -> [$($out)* $mode as $crate::ClockDataIn as u8,
         (($len) & 0xFF_usize) as u8,
-        ((($len) >> 8) & 0xFF_usize) as u8,);
+        ((($len) >> 8) & 0xFF_usize) as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $range_id:ident = clock_data_in($mode:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $range_id:ident = clock_data_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $range_id: ::std::ops::Range<usize> = $read_len..$read_len + ($len);
-        mpsse!(@intern ($passthru, $read_len) clock_data_in($mode, $len); $($tail)*);
+        mpsse!(($passthru, $read_len) {clock_data_in($mode, $len); $($tail)*} -> [$($out)*]);
     };
-    (@intern ($passthru:tt, $read_len:expr) clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert ($passthru, $read_len), mpsse!(@count_elements $($data,)*) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
-        mpsse!(@intern ($passthru, $read_len + mpsse!(@count_elements $($data,)*)) $($tail)* $mode as $crate::ClockData as u8,
+        mpsse!(($passthru, $read_len + mpsse!(@count_elements $($data,)*)) {$($tail)*} -> [$($out)* $mode as $crate::ClockData as u8,
         (mpsse!(@count_elements $($data,)*) & 0xFF_usize) as u8,
         ((mpsse!(@count_elements $($data,)*) >> 8) & 0xFF_usize) as u8,
-        $($data as u8,)*);
+        $($data as u8,)*]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $range_id:ident = clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $range_id:ident = clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $range_id: ::std::ops::Range<usize> = $read_len..$read_len + mpsse!(@count_elements $($data,)*);
-        mpsse!(@intern ($passthru, $read_len) clock_data($mode, [$($data,)*]); $($tail)*);
+        mpsse!(($passthru, $read_len) {clock_data($mode, [$($data,)*]); $($tail)*} -> [$($out)*]);
     };
-    (@intern $passthru:tt clock_bits_out($mode:expr, $data:expr, $len:expr); $($tail:tt)*) => {
+    ($passthru:tt {clock_bits_out($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert $passthru, $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!(@intern $passthru $($tail)* $mode as $crate::ClockBitsOut as u8, $len as u8, $data as u8,);
+        mpsse!($passthru {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsOut as u8, $len as u8, $data as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) clock_bits_in($mode:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {clock_bits_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert ($passthru, $read_len), $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!(@intern ($passthru, $read_len + 1) $($tail)* $mode as $crate::ClockBitsIn as u8, $len as u8,);
+        mpsse!(($passthru, $read_len + 1) {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsIn as u8, $len as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $idx_id:ident = clock_bits_in($mode:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $idx_id:ident = clock_bits_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
-        mpsse!(@intern ($passthru, $read_len) clock_bits_in($mode, $len); $($tail)*);
+        mpsse!(($passthru, $read_len) {clock_bits_in($mode, $len); $($tail)*} -> [$($out)*]);
     };
-    (@intern ($passthru:tt, $read_len:expr) clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         mpsse!(@assert ($passthru, $read_len), $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!(@intern ($passthru, $read_len + 1) $($tail)* $mode as $crate::ClockBits as u8, $len as u8, $data as u8,);
+        mpsse!(($passthru, $read_len + 1) {$($tail)*} -> [$($out)* $mode as $crate::ClockBits as u8, $len as u8, $data as u8,]);
     };
-    (@intern ($passthru:tt, $read_len:expr) const $idx_id:ident = clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*) => {
+    (($passthru:tt, $read_len:expr) {const $idx_id:ident = clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
-        mpsse!(@intern ($passthru, $read_len) clock_bits($mode, $data, $len); $($tail)*);
+        mpsse!(($passthru, $read_len) {clock_bits($mode, $data, $len); $($tail)*} -> [$($out)*]);
     };
 
     // Emit command_data
-    (@intern (($const_let:tt, $id:tt, _), $read_len:expr) $($tail:tt)*) => {
-        $const_let $id: [u8; mpsse!(@count_elements $($tail)*)] = [$($tail)*];
+    ((($const_let:tt, ($id:tt, _)), $read_len:expr) {} -> [$($out:tt)*]) => {
+        $const_let $id: [u8; mpsse!(@count_elements $($out)*)] = [$($out)*];
     };
 
     // Emit command_data, READ_LEN
-    (@intern (($const_let:tt, $id:tt, $read_len_id:tt), $read_len:expr) $($tail:tt)*) => {
-        $const_let $id: [u8; mpsse!(@count_elements $($tail)*)] = [$($tail)*];
+    ((($const_let:tt, ($id:tt, $read_len_id:tt)), $read_len:expr) {} -> [$($out:tt)*]) => {
+        $const_let $id: [u8; mpsse!(@count_elements $($out)*)] = [$($out)*];
         const $read_len_id: usize = $read_len;
     };
 }
