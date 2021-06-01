@@ -48,29 +48,29 @@ fn all_commands() {
             MpsseCmd::WaitOnIOHigh as u8,
             MpsseCmd::WaitOnIOLow as u8,
             ClockDataOut::MsbPos as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             11 as u8,
             22 as u8,
             33 as u8,
             44 as u8,
             ClockDataIn::MsbPos as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             ClockData::MsbPosIn as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             12 as u8,
             22 as u8,
             32 as u8,
             42 as u8,
             ClockBitsOut::MsbPos as u8,
-            8 as u8,
+            7 as u8,
             42 as u8,
             ClockBitsIn::MsbPos as u8,
-            8 as u8,
+            7 as u8,
             ClockBits::MsbPosIn as u8,
-            8 as u8,
+            7 as u8,
             42 as u8,
         ]
     );
@@ -126,29 +126,29 @@ fn all_commands_const() {
             MpsseCmd::WaitOnIOHigh as u8,
             MpsseCmd::WaitOnIOLow as u8,
             ClockDataOut::MsbPos as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             11 as u8,
             22 as u8,
             33 as u8,
             44 as u8,
             ClockDataIn::MsbPos as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             ClockData::MsbPosIn as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             12 as u8,
             22 as u8,
             32 as u8,
             42 as u8,
             ClockBitsOut::MsbPos as u8,
-            8 as u8,
+            7 as u8,
             42 as u8,
             ClockBitsIn::MsbPos as u8,
-            8 as u8,
+            7 as u8,
             ClockBits::MsbPosIn as u8,
-            8 as u8,
+            7 as u8,
             42 as u8,
         ]
     );
@@ -162,8 +162,18 @@ fn all_commands_const() {
 }
 
 #[test]
-#[should_panic(expected = "data length cannot exceed u16::MAX + 1")]
-fn clock_data_assert() {
+#[should_panic(expected = "data length must be in 1..=(u16::MAX + 1)")]
+fn clock_data_assert_lower() {
+    mpsse! {
+        let (_data, DATA_READ_LEN) = {
+            clock_data_in(ClockDataIn::MsbPos, 0);
+        };
+    }
+}
+
+#[test]
+#[should_panic(expected = "data length must be in 1..=(u16::MAX + 1)")]
+fn clock_data_assert_upper() {
     mpsse! {
         let (_data, DATA_READ_LEN) = {
             clock_data_in(ClockDataIn::MsbPos, (u16::MAX as usize) + 2);
@@ -172,8 +182,18 @@ fn clock_data_assert() {
 }
 
 #[test]
-#[should_panic(expected = "data length cannot exceed 8")]
-fn clock_bits_out_assert() {
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_out_assert_lower() {
+    mpsse! {
+        let (_data, DATA_READ_LEN) = {
+            clock_bits_out(ClockBitsOut::MsbPos, 42, 0);
+        };
+    }
+}
+
+#[test]
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_out_assert_upper() {
     mpsse! {
         let (_data, DATA_READ_LEN) = {
             clock_bits_out(ClockBitsOut::MsbPos, 42, 9);
@@ -182,8 +202,18 @@ fn clock_bits_out_assert() {
 }
 
 #[test]
-#[should_panic(expected = "data length cannot exceed 8")]
-fn clock_bits_in_assert() {
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_in_assert_lower() {
+    mpsse! {
+        let (_data, DATA_READ_LEN) = {
+            clock_bits_in(ClockBitsIn::MsbPos, 0);
+        };
+    }
+}
+
+#[test]
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_in_assert_upper() {
     mpsse! {
         let (_data, DATA_READ_LEN) = {
             clock_bits_in(ClockBitsIn::MsbPos, 9);
@@ -192,8 +222,18 @@ fn clock_bits_in_assert() {
 }
 
 #[test]
-#[should_panic(expected = "data length cannot exceed 8")]
-fn clock_bits_assert() {
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_assert_lower() {
+    mpsse! {
+        let (_data, DATA_READ_LEN) = {
+            clock_bits(ClockBits::MsbPosIn, 42, 0);
+        };
+    }
+}
+
+#[test]
+#[should_panic(expected = "data length must be in 1..=8")]
+fn clock_bits_assert_upper() {
     mpsse! {
         let (_data, DATA_READ_LEN) = {
             clock_bits(ClockBits::MsbPosIn, 42, 9);
@@ -252,7 +292,7 @@ fn user_abstracted_macro() {
             0x0,
             0xb,
             ClockData::MsbPosIn as u8,
-            4 as u8,
+            3 as u8,
             0 as u8,
             0x42 as u8,
             11 as u8,

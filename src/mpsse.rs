@@ -1589,27 +1589,27 @@ macro_rules! mpsse {
         mpsse!($passthru {$($tail)*} -> [$($out)* $crate::MpsseCmd::WaitOnIOLow as u8,]);
     };
     ($passthru:tt {clock_data_out($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert $passthru, mpsse!(@count_elements $($data,)*) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
+        mpsse!(@assert $passthru, (mpsse!(@count_elements $($data,)*) as usize > 0_usize && mpsse!(@count_elements $($data,)*) as usize <= 65536_usize), "data length must be in 1..=(u16::MAX + 1)");
         mpsse!($passthru {$($tail)*} -> [$($out)* $mode as $crate::ClockDataOut as u8,
-        (mpsse!(@count_elements $($data,)*) & 0xFF_usize) as u8,
-        ((mpsse!(@count_elements $($data,)*) >> 8) & 0xFF_usize) as u8,
+        ((mpsse!(@count_elements $($data,)*) - 1) & 0xFF_usize) as u8,
+        (((mpsse!(@count_elements $($data,)*) - 1) >> 8) & 0xFF_usize) as u8,
         $($data as u8,)*]);
     };
     (($passthru:tt, $read_len:tt) {clock_data_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert ($passthru, $read_len), ($len) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
+        mpsse!(@assert ($passthru, $read_len), (($len) as usize > 0_usize && ($len) as usize <= 65536_usize), "data length must be in 1..=(u16::MAX + 1)");
         mpsse!(($passthru, ($read_len + ($len))) {$($tail)*} -> [$($out)* $mode as $crate::ClockDataIn as u8,
-        (($len) & 0xFF_usize) as u8,
-        ((($len) >> 8) & 0xFF_usize) as u8,]);
+        ((($len) - 1) & 0xFF_usize) as u8,
+        (((($len) - 1) >> 8) & 0xFF_usize) as u8,]);
     };
     (($passthru:tt, $read_len:tt) {const $range_id:ident = clock_data_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $range_id: ::std::ops::Range<usize> = $read_len..$read_len + ($len);
         mpsse!(($passthru, $read_len) {clock_data_in($mode, $len); $($tail)*} -> [$($out)*]);
     };
     (($passthru:tt, $read_len:tt) {clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert ($passthru, $read_len), mpsse!(@count_elements $($data,)*) as usize <= 65536_usize, "data length cannot exceed u16::MAX + 1");
+        mpsse!(@assert ($passthru, $read_len), (mpsse!(@count_elements $($data,)*) as usize > 0_usize && mpsse!(@count_elements $($data,)*) as usize <= 65536_usize), "data length must be in 1..=(u16::MAX + 1)");
         mpsse!(($passthru, ($read_len + mpsse!(@count_elements $($data,)*))) {$($tail)*} -> [$($out)* $mode as $crate::ClockData as u8,
-        (mpsse!(@count_elements $($data,)*) & 0xFF_usize) as u8,
-        ((mpsse!(@count_elements $($data,)*) >> 8) & 0xFF_usize) as u8,
+        ((mpsse!(@count_elements $($data,)*) - 1) & 0xFF_usize) as u8,
+        (((mpsse!(@count_elements $($data,)*) - 1) >> 8) & 0xFF_usize) as u8,
         $($data as u8,)*]);
     };
     (($passthru:tt, $read_len:tt) {const $range_id:ident = clock_data($mode:expr, [$($data:expr),* $(,)*]); $($tail:tt)*} -> [$($out:tt)*]) => {
@@ -1617,20 +1617,20 @@ macro_rules! mpsse {
         mpsse!(($passthru, $read_len) {clock_data($mode, [$($data,)*]); $($tail)*} -> [$($out)*]);
     };
     ($passthru:tt {clock_bits_out($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert $passthru, $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!($passthru {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsOut as u8, $len as u8, $data as u8,]);
+        mpsse!(@assert $passthru, ($len as u8 > 0_u8 && $len as u8 <= 8_u8), "data length must be in 1..=8");
+        mpsse!($passthru {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsOut as u8, (($len) - 1) as u8, $data as u8,]);
     };
     (($passthru:tt, $read_len:tt) {clock_bits_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert ($passthru, $read_len), $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!(($passthru, ($read_len + 1)) {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsIn as u8, $len as u8,]);
+        mpsse!(@assert ($passthru, $read_len), ($len as u8 > 0_u8 && $len as u8 <= 8_u8), "data length must be in 1..=8");
+        mpsse!(($passthru, ($read_len + 1)) {$($tail)*} -> [$($out)* $mode as $crate::ClockBitsIn as u8, (($len) - 1) as u8,]);
     };
     (($passthru:tt, $read_len:tt) {const $idx_id:ident = clock_bits_in($mode:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
         mpsse!(($passthru, $read_len) {clock_bits_in($mode, $len); $($tail)*} -> [$($out)*]);
     };
     (($passthru:tt, $read_len:tt) {clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
-        mpsse!(@assert ($passthru, $read_len), $len as u8 <= 8_u8, "data length cannot exceed 8");
-        mpsse!(($passthru, ($read_len + 1)) {$($tail)*} -> [$($out)* $mode as $crate::ClockBits as u8, $len as u8, $data as u8,]);
+        mpsse!(@assert ($passthru, $read_len), ($len as u8 > 0_u8 && $len as u8 <= 8_u8), "data length must be in 1..=8");
+        mpsse!(($passthru, ($read_len + 1)) {$($tail)*} -> [$($out)* $mode as $crate::ClockBits as u8, (($len) - 1) as u8, $data as u8,]);
     };
     (($passthru:tt, $read_len:tt) {const $idx_id:ident = clock_bits($mode:expr, $data:expr, $len:expr); $($tail:tt)*} -> [$($out:tt)*]) => {
         const $idx_id: usize = $read_len;
