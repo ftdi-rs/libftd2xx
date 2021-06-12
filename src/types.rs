@@ -36,9 +36,12 @@ use libftd2xx_ffi::{
 
 // FT_DEVICE_
 use libftd2xx_ffi::{
-    FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_232H, FT_DEVICE_232R,
+    FT_DEVICE_100AX, FT_DEVICE_2232C, FT_DEVICE_2232H, FT_DEVICE_2232HA, FT_DEVICE_2232HP,
+    FT_DEVICE_2233HP, FT_DEVICE_232H, FT_DEVICE_232HP, FT_DEVICE_232R, FT_DEVICE_233HP,
     FT_DEVICE_4222H_0, FT_DEVICE_4222H_1_2, FT_DEVICE_4222H_3, FT_DEVICE_4222_PROG,
-    FT_DEVICE_4232H, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_UNKNOWN, FT_DEVICE_X_SERIES,
+    FT_DEVICE_4232H, FT_DEVICE_4232HA, FT_DEVICE_4232HP, FT_DEVICE_4233HP, FT_DEVICE_900,
+    FT_DEVICE_930, FT_DEVICE_AM, FT_DEVICE_BM, FT_DEVICE_UMFTPD3A, FT_DEVICE_UNKNOWN,
+    FT_DEVICE_X_SERIES,
 };
 
 // FT_DRIVER_TYPE_
@@ -154,6 +157,17 @@ const DEVICE_4222H_0: u32 = FT_DEVICE_4222H_0 as u32;
 const DEVICE_4222H_1_2: u32 = FT_DEVICE_4222H_1_2 as u32;
 const DEVICE_4222H_3: u32 = FT_DEVICE_4222H_3 as u32;
 const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
+const DEVICE_900: u32 = FT_DEVICE_900 as u32;
+const DEVICE_930: u32 = FT_DEVICE_930 as u32;
+const DEVICE_UMFTPD3A: u32 = FT_DEVICE_UMFTPD3A as u32;
+const DEVICE_2233HP: u32 = FT_DEVICE_2233HP as u32;
+const DEVICE_4233HP: u32 = FT_DEVICE_4233HP as u32;
+const DEVICE_2232HP: u32 = FT_DEVICE_2232HP as u32;
+const DEVICE_4232HP: u32 = FT_DEVICE_4232HP as u32;
+const DEVICE_233HP: u32 = FT_DEVICE_233HP as u32;
+const DEVICE_232HP: u32 = FT_DEVICE_232HP as u32;
+const DEVICE_2232HA: u32 = FT_DEVICE_2232HA as u32;
+const DEVICE_4232HA: u32 = FT_DEVICE_4232HA as u32;
 
 /// FTDI device types.
 ///
@@ -209,6 +223,28 @@ pub enum DeviceType {
     FT4222H_3 = DEVICE_4222H_3,
     /// FT4222 device.
     FT4222_PROG = DEVICE_4222_PROG,
+    /// FT900 device.
+    FT900 = DEVICE_900,
+    /// FT930 device.
+    FT930 = DEVICE_930,
+    /// FTUMFTPD3A device.
+    FTUMFTPD3A = DEVICE_UMFTPD3A,
+    /// FT2233HP device.
+    FT2233HP = DEVICE_2233HP,
+    /// FT4233HP device.
+    FT4233HP = DEVICE_4233HP,
+    /// FT2232HP device.
+    FT2232HP = DEVICE_2232HP,
+    /// FT4232HP device.
+    FT4232HP = DEVICE_4232HP,
+    /// FT233HP device.
+    FT233HP = DEVICE_233HP,
+    /// FT232HP device.
+    FT232HP = DEVICE_232HP,
+    /// FT2232HA device.
+    FT2232HA = DEVICE_2232HA,
+    /// FT4232HA device.
+    FT4232HA = DEVICE_4232HA,
 }
 
 impl DeviceType {
@@ -669,6 +705,12 @@ impl TryFrom<u8> for DriverType {
     }
 }
 
+impl From<DriverType> for u8 {
+    fn from(dt: DriverType) -> Self {
+        dt as u8
+    }
+}
+
 /// FTDI pin drive currents.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
@@ -1043,7 +1085,29 @@ impl Default for Eeprom232h {
             common: header.0,
             ACDriveCurrent: 4,
             ADDriveCurrent: 4,
-            ..FT_EEPROM_232H::default()
+            ACSlowSlew: 0,
+            ACSchmittInput: 0,
+            ADSlowSlew: 0,
+            ADSchmittInput: 0,
+            Cbus0: 0,
+            Cbus1: 0,
+            Cbus2: 0,
+            Cbus3: 0,
+            Cbus4: 0,
+            Cbus5: 0,
+            Cbus6: 0,
+            Cbus7: 0,
+            Cbus8: 0,
+            Cbus9: 0,
+            FT1248Cpol: 0,
+            FT1248Lsb: 0,
+            FT1248FlowControl: 0,
+            IsFifo: 0,
+            IsFifoTar: 0,
+            IsFastSer: 0,
+            IsFT1248: 0,
+            PowerSaveEnable: 0,
+            DriverType: DriverType::D2XX.into(),
         })
     }
 }
@@ -1080,7 +1144,23 @@ impl Default for Eeprom2232h {
             BLDriveCurrent: 4,
             AHDriveCurrent: 4,
             BHDriveCurrent: 4,
-            ..FT_EEPROM_2232H::default()
+            ALSlowSlew: 0,
+            ALSchmittInput: 0,
+            AHSlowSlew: 0,
+            AHSchmittInput: 0,
+            BLSlowSlew: 0,
+            BLSchmittInput: 0,
+            BHSlowSlew: 0,
+            BHSchmittInput: 0,
+            AIsFifo: 0,
+            AIsFifoTar: 0,
+            AIsFastSer: 0,
+            BIsFifo: 0,
+            BIsFifoTar: 0,
+            BIsFastSer: 0,
+            PowerSaveEnable: 0,
+            ADriverType: DriverType::D2XX.into(),
+            BDriverType: DriverType::D2XX.into(),
         })
     }
 }
@@ -1129,7 +1209,22 @@ impl Default for Eeprom4232h {
             BDriveCurrent: 4,
             CDriveCurrent: 4,
             DDriveCurrent: 4,
-            ..FT_EEPROM_4232H::default()
+            ASlowSlew: 0,
+            ASchmittInput: 0,
+            BSlowSlew: 0,
+            BSchmittInput: 0,
+            CSlowSlew: 0,
+            CSchmittInput: 0,
+            DSlowSlew: 0,
+            DSchmittInput: 0,
+            ARIIsTXDEN: 0,
+            BRIIsTXDEN: 0,
+            CRIIsTXDEN: 0,
+            DRIIsTXDEN: 0,
+            ADriverType: DriverType::D2XX.into(),
+            BDriverType: DriverType::D2XX.into(),
+            CDriverType: DriverType::D2XX.into(),
+            DDriverType: DriverType::D2XX.into(),
         })
     }
 }

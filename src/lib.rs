@@ -139,7 +139,7 @@ use libftd2xx_ffi::{
 #[cfg(target_os = "windows")]
 use libftd2xx_ffi::{FT_CyclePort, FT_GetComPortNumber, FT_Rescan, FT_ResetPort};
 
-#[cfg(any(target_os = "linux", target_os = "mac"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
 
 use log::trace;
@@ -1853,7 +1853,7 @@ pub trait FtdiCommon {
 
 /// FTDI device-specific EEPROM trait.
 pub trait FtdiEeprom<
-    T: Default + std::fmt::Debug + std::convert::From<Eeprom>,
+    T: std::fmt::Debug + std::convert::From<Eeprom>,
     Eeprom: Default + std::fmt::Debug + std::convert::From<T>,
 >: FtdiCommon
 {
