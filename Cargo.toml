@@ -18,9 +18,9 @@ maintenance = { status = "experimental" }
 static = ["libftd2xx-ffi/static"]
 
 [dependencies]
-libftd2xx-ffi = "~0.7.0"
+libftd2xx-ffi = "~0.8.0"
 log = "~0.4.11"
-paste = "^1.0.0"
+paste = "^1"
 
 [dev-dependencies]
 version-sync = "~0.9.2"
