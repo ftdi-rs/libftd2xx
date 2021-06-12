@@ -15,6 +15,8 @@ jobs:
   linux_build:
     name: Linux Build
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
     strategy:
       matrix:
         target:
@@ -28,7 +30,20 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }}
+
+  macos_build:
+    name: Mac Build
+    runs-on: macos-10.15
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-apple-darwin
+      - run: cargo build --target x86_64-apple-darwin
 
   windows_build:
     name: Windows Build
@@ -46,6 +61,8 @@ jobs:
   linux_test:
     name: Linux Unit Tests
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
     strategy:
       matrix:
         target: ["x86_64-unknown-linux-musl", "x86_64-unknown-linux-gnu"]
@@ -57,9 +74,24 @@ jobs:
           target: ${{ matrix.target }}
       - run: cargo test --all-features --target ${{ matrix.target }}
 
+  macos_test:
+    name: Mac Test
+    runs-on: macos-10.15
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-apple-darwin
+      - run: cargo test --target x86_64-apple-darwin
+
   windows_test:
     name: Windows Unit Tests
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -85,12 +117,14 @@ jobs:
   docs:
     name: docs
     runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: RUSTDOCFLAGS="-D warnings" cargo doc
+      - run: cargo doc
 
   format_check:
     name: Rust Format
