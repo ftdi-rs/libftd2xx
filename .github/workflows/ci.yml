@@ -146,6 +146,8 @@ jobs:
       - format_check
       - linux_build
       - linux_test
+      - macos_build
+      - macos_test
       - windows_build
       - windows_test
     runs-on: ubuntu-latest
