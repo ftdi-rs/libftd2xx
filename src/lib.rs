@@ -8,10 +8,9 @@
 //!
 //! ```toml
 //! [dependencies.libftd2xx]
-//! version = "~0.30.0"
+//! version = "~0.31.0"
 //! # statically link the vendor library, defaults to dynamic if not set
-//! # this will make things "just work" on Linux
-//! # not recommended on Windows due to legacy library requirements
+//! # this will make things "just work" on Linux and Windows
 //! features = ["static"]
 //! ```
 //!
@@ -59,21 +58,15 @@
 //! The shared object `libftd2xx.so` must exist on your system.
 //! See [FTDI Drivers Installation Guide for Linux] for instructions.
 //!
-//! ### Static Linking on Linux
-//!
-//! No special considerations are needed, the static library is distributed with
-//! permission from FTDI in the [libftd2xx-ffi] crate.
-//!
 //! ### Dynamic Linking on Windows
 //!
 //! The FTD2XX DLL must exist on your system PATH.
 //! The easiest way to install this is with the vendor provided [setup executable].
 //!
-//! ### Static Linking on Windows
+//! ### Static Linking on Linux or Windows
 //!
-//! You must set the "LIBMSVC_PATH" environment variable to link with
-//! `legacy_stdio_definitions.lib` (vendor library requirement).
-//! See [libftd2xx-ffi] for more information.
+//! No special considerations are needed, the static library is distributed with
+//! permission from FTDI in the [libftd2xx-ffi] crate.
 //!
 //! # References
 //!
@@ -99,7 +92,7 @@
 //! [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
 //! [`embedded-hal`]: https://crates.io/crates/embedded-hal
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.30.0")]
+#![doc(html_root_url = "https://docs.rs/libftd2xx/0.31.0")]
 #![deny(missing_docs)]
 
 mod errors;

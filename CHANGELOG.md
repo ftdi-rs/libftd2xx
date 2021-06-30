@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2021-06-30
+### Added
+- Added compile-time MPSSE command construction macros.
+
+### Changed
+- Updated `libftd2xx-ffi` dependency from `0.8.0` to `0.8.3`.
+
 ## [0.30.0] - 2021-06-12
 ### Added
 - Added support for `x86_64-apple-darwin`, dynamic linking only.
@@ -121,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.30.0...HEAD
+[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.31.0...HEAD
+[0.31.0]: https://github.com/newAM/libftd2xx-rs/compare/0.30.0...0.31.0
 [0.30.0]: https://github.com/newAM/libftd2xx-rs/compare/0.29.0...0.30.0
 [0.29.0]: https://github.com/newAM/libftd2xx-rs/compare/0.28.0...0.29.0
 [0.28.0]: https://github.com/newAM/libftd2xx-rs/compare/0.27.0...0.28.0
