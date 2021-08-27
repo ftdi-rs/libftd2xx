@@ -99,10 +99,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-pub use mpsse::{
-    ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, FtdiMpsse,
-    Ftx232hMpsse, MpsseCmd, MpsseCmdBuilder, MpsseSettings,
-};
+pub use mpsse::{FtdiMpsse, Ftx232hMpsse};
 
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
@@ -114,6 +111,11 @@ pub use types::{
 
 mod util;
 use util::slice_into_string;
+
+pub use ftdi_mpsse::{
+    ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, MpsseCmd,
+    MpsseCmdBuilder, MpsseSettings,
+};
 
 use libftd2xx_ffi::{
     FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
