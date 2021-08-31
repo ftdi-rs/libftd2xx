@@ -114,7 +114,7 @@ use util::slice_into_string;
 
 pub use ftdi_mpsse::{
     ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, MpsseCmd,
-    MpsseCmdBuilder, MpsseSettings,
+    MpsseCmdBuilder, MpsseCmdExecutor, MpsseSettings,
 };
 
 use libftd2xx_ffi::{
@@ -2240,6 +2240,22 @@ macro_rules! impl_boilerplate_for {
 
             fn device_type(&mut self) -> Result<DeviceType, FtStatus> {
                 Ok(Self::DEVICE_TYPE)
+            }
+        }
+
+        impl MpsseCmdExecutor for $DEVICE {
+            type Error = TimeoutError;
+
+            fn init(&mut self, settings: &MpsseSettings) -> Result<(), Self::Error> {
+                self.initialize_mpsse(settings)
+            }
+
+            fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
+                self.write_all(data)
+            }
+
+            fn recv(&mut self, data: &mut [u8]) -> Result<(), Self::Error> {
+                self.read_all(data)
             }
         }
     };
