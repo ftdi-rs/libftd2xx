@@ -3,7 +3,7 @@
 use super::{BitMode, DeviceType, FtStatus, FtdiCommon, TimeoutError};
 use ftdi_mpsse::mpsse;
 use ftdi_mpsse::{ClockData, ClockDataIn, ClockDataOut};
-use ftdi_mpsse::{MpsseCmd, MpsseCmdBuilder, MpsseSettings};
+use ftdi_mpsse::{MpsseCmdBuilder, MpsseSettings};
 use std::convert::From;
 
 // seemingly arbitrary values from libmpsse
@@ -29,7 +29,7 @@ fn check_limits(device: DeviceType, frequency: u32, max: u32) {
 }
 
 // calculate the clock divisor from a frequency
-fn clock_divisor(device: DeviceType, frequency: u32) -> (u32, Option<MpsseCmd>) {
+fn clock_divisor(device: DeviceType, frequency: u32) -> (u32, Option<bool>) {
     match device {
         // FT2232D appears as FT2232C in FTD2XX
         DeviceType::FT2232C => {
@@ -39,12 +39,9 @@ fn clock_divisor(device: DeviceType, frequency: u32) -> (u32, Option<MpsseCmd>) 
         DeviceType::FT2232H | DeviceType::FT4232H | DeviceType::FT232H => {
             check_limits(device, frequency, 30_000_000);
             if frequency <= 6_000_000 {
-                (6_000_000 / frequency - 1, Some(MpsseCmd::EnableClockDivide))
+                (6_000_000 / frequency - 1, Some(true))
             } else {
-                (
-                    30_000_000 / frequency - 1,
-                    Some(MpsseCmd::DisableClockDivide),
-                )
+                (30_000_000 / frequency - 1, Some(false))
             }
         }
         _ => panic!("Unknown device type: {:?}", device),
@@ -76,30 +73,20 @@ mod clock_divisor {
 
     pos!(ft232c_min, DeviceType::FT2232C, 92, (65216, None));
     pos!(ft232c_max, DeviceType::FT2232C, 6_000_000, (0, None));
-    pos!(
-        min,
-        DeviceType::FT2232H,
-        92,
-        (65216, Some(MpsseCmd::EnableClockDivide))
-    );
+    pos!(min, DeviceType::FT2232H, 92, (65216, Some(true)));
     pos!(
         max_with_div,
         DeviceType::FT2232H,
         6_000_000,
-        (0, Some(MpsseCmd::EnableClockDivide))
+        (0, Some(true))
     );
     pos!(
         min_without_div,
         DeviceType::FT2232H,
         6_000_001,
-        (3, Some(MpsseCmd::DisableClockDivide))
+        (3, Some(false))
     );
-    pos!(
-        max,
-        DeviceType::FT4232H,
-        30_000_000,
-        (0, Some(MpsseCmd::DisableClockDivide))
-    );
+    pos!(max, DeviceType::FT4232H, 30_000_000, (0, Some(false)));
 
     neg!(panic_unknown, DeviceType::Unknown, 1_000);
     neg!(panic_ft232c_min, DeviceType::FT2232C, 91);
@@ -136,20 +123,11 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn set_clock(&mut self, frequency: u32) -> Result<(), TimeoutError> {
-        let (value, divisor) = clock_divisor(Self::DEVICE_TYPE, frequency);
-        debug_assert!(value <= 0xFFFF);
+        let (divisor, clkdiv) = clock_divisor(Self::DEVICE_TYPE, frequency);
+        debug_assert!(divisor <= 0xFFFF);
 
-        let mut buf: Vec<u8> = Vec::new();
-
-        if let Some(div) = divisor {
-            buf.push(div.into());
-        };
-
-        buf.push(MpsseCmd::SetClockFrequency.into());
-        buf.push((value & 0xFF) as u8);
-        buf.push(((value >> 8) & 0xFF) as u8);
-
-        self.write_all(&buf.as_slice())
+        let cmd = MpsseCmdBuilder::new().set_clock(divisor, clkdiv);
+        self.write_all(cmd.as_slice())
     }
 
     /// Initialize the MPSSE.
