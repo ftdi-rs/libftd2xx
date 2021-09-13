@@ -1,6 +1,7 @@
 #![deny(missing_docs, unsafe_code)]
 
 use super::{BitMode, DeviceType, FtStatus, FtdiCommon, TimeoutError};
+use ftdi_mpsse::mpsse;
 use ftdi_mpsse::{ClockData, ClockDataIn, ClockDataOut};
 use ftdi_mpsse::{MpsseCmd, MpsseCmdBuilder, MpsseSettings};
 use std::convert::From;
@@ -267,8 +268,11 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn enable_loopback(&mut self) -> Result<(), TimeoutError> {
-        let cmd = MpsseCmdBuilder::new().enable_loopback();
-        self.write_all(cmd.as_slice())
+        mpsse! {
+            let cmd = { enable_loopback(); };
+        }
+
+        self.write_all(&cmd)
     }
 
     /// Disable the MPSSE loopback state.
@@ -284,8 +288,11 @@ pub trait FtdiMpsse: FtdiCommon {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn disable_loopback(&mut self) -> Result<(), TimeoutError> {
-        let cmd = MpsseCmdBuilder::new().disable_loopback();
-        self.write_all(cmd.as_slice())
+        mpsse! {
+            let cmd = { disable_loopback(); };
+        }
+
+        self.write_all(&cmd)
     }
 
     /// Set the pin direction and state of the lower byte (0-7) GPIO pins on the
@@ -476,8 +483,11 @@ pub trait Ftx232hMpsse: FtdiMpsse {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn enable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
-        let cmd = MpsseCmdBuilder::new().enable_3phase_data_clocking();
-        self.write_all(cmd.as_slice())
+        mpsse! {
+            let cmd = { enable_3phase_data_clocking(); };
+        }
+
+        self.write_all(&cmd)
     }
 
     /// Disable 3 phase data clocking.
@@ -500,7 +510,10 @@ pub trait Ftx232hMpsse: FtdiMpsse {
     /// # Ok::<(), std::boxed::Box<dyn std::error::Error>>(())
     /// ```
     fn disable_3phase_data_clocking(&mut self) -> Result<(), TimeoutError> {
-        let cmd = MpsseCmdBuilder::new().disable_3phase_data_clocking();
-        self.write_all(cmd.as_slice())
+        mpsse! {
+            let cmd = { disable_3phase_data_clocking(); };
+        }
+
+        self.write_all(&cmd)
     }
 }
