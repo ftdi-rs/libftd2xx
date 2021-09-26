@@ -86,7 +86,7 @@
 //! [D2xx Programmers Guide V1.4]: https://ftdichip.com/document/programming-guides/
 //! [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 //! [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
-//! [libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
+//! [libftd2xx-ffi]: https://github.com/ftdi-rs/libftd2xx-ffi
 //! [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 //! [udev]: https://en.wikipedia.org/wiki/Udev
 //! [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
@@ -575,7 +575,7 @@ pub trait FtdiCommon {
     /// vendor driver that also return this code.
     ///
     /// This is not a native function in `libftd2xx`, this works around a bug in
-    /// `libftd2xx`, see <https://github.com/newAM/libftd2xx-rs/pull/37> for more
+    /// `libftd2xx`, see <https://github.com/ftdi-rs/libftd2xx/pull/37> for more
     /// information.
     ///
     /// # Example

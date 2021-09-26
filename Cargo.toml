@@ -1,13 +1,13 @@
 [package]
 name = "libftd2xx"
 version = "0.31.0" # remember to update html_root_url
-authors = ["Alex M. <alexmgit@protonmail.com>"]
+authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2018"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
 keywords = ["ftdi", "usb"]
 categories = ["api-bindings", "hardware-support"]
 readme = "README.md"
-repository = "https://github.com/newAM/libftd2xx-rs/"
+repository = "https://github.com/ftdi-rs/libftd2xx/"
 documentation = "https://docs.rs/libftd2xx"
 license = "MIT"
 
