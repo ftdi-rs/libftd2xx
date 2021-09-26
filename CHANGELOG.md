@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Added `Drop` for FTDI types that will call `close`.
+
+### Changed
+- Moved FTDI MPSSE types to a separate crate, [ftdi-mpsse].
+  These types are re-exported by this crate to reduce the number of breaking
+  changes.
+
 ## [0.31.0] - 2021-06-30
 ### Added
 - Added compile-time MPSSE command construction macros.
@@ -148,3 +157,4 @@ A changelog was not kept for prior releases.
 [0.18.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.17.0...0.18.0
 [0.17.0]: https://github.com/ftdi-rs/libftd2xx/releases/tag/0.17.0
 [resolver version]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
+[ftdi-mpsse]: https://github.com/ftdi-rs/ftdi-mpsse
