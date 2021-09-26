@@ -99,10 +99,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-pub use mpsse::{
-    ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, FtdiMpsse,
-    Ftx232hMpsse, MpsseCmd, MpsseCmdBuilder, MpsseSettings,
-};
+pub use mpsse::{FtdiMpsse, Ftx232hMpsse};
 
 mod types;
 use types::{vid_pid_from_id, STRING_LEN};
@@ -114,6 +111,11 @@ pub use types::{
 
 mod util;
 use util::slice_into_string;
+
+pub use ftdi_mpsse::{
+    ClockBits, ClockBitsIn, ClockBitsOut, ClockData, ClockDataIn, ClockDataOut, MpsseCmd,
+    MpsseCmdBuilder, MpsseCmdExecutor, MpsseSettings,
+};
 
 use libftd2xx_ffi::{
     FT_Close, FT_ClrDtr, FT_ClrRts, FT_CreateDeviceInfoList, FT_EEPROM_Program, FT_EEPROM_Read,
@@ -518,7 +520,7 @@ pub struct Ftdi {
 /// ```
 #[derive(Debug)]
 pub struct Ft232h {
-    handle: FT_HANDLE,
+    ftdi: Ftdi,
 }
 
 /// FT2232H device.
@@ -536,7 +538,7 @@ pub struct Ft232h {
 /// ```
 #[derive(Debug)]
 pub struct Ft2232h {
-    handle: FT_HANDLE,
+    ftdi: Ftdi,
 }
 
 /// FT4232H device.
@@ -554,7 +556,7 @@ pub struct Ft2232h {
 /// ```
 #[derive(Debug)]
 pub struct Ft4232h {
-    handle: FT_HANDLE,
+    ftdi: Ftdi,
 }
 
 /// FTD2XX functions common to all devices.
@@ -2073,7 +2075,9 @@ impl Ft232h {
     /// ```
     pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft232h, FtStatus> {
         let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
-        Ok(Ft232h { handle })
+        Ok(Ft232h {
+            ftdi: Ftdi { handle },
+        })
     }
 
     /// Open a `Ft232h` device and initialize the handle.
@@ -2124,7 +2128,9 @@ impl Ft2232h {
     /// ```
     pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft2232h, FtStatus> {
         let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
-        Ok(Ft2232h { handle })
+        Ok(Ft2232h {
+            ftdi: Ftdi { handle },
+        })
     }
 
     /// Open a `Ft2232h` device and initialize the handle.
@@ -2175,7 +2181,9 @@ impl Ft4232h {
     /// ```
     pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft4232h, FtStatus> {
         let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
-        Ok(Ft4232h { handle })
+        Ok(Ft4232h {
+            ftdi: Ftdi { handle },
+        })
     }
 
     /// Open a `Ft4232h` device and initialize the handle.
@@ -2215,17 +2223,39 @@ impl FtdiCommon for Ftdi {
     }
 }
 
+impl Drop for Ftdi {
+    fn drop(&mut self) {
+        self.close().ok();
+    }
+}
+
 macro_rules! impl_boilerplate_for {
     ($DEVICE:ident, $TYPE:expr) => {
         impl FtdiCommon for $DEVICE {
             const DEVICE_TYPE: DeviceType = $TYPE;
 
             fn handle(&mut self) -> FT_HANDLE {
-                self.handle
+                self.ftdi.handle
             }
 
             fn device_type(&mut self) -> Result<DeviceType, FtStatus> {
                 Ok(Self::DEVICE_TYPE)
+            }
+        }
+
+        impl MpsseCmdExecutor for $DEVICE {
+            type Error = TimeoutError;
+
+            fn init(&mut self, settings: &MpsseSettings) -> Result<(), Self::Error> {
+                self.initialize_mpsse(settings)
+            }
+
+            fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
+                self.write_all(data)
+            }
+
+            fn recv(&mut self, data: &mut [u8]) -> Result<(), Self::Error> {
+                self.read_all(data)
             }
         }
     };
@@ -2244,9 +2274,7 @@ macro_rules! impl_try_from_for {
                         detected: device_type,
                     })
                 } else {
-                    Ok($DEVICE {
-                        handle: ft.handle(),
-                    })
+                    Ok($DEVICE { ftdi: ft })
                 }
             }
         }
