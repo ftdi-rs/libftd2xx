@@ -128,23 +128,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/newAM/libftd2xx-rs/compare/0.31.0...HEAD
-[0.31.0]: https://github.com/newAM/libftd2xx-rs/compare/0.30.0...0.31.0
-[0.30.0]: https://github.com/newAM/libftd2xx-rs/compare/0.29.0...0.30.0
-[0.29.0]: https://github.com/newAM/libftd2xx-rs/compare/0.28.0...0.29.0
-[0.28.0]: https://github.com/newAM/libftd2xx-rs/compare/0.27.0...0.28.0
-[0.27.0]: https://github.com/newAM/libftd2xx-rs/compare/0.26.0...0.27.0
-[0.26.0]: https://github.com/newAM/libftd2xx-rs/compare/0.25.1...0.26.0
-[0.25.1]: https://github.com/newAM/libftd2xx-rs/compare/0.25.0...0.25.1
-[0.25.0]: https://github.com/newAM/libftd2xx-rs/compare/0.24.1...0.25.0
-[0.24.1]: https://github.com/newAM/libftd2xx-rs/compare/0.24.0...0.24.1
-[0.24.0]: https://github.com/newAM/libftd2xx-rs/compare/0.23.0...0.24.0
-[0.23.0]: https://github.com/newAM/libftd2xx-rs/compare/0.22.0...0.23.0
-[0.22.0]: https://github.com/newAM/libftd2xx-rs/compare/0.21.1...0.22.0
-[0.21.1]: https://github.com/newAM/libftd2xx-rs/compare/0.21.0...0.21.1
-[0.21.0]: https://github.com/newAM/libftd2xx-rs/compare/0.20.0...0.21.0
-[0.20.0]: https://github.com/newAM/libftd2xx-rs/compare/0.19.0...0.20.0
-[0.19.0]: https://github.com/newAM/libftd2xx-rs/compare/0.18.0...0.19.0
-[0.18.0]: https://github.com/newAM/libftd2xx-rs/compare/0.17.0...0.18.0
-[0.17.0]: https://github.com/newAM/libftd2xx-rs/releases/tag/0.17.0
+[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.31.0...HEAD
+[0.31.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.30.0...0.31.0
+[0.30.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.29.0...0.30.0
+[0.29.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.28.0...0.29.0
+[0.28.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.27.0...0.28.0
+[0.27.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.26.0...0.27.0
+[0.26.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.25.1...0.26.0
+[0.25.1]: https://github.com/ftdi-rs/libftd2xx/compare/0.25.0...0.25.1
+[0.25.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.24.1...0.25.0
+[0.24.1]: https://github.com/ftdi-rs/libftd2xx/compare/0.24.0...0.24.1
+[0.24.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.23.0...0.24.0
+[0.23.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.22.0...0.23.0
+[0.22.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.21.1...0.22.0
+[0.21.1]: https://github.com/ftdi-rs/libftd2xx/compare/0.21.0...0.21.1
+[0.21.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.20.0...0.21.0
+[0.20.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.19.0...0.20.0
+[0.19.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.18.0...0.19.0
+[0.18.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.17.0...0.18.0
+[0.17.0]: https://github.com/ftdi-rs/libftd2xx/releases/tag/0.17.0
 [resolver version]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions

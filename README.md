@@ -1,7 +1,7 @@
 ![Maintenance](https://img.shields.io/badge/maintenance-experimental-blue.svg)
 [![crates.io](https://img.shields.io/crates/v/libftd2xx.svg)](https://crates.io/crates/libftd2xx)
 [![docs.rs](https://docs.rs/libftd2xx/badge.svg)](https://docs.rs/libftd2xx/)
-[![CI](https://github.com/newAM/libftd2xx-rs/workflows/CI/badge.svg)](https://github.com/newAM/libftd2xx-rs/actions)
+[![CI](https://github.com/ftdi-rs/libftd2xx/workflows/CI/badge.svg)](https://github.com/ftdi-rs/libftd2xx/actions)
 
 # libftd2xx
 
@@ -92,7 +92,7 @@ See [FTDI Drivers Installation Guide for Linux] for more details.
 [D2xx Programmers Guide V1.4]: https://ftdichip.com/document/programming-guides/
 [FTDI D2XX drivers]: https://www.ftdichip.com/Drivers/D2XX.htm
 [FTDI Drivers Installation Guide for Linux]: http://www.ftdichip.cn/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux.pdf
-[libftd2xx-ffi]: https://github.com/newAM/libftd2xx-ffi-rs
+[libftd2xx-ffi]: https://github.com/ftdi-rs/libftd2xx-ffi
 [setup executable]: https://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip
 [udev]: https://en.wikipedia.org/wiki/Udev
 [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
