@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies.libftd2xx]
-//! version = "~0.31.0"
+//! version = "0.32"
 //! # statically link the vendor library, defaults to dynamic if not set
 //! # this will make things "just work" on Linux and Windows
 //! features = ["static"]
@@ -92,7 +92,6 @@
 //! [`ftd2xx-embedded-hal`]: https://crates.io/crates/ftd2xx-embedded-hal
 //! [`embedded-hal`]: https://crates.io/crates/embedded-hal
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_root_url = "https://docs.rs/libftd2xx/0.31.0")]
 #![deny(missing_docs)]
 
 mod errors;
