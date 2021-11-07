@@ -15,7 +15,7 @@ Simply add this crate as a dependency in your `Cargo.toml`.
 
 ```toml
 [dependencies.libftd2xx]
-version = "~0.31.0"
+version = "0.32"
 # statically link the vendor library, defaults to dynamic if not set
 # this will make things "just work" on Linux and Windows
 features = ["static"]
