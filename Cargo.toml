@@ -1,7 +1,7 @@
 [package]
 name = "libftd2xx"
 version = "0.32.0"
-authors = ["Alex Martens <alexmgit@protonmail.com>"]
+authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2018"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
 keywords = ["ftdi", "usb"]
