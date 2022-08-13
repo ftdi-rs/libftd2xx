@@ -317,7 +317,7 @@ impl From<u32> for DeviceType {
 /// This is returned by [`library_version`] and [`driver_version`].
 ///
 /// [`library_version`]: crate::library_version
-/// [`driver_version`]: crate::Ftdi::driver_version
+/// [`driver_version`]: crate::FtdiCommon::driver_version
 /// [SemVer]: https://semver.org/
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Version {
@@ -442,7 +442,7 @@ impl Version {
 ///
 /// This structure is passed to [`set_bit_mode`] to set the bit mode.
 ///
-/// [`set_bit_mode`]: crate::Ftdi::set_bit_mode
+/// [`set_bit_mode`]: crate::FtdiCommon::set_bit_mode
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum BitMode {
@@ -599,7 +599,7 @@ impl ModemStatus {
 /// This is returned by [`list_devices`] and [`device_info`].
 ///
 /// [`list_devices`]: crate::list_devices
-/// [`device_info`]: crate::Ftdi::device_info
+/// [`device_info`]: crate::FtdiCommon::device_info
 #[derive(Clone, Eq, PartialEq, Default, Ord, PartialOrd)]
 pub struct DeviceInfo {
     /// `true` if the port is open.
@@ -609,7 +609,7 @@ pub struct DeviceInfo {
     /// This will be `None` when getting the information of an open device with
     /// the [`device_info`] function.
     ///
-    /// [`device_info`]: crate::Ftdi::device_info
+    /// [`device_info`]: crate::FtdiCommon::device_info
     pub speed: Option<Speed>,
     /// FTDI device type.
     pub device_type: DeviceType,
