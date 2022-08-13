@@ -137,7 +137,6 @@ use libftd2xx_ffi::{FT_CyclePort, FT_GetComPortNumber, FT_Rescan, FT_ResetPort};
 use libftd2xx_ffi::{FT_GetVIDPID, FT_SetVIDPID};
 
 use log::trace;
-use std::convert::{TryFrom, TryInto};
 use std::ffi::c_void;
 use std::fs;
 use std::io;
@@ -512,7 +511,6 @@ pub struct Ftdi {
 ///
 /// ```no_run
 /// use libftd2xx::{Ft232h, Ftdi};
-/// use std::convert::TryInto;
 ///
 /// let ft232h: Ft232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
@@ -530,7 +528,6 @@ pub struct Ft232h {
 ///
 /// ```no_run
 /// use libftd2xx::{Ft2232h, Ftdi};
-/// use std::convert::TryInto;
 ///
 /// let ft4232h: Ft2232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
@@ -548,7 +545,6 @@ pub struct Ft2232h {
 ///
 /// ```no_run
 /// use libftd2xx::{Ft4232h, Ftdi};
-/// use std::convert::TryInto;
 ///
 /// let ft4232h: Ft4232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
@@ -1855,7 +1851,6 @@ pub trait FtdiEeprom<
     ///
     /// ```no_run
     /// use libftd2xx::{Ft4232h, Ftdi, FtdiEeprom};
-    /// use std::convert::TryInto;
     ///
     /// let mut ft: Ft4232h = Ftdi::new()?.try_into()?;
     /// let (eeprom, eeprom_strings) = ft.eeprom_read()?;
