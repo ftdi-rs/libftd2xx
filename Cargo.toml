@@ -2,7 +2,7 @@
 name = "libftd2xx"
 version = "0.32.0"
 authors = ["Alex Martens <alex@thinglab.org>"]
-edition = "2018"
+edition = "2021"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
 keywords = ["ftdi", "usb"]
 categories = ["api-bindings", "hardware-support"]

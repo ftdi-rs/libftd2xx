@@ -52,7 +52,7 @@ use libftd2xx_ffi::{FT_EEPROM_2232H, FT_EEPROM_232H, FT_EEPROM_4232H, FT_EEPROM_
 
 use super::{EepromStringsError, EepromValueError};
 use crate::util::slice_into_string;
-use std::{convert::TryFrom, fmt};
+use std::fmt;
 
 /// Maximum length of common FTDI strings.
 pub const STRING_LEN: usize = 64;

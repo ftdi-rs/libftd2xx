@@ -7,7 +7,6 @@
 //! [MPSSE Basics]: https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf
 #![deny(unsafe_code, warnings)]
 use libftd2xx::{BitMode, Ft232h, Ftdi, FtdiCommon, FtdiMpsse};
-use std::convert::TryInto;
 use std::error::Error;
 use std::time::Duration;
 
