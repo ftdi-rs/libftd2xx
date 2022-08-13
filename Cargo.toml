@@ -11,9 +11,6 @@ repository = "https://github.com/ftdi-rs/libftd2xx/"
 documentation = "https://docs.rs/libftd2xx"
 license = "MIT"
 
-[badges]
-maintenance = { status = "experimental" }
-
 [features]
 static = ["libftd2xx-ffi/static"]
 

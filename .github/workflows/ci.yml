@@ -26,24 +26,20 @@ jobs:
           - "x86_64-unknown-linux-musl"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }}
 
   macos_build:
     name: Mac Build
-    runs-on: macos-10.15
+    runs-on: macos-12
     env:
       RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-apple-darwin
-      - run: cargo build --target x86_64-apple-darwin
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build
 
   windows_build:
     name: Windows Build
@@ -52,10 +48,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-pc-windows-msvc
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo build
 
   linux_test:
@@ -68,24 +61,20 @@ jobs:
         target: ["x86_64-unknown-linux-musl", "x86_64-unknown-linux-gnu"]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
       - run: cargo test --all-features --target ${{ matrix.target }}
 
   macos_test:
     name: Mac Test
-    runs-on: macos-10.15
+    runs-on: macos-12
     env:
       RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-apple-darwin
-      - run: cargo test --target x86_64-apple-darwin
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test
 
   windows_test:
     name: Windows Unit Tests
@@ -94,10 +83,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-pc-windows-msvc
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo test
 
   clippy_check:
@@ -105,14 +91,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: clippy
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+      - run: cargo clippy --all-features -- --deny warnings
 
   docs:
     name: docs
@@ -121,9 +103,7 @@ jobs:
       RUSTDOCFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo doc
 
   format_check:
@@ -131,11 +111,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
           components: rustfmt
-      - run: cargo fmt -- --check
+      - run: cargo +nightly fmt -- --check
 
   release:
     name: crates.io release
@@ -153,9 +132,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo publish --token ${CRATES_IO_TOKEN}
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
