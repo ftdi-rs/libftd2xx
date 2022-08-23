@@ -2223,6 +2223,15 @@ impl Drop for Ftdi {
     }
 }
 
+// Safety: Unfortunatly there is no clear statement about the thread safety of
+// the D2XX library in the official programming guide. But there are mentions
+// about thread-safety fixes in the release notes of the driver, which suggests
+// that the library is indeed thread synchronized. It would also be quite
+// strange if the D2XX driver could not be used across threads, but the VCP
+// driver can.
+unsafe impl Send for Ftdi {}
+unsafe impl Sync for Ftdi {}
+
 macro_rules! impl_boilerplate_for {
     ($DEVICE:ident, $TYPE:expr) => {
         impl FtdiCommon for $DEVICE {
