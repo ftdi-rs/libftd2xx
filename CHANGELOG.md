@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Updated the edition from 2018 to 2021.
+- Implement `Send` and `Sync` for `Ftdi`.
 
 ## [0.32.0] - 2021-11-07
 ### Added
