@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies.libftd2xx]
-//! version = "0.32"
+//! version = "0.32.1"
 //! # statically link the vendor library, defaults to dynamic if not set
 //! # this will make things "just work" on Linux and Windows
 //! features = ["static"]
