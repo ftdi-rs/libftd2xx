@@ -143,31 +143,31 @@ impl Default for Parity {
 
 // These get around an annoyance with bindgen generating different types for
 // enums on Linux vs Windows.
-const DEVICE_BM: u32 = FT_DEVICE_BM as u32;
-const DEVICE_AM: u32 = FT_DEVICE_AM as u32;
-const DEVICE_100AX: u32 = FT_DEVICE_100AX as u32;
-const DEVICE_UNKNOWN: u32 = FT_DEVICE_UNKNOWN as u32;
-const DEVICE_2232C: u32 = FT_DEVICE_2232C as u32;
-const DEVICE_232R: u32 = FT_DEVICE_232R as u32;
-const DEVICE_2232H: u32 = FT_DEVICE_2232H as u32;
-const DEVICE_4232H: u32 = FT_DEVICE_4232H as u32;
-const DEVICE_232H: u32 = FT_DEVICE_232H as u32;
-const DEVICE_X_SERIES: u32 = FT_DEVICE_X_SERIES as u32;
-const DEVICE_4222H_0: u32 = FT_DEVICE_4222H_0 as u32;
-const DEVICE_4222H_1_2: u32 = FT_DEVICE_4222H_1_2 as u32;
-const DEVICE_4222H_3: u32 = FT_DEVICE_4222H_3 as u32;
-const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG as u32;
-const DEVICE_900: u32 = FT_DEVICE_900 as u32;
-const DEVICE_930: u32 = FT_DEVICE_930 as u32;
-const DEVICE_UMFTPD3A: u32 = FT_DEVICE_UMFTPD3A as u32;
-const DEVICE_2233HP: u32 = FT_DEVICE_2233HP as u32;
-const DEVICE_4233HP: u32 = FT_DEVICE_4233HP as u32;
-const DEVICE_2232HP: u32 = FT_DEVICE_2232HP as u32;
-const DEVICE_4232HP: u32 = FT_DEVICE_4232HP as u32;
-const DEVICE_233HP: u32 = FT_DEVICE_233HP as u32;
-const DEVICE_232HP: u32 = FT_DEVICE_232HP as u32;
-const DEVICE_2232HA: u32 = FT_DEVICE_2232HA as u32;
-const DEVICE_4232HA: u32 = FT_DEVICE_4232HA as u32;
+const DEVICE_BM: u32 = FT_DEVICE_BM;
+const DEVICE_AM: u32 = FT_DEVICE_AM;
+const DEVICE_100AX: u32 = FT_DEVICE_100AX;
+const DEVICE_UNKNOWN: u32 = FT_DEVICE_UNKNOWN;
+const DEVICE_2232C: u32 = FT_DEVICE_2232C;
+const DEVICE_232R: u32 = FT_DEVICE_232R;
+const DEVICE_2232H: u32 = FT_DEVICE_2232H;
+const DEVICE_4232H: u32 = FT_DEVICE_4232H;
+const DEVICE_232H: u32 = FT_DEVICE_232H;
+const DEVICE_X_SERIES: u32 = FT_DEVICE_X_SERIES;
+const DEVICE_4222H_0: u32 = FT_DEVICE_4222H_0;
+const DEVICE_4222H_1_2: u32 = FT_DEVICE_4222H_1_2;
+const DEVICE_4222H_3: u32 = FT_DEVICE_4222H_3;
+const DEVICE_4222_PROG: u32 = FT_DEVICE_4222_PROG;
+const DEVICE_900: u32 = FT_DEVICE_900;
+const DEVICE_930: u32 = FT_DEVICE_930;
+const DEVICE_UMFTPD3A: u32 = FT_DEVICE_UMFTPD3A;
+const DEVICE_2233HP: u32 = FT_DEVICE_2233HP;
+const DEVICE_4233HP: u32 = FT_DEVICE_4233HP;
+const DEVICE_2232HP: u32 = FT_DEVICE_2232HP;
+const DEVICE_4232HP: u32 = FT_DEVICE_4232HP;
+const DEVICE_233HP: u32 = FT_DEVICE_233HP;
+const DEVICE_232HP: u32 = FT_DEVICE_232HP;
+const DEVICE_2232HA: u32 = FT_DEVICE_2232HA;
+const DEVICE_4232HA: u32 = FT_DEVICE_4232HA;
 
 /// FTDI device types.
 ///
@@ -1287,7 +1287,7 @@ impl EepromHeader {
 
     /// Set Serial Number Enable.
     pub fn set_serial_number_enable(&mut self, value: bool) {
-        (self.0).SerNumEnable = if value { 1 } else { 0 }
+        (self.0).SerNumEnable = value.into()
     }
 
     /// Maximum bus current.
@@ -1319,7 +1319,7 @@ impl EepromHeader {
     /// * `true` if the device is self-powered (not powered by USB bus).
     /// * `false` if the device is powered by the USB bus.
     pub fn set_self_powered(&mut self, value: bool) {
-        (self.0).SelfPowered = if value { 1 } else { 0 }
+        (self.0).SelfPowered = value.into()
     }
 
     /// Remote wakeup capabilities.
@@ -1341,7 +1341,7 @@ impl EepromHeader {
     /// * `true` if the device is capable of remote wakeup.
     /// * `false` if the device is not capable of remote wakeup.
     pub fn set_remote_wakeup(&mut self, value: bool) {
-        (self.0).RemoteWakeup = if value { 1 } else { 0 }
+        (self.0).RemoteWakeup = value.into()
     }
 
     /// Pull down in suspend mode.
@@ -1357,7 +1357,7 @@ impl EepromHeader {
     /// * `true` if pull-down in suspend is enabled.
     /// * `false` if pull-down in suspend is disabled.
     pub fn set_pull_down_enable(&mut self, value: bool) {
-        (self.0).PullDownEnable = if value { 1 } else { 0 }
+        (self.0).PullDownEnable = value.into()
     }
 }
 
@@ -1426,7 +1426,7 @@ impl Eeprom232h {
 
     /// Set FT1248 flow control enable.
     pub fn set_ft1248_flow_control(&mut self, value: bool) {
-        (self.0).FT1248FlowControl = if value { 1 } else { 0 }
+        (self.0).FT1248FlowControl = value.into()
     }
 
     /// FT245 FIFO interface mode.
@@ -1436,7 +1436,7 @@ impl Eeprom232h {
 
     /// Set FT245 FIFO interface mode.
     pub fn set_is_fifo(&mut self, value: bool) {
-        (self.0).IsFifo = if value { 1 } else { 0 }
+        (self.0).IsFifo = value.into()
     }
 
     /// FT245 FIFO CPU target mode.
@@ -1446,7 +1446,7 @@ impl Eeprom232h {
 
     /// Set FT245 FIFO CPU target mode.
     pub fn set_is_fifo_target(&mut self, value: bool) {
-        (self.0).IsFifoTar = if value { 1 } else { 0 }
+        (self.0).IsFifoTar = value.into()
     }
 
     /// Fast serial interface mode.
@@ -1456,7 +1456,7 @@ impl Eeprom232h {
 
     /// Set Fast serial interface mode.
     pub fn set_is_fast_serial(&mut self, value: bool) {
-        (self.0).IsFastSer = if value { 1 } else { 0 }
+        (self.0).IsFastSer = value.into()
     }
 
     /// FT1248 interface mode.
@@ -1466,7 +1466,7 @@ impl Eeprom232h {
 
     /// Set FT1248 interface mode.
     pub fn set_is_ft1248(&mut self, value: bool) {
-        (self.0).IsFT1248 = if value { 1 } else { 0 }
+        (self.0).IsFT1248 = value.into()
     }
 
     /// Power save enable.
@@ -1478,7 +1478,7 @@ impl Eeprom232h {
 
     /// Set power save enable.
     pub fn set_power_save_enable(&mut self, value: bool) {
-        (self.0).PowerSaveEnable = if value { 1 } else { 0 }
+        (self.0).PowerSaveEnable = value.into()
     }
 }
 
@@ -1496,7 +1496,7 @@ macro_rules! impl_bus_pins {
 
                     #[doc = "Set slow slew for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _slow_slew>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper SlowSlew>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SlowSlew>] = value.into()
                     }
 
                     #[doc = "Schmitt input for bus " $FIELD "."]
@@ -1508,7 +1508,7 @@ macro_rules! impl_bus_pins {
 
                     #[doc = "Set Schmitt input for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _schmitt_input>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper SchmittInput>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SchmittInput>] = value.into()
                     }
 
                     #[doc = "Drive current for bus " $FIELD "."]
@@ -1601,7 +1601,7 @@ macro_rules! impl_tx_data_enable {
 
                     #[doc = "Use port " $FIELD " as RS485 TX data enable."]
                     pub fn [<set_ $FIELD:lower _ri_is_tx_data_enable>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper RIIsTXDEN>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper RIIsTXDEN>] = value.into()
                     }
                 }
             )*
