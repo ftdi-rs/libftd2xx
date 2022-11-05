@@ -1,4 +1,5 @@
 #![deny(missing_docs, unsafe_code)]
+#![cfg_attr(not(target_family = "windows"), allow(clippy::unnecessary_cast))]
 
 // FT_X_SERIES_CBUS_
 use libftd2xx_ffi::{
@@ -1287,7 +1288,7 @@ impl EepromHeader {
 
     /// Set Serial Number Enable.
     pub fn set_serial_number_enable(&mut self, value: bool) {
-        (self.0).SerNumEnable = if value { 1 } else { 0 }
+        (self.0).SerNumEnable = value.into()
     }
 
     /// Maximum bus current.
@@ -1319,7 +1320,7 @@ impl EepromHeader {
     /// * `true` if the device is self-powered (not powered by USB bus).
     /// * `false` if the device is powered by the USB bus.
     pub fn set_self_powered(&mut self, value: bool) {
-        (self.0).SelfPowered = if value { 1 } else { 0 }
+        (self.0).SelfPowered = value.into()
     }
 
     /// Remote wakeup capabilities.
@@ -1341,7 +1342,7 @@ impl EepromHeader {
     /// * `true` if the device is capable of remote wakeup.
     /// * `false` if the device is not capable of remote wakeup.
     pub fn set_remote_wakeup(&mut self, value: bool) {
-        (self.0).RemoteWakeup = if value { 1 } else { 0 }
+        (self.0).RemoteWakeup = value.into()
     }
 
     /// Pull down in suspend mode.
@@ -1357,7 +1358,7 @@ impl EepromHeader {
     /// * `true` if pull-down in suspend is enabled.
     /// * `false` if pull-down in suspend is disabled.
     pub fn set_pull_down_enable(&mut self, value: bool) {
-        (self.0).PullDownEnable = if value { 1 } else { 0 }
+        (self.0).PullDownEnable = value.into()
     }
 }
 
@@ -1426,7 +1427,7 @@ impl Eeprom232h {
 
     /// Set FT1248 flow control enable.
     pub fn set_ft1248_flow_control(&mut self, value: bool) {
-        (self.0).FT1248FlowControl = if value { 1 } else { 0 }
+        (self.0).FT1248FlowControl = value.into()
     }
 
     /// FT245 FIFO interface mode.
@@ -1436,7 +1437,7 @@ impl Eeprom232h {
 
     /// Set FT245 FIFO interface mode.
     pub fn set_is_fifo(&mut self, value: bool) {
-        (self.0).IsFifo = if value { 1 } else { 0 }
+        (self.0).IsFifo = value.into()
     }
 
     /// FT245 FIFO CPU target mode.
@@ -1446,7 +1447,7 @@ impl Eeprom232h {
 
     /// Set FT245 FIFO CPU target mode.
     pub fn set_is_fifo_target(&mut self, value: bool) {
-        (self.0).IsFifoTar = if value { 1 } else { 0 }
+        (self.0).IsFifoTar = value.into()
     }
 
     /// Fast serial interface mode.
@@ -1456,7 +1457,7 @@ impl Eeprom232h {
 
     /// Set Fast serial interface mode.
     pub fn set_is_fast_serial(&mut self, value: bool) {
-        (self.0).IsFastSer = if value { 1 } else { 0 }
+        (self.0).IsFastSer = value.into()
     }
 
     /// FT1248 interface mode.
@@ -1466,7 +1467,7 @@ impl Eeprom232h {
 
     /// Set FT1248 interface mode.
     pub fn set_is_ft1248(&mut self, value: bool) {
-        (self.0).IsFT1248 = if value { 1 } else { 0 }
+        (self.0).IsFT1248 = value.into()
     }
 
     /// Power save enable.
@@ -1478,7 +1479,7 @@ impl Eeprom232h {
 
     /// Set power save enable.
     pub fn set_power_save_enable(&mut self, value: bool) {
-        (self.0).PowerSaveEnable = if value { 1 } else { 0 }
+        (self.0).PowerSaveEnable = value.into()
     }
 }
 
@@ -1496,7 +1497,7 @@ macro_rules! impl_bus_pins {
 
                     #[doc = "Set slow slew for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _slow_slew>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper SlowSlew>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SlowSlew>] = value.into()
                     }
 
                     #[doc = "Schmitt input for bus " $FIELD "."]
@@ -1508,7 +1509,7 @@ macro_rules! impl_bus_pins {
 
                     #[doc = "Set Schmitt input for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _schmitt_input>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper SchmittInput>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper SchmittInput>] = value.into()
                     }
 
                     #[doc = "Drive current for bus " $FIELD "."]
@@ -1601,7 +1602,7 @@ macro_rules! impl_tx_data_enable {
 
                     #[doc = "Use port " $FIELD " as RS485 TX data enable."]
                     pub fn [<set_ $FIELD:lower _ri_is_tx_data_enable>](&mut self, value: bool) {
-                        (self.0).[<$FIELD:upper RIIsTXDEN>] = if value { 1 } else { 0 }
+                        (self.0).[<$FIELD:upper RIIsTXDEN>] = value.into()
                     }
                 }
             )*
