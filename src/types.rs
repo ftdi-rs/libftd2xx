@@ -1527,12 +1527,12 @@ macro_rules! impl_bus_pins {
                     /// This is the **unchecked** raw value retrived from the EEPROM and it may
                     /// not be a valid value.
                     pub fn [<$FIELD:lower _drive_current_unchecked>](&self) -> u8 {
-                        (self.0).[<$FIELD:upper SchmittInput>]
+                        (self.0).[<$FIELD:upper DriveCurrent>]
                     }
 
                     #[doc = "Set drive current for bus " $FIELD "."]
                     pub fn [<set_ $FIELD:lower _drive_current>](&mut self, value: DriveCurrent) {
-                        (self.0).[<$FIELD:upper SchmittInput>] = value as u8
+                        (self.0).[<$FIELD:upper DriveCurrent>] = value as u8
                     }
                 }
             )*
