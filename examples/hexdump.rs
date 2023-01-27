@@ -17,7 +17,7 @@ fn main() -> Result<(), FtStatus> {
             let word: u16 = ft.eeprom_word_read(x + r * WORDS_PER_ROW)?;
             let low = u8::try_from(word & 0xFF).unwrap();
             let high = u8::try_from(word >> 8).unwrap();
-            print!("{:02x} {:02x} ", high, low);
+            print!("{high:02x} {low:02x} ");
             ascii[(x as usize) * 2] = high;
             ascii[(x as usize) * 2 + 1] = low;
             if x == WORDS_PER_ROW / 2 - 1 {
@@ -33,7 +33,7 @@ fn main() -> Result<(), FtStatus> {
             } else {
                 '.'
             };
-            print!("{}", ch);
+            print!("{ch}");
         }
 
         println!();

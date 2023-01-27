@@ -7,9 +7,9 @@ fn main() -> Result<(), TimeoutError> {
     let mode = ft.bit_mode()?;
     for pin_index in 0..8 {
         if mode & (1 << pin_index) == 0 {
-            println!("Pin {}: Off", pin_index);
+            println!("Pin {pin_index}: Off");
         } else {
-            println!("Pin {}: On", pin_index);
+            println!("Pin {pin_index}: On");
         }
     }
     ft.close()?;

@@ -305,7 +305,7 @@ impl From<u32> for DeviceType {
             DEVICE_4222H_1_2 => DeviceType::FT4222H_1_2,
             DEVICE_4222H_3 => DeviceType::FT4222H_3,
             DEVICE_4222_PROG => DeviceType::FT4222_PROG,
-            _ => panic!("unknown device: {}", value),
+            _ => panic!("unknown device: {value}"),
         }
     }
 }
@@ -480,7 +480,7 @@ impl From<u8> for BitMode {
             x if x == BitMode::FastSerial as u8 => BitMode::FastSerial,
             x if x == BitMode::CbusBitbang as u8 => BitMode::CbusBitbang,
             x if x == BitMode::SyncFifo as u8 => BitMode::SyncFifo,
-            _ => panic!("invalid BitMode value: {}", x),
+            _ => panic!("invalid BitMode value: {x}"),
         }
     }
 }
@@ -1303,7 +1303,7 @@ impl EepromHeader {
     ///
     /// Values greater than 500 mA (`500u16`) will result in panic.
     pub fn set_max_current(&mut self, value: u16) {
-        assert!(value <= 500, "{} exceeds 500 mA limit", value);
+        assert!(value <= 500, "{value} exceeds 500 mA limit");
         (self.0).MaxPower = value
     }
 

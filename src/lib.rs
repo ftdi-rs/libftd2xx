@@ -718,21 +718,15 @@ pub trait FtdiCommon {
         const MIN: u32 = 64;
         assert!(
             in_transfer_size <= MAX,
-            "in_transfer_size of {} exceeds maximum of {}",
-            in_transfer_size,
-            MAX
+            "in_transfer_size of {in_transfer_size} exceeds maximum of {MAX}"
         );
         assert!(
             in_transfer_size >= MIN,
-            "in_transfer_size of {} exceeds minimum of {}",
-            in_transfer_size,
-            MIN
+            "in_transfer_size of {in_transfer_size} exceeds minimum of {MIN}"
         );
         assert!(
             in_transfer_size % MIN == 0,
-            "in_transfer_size of {} not a multiple of {}",
-            in_transfer_size,
-            MIN
+            "in_transfer_size of {in_transfer_size} not a multiple of {MIN}"
         );
         trace!(
             "FT_SetUSBParameters({:?}, {}, {})",
@@ -893,8 +887,8 @@ pub trait FtdiCommon {
     /// [pyftdi]: https://github.com/eblot/pyftdi/tree/master
     fn set_latency_timer(&mut self, timer: Duration) -> Result<(), FtStatus> {
         let millis = timer.as_millis();
-        debug_assert!(millis >= 2, "duration must be >= 2ms, got {:?}", timer);
-        debug_assert!(millis <= 255, "duration must be <= 255ms, got {:?}", timer);
+        debug_assert!(millis >= 2, "duration must be >= 2ms, got {timer:?}");
+        debug_assert!(millis <= 255, "duration must be <= 255ms, got {timer:?}");
         let millis = u8::try_from(millis).unwrap();
         trace!("FT_SetLatencyTimer({:?}, {})", self.handle(), millis);
         let status: FT_STATUS = unsafe { FT_SetLatencyTimer(self.handle(), millis) };

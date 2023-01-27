@@ -14,17 +14,11 @@ fn check_limits(device: DeviceType, frequency: u32, max: u32) {
     const MIN: u32 = 92;
     assert!(
         frequency >= MIN,
-        "frequency of {} exceeds minimum of {} for {:?}",
-        frequency,
-        MIN,
-        device
+        "frequency of {frequency} exceeds minimum of {MIN} for {device:?}"
     );
     assert!(
         frequency <= max,
-        "frequency of {} exceeds maximum of {} for {:?}",
-        frequency,
-        max,
-        device
+        "frequency of {frequency} exceeds maximum of {max} for {device:?}"
     );
 }
 
@@ -44,7 +38,7 @@ fn clock_divisor(device: DeviceType, frequency: u32) -> (u32, Option<bool>) {
                 (30_000_000 / frequency - 1, Some(false))
             }
         }
-        _ => panic!("Unknown device type: {:?}", device),
+        _ => panic!("Unknown device type: {device:?}"),
     }
 }
 
