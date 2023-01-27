@@ -39,9 +39,9 @@ impl Error for TimeoutError {}
 impl fmt::Display for TimeoutError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TimeoutError::FtStatus(status) => write!(f, "{}", status),
+            TimeoutError::FtStatus(status) => write!(f, "{status}"),
             TimeoutError::Timeout { actual, expected } => {
-                write!(f, "IO Timeout {}/{} Bytes", actual, expected)
+                write!(f, "IO Timeout {actual}/{expected} Bytes")
             }
         }
     }
@@ -67,8 +67,8 @@ fn timeout_error_display() {
         expected: 1,
         actual: 0,
     };
-    assert_eq!(format!("{}", to), "IO Timeout 0/1 Bytes");
-    assert_eq!(format!("{:?}", to), "Timeout { actual: 0, expected: 1 }");
+    assert_eq!(format!("{to}"), "IO Timeout 0/1 Bytes");
+    assert_eq!(format!("{to:?}"), "Timeout { actual: 0, expected: 1 }");
 }
 
 /// Device type errors.
@@ -91,11 +91,10 @@ impl Error for DeviceTypeError {}
 impl fmt::Display for DeviceTypeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DeviceTypeError::FtStatus(status) => write!(f, "{}", status),
+            DeviceTypeError::FtStatus(status) => write!(f, "{status}"),
             DeviceTypeError::DeviceType { expected, detected } => write!(
                 f,
-                "Device mismatch, expected {:?}, detected {:?}",
-                expected, detected
+                "Device mismatch, expected {expected:?}, detected {detected:?}"
             ),
         }
     }
@@ -122,11 +121,11 @@ fn device_type_error_display() {
         detected: DeviceType::FT4232H,
     };
     assert_eq!(
-        format!("{}", dt),
+        format!("{dt}"),
         "Device mismatch, expected FT232H, detected FT4232H"
     );
     assert_eq!(
-        format!("{:?}", dt),
+        format!("{dt:?}"),
         "DeviceType { expected: FT232H, detected: FT4232H }"
     );
 }
@@ -213,14 +212,14 @@ impl From<FT_STATUS> for FtStatus {
             NOT_SUPPORTED => FtStatus::NOT_SUPPORTED,
             OTHER_ERROR => FtStatus::OTHER_ERROR,
             DEVICE_LIST_NOT_READY => FtStatus::DEVICE_LIST_NOT_READY,
-            _ => panic!("invalid FT_STATUS value: {}", x),
+            _ => panic!("invalid FT_STATUS value: {x}"),
         }
     }
 }
 
 impl fmt::Display for FtStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "FtStatus::{:?}", self)
+        write!(f, "FtStatus::{self:?}")
     }
 }
 

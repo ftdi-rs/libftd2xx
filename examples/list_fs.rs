@@ -5,7 +5,7 @@ fn main() -> std::io::Result<()> {
     let mut devices = list_devices_fs()?;
 
     while let Some(device) = devices.pop() {
-        println!("device: {:?}", device);
+        println!("device: {device:?}");
     }
 
     Ok(())

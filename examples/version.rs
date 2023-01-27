@@ -6,7 +6,7 @@ fn main() -> Result<(), FtStatus> {
 
     let mut ft = Ftdi::new()?;
     let version = ft.driver_version()?;
-    println!("Driver Version: {}", version);
+    println!("Driver Version: {version}");
 
     Ok(())
 }

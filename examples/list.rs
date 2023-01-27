@@ -5,7 +5,7 @@ fn main() -> Result<(), FtStatus> {
     let mut devices = list_devices()?;
 
     while let Some(device) = devices.pop() {
-        println!("device: {:?}", device);
+        println!("device: {device:?}");
     }
 
     Ok(())
