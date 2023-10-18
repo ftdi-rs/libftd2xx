@@ -860,11 +860,11 @@ pub trait FtdiCommon {
     /// is used to flush remaining data from the receive buffer was fixed at
     /// 16 ms.
     /// In all other FTDI devices, this timeout is programmable and can be set
-    /// at 1 ms intervals between 2ms and 255 ms.  This allows the device to be
+    /// at 1 ms intervals between 0ms and 255 ms.  This allows the device to be
     /// better optimized for protocols requiring faster response times from
     /// short data packets.
     ///
-    /// The valid range for the latency timer is 2 to 255 milliseconds.
+    /// The valid range for the latency timer is 0 to 255 milliseconds.
     ///
     /// The resolution for the latency timer is 1 millisecond.
     ///
@@ -887,7 +887,6 @@ pub trait FtdiCommon {
     /// [pyftdi]: https://github.com/eblot/pyftdi/tree/master
     fn set_latency_timer(&mut self, timer: Duration) -> Result<(), FtStatus> {
         let millis = timer.as_millis();
-        debug_assert!(millis >= 2, "duration must be >= 2ms, got {timer:?}");
         debug_assert!(millis <= 255, "duration must be <= 255ms, got {timer:?}");
         let millis = u8::try_from(millis).unwrap();
         trace!("FT_SetLatencyTimer({:?}, {})", self.handle(), millis);
