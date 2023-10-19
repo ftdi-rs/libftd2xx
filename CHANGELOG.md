@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.3] - 2023-10-19
+### Fixed
+- Allow a value of 0ms for `set_latency_timer`.
+
 ## [0.32.2] - 2022-12-14
 ### Fixed
 - Fixed a typo where EEPROM drive-current sets schmitt input instead.
@@ -148,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.2...HEAD
+[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.3...HEAD
+[0.32.3]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.2...0.32.3
 [0.32.2]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.1...0.32.2
 [0.32.1]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.0...0.32.1
 [0.32.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.31.0...0.32.0
