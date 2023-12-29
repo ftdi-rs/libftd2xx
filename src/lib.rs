@@ -766,17 +766,17 @@ pub trait FtdiCommon {
             "FT_SetChars({:?}, {}, {}, {}, {})",
             self.handle(),
             event_char,
-            u8::try_from(event_enable).unwrap(),
+            u8::from(event_enable),
             error_char,
-            u8::try_from(error_enable).unwrap()
+            u8::from(error_enable)
         );
         let status: FT_STATUS = unsafe {
             FT_SetChars(
                 self.handle(),
                 event_char,
-                u8::try_from(event_enable).unwrap(),
+                u8::from(event_enable),
                 error_char,
-                u8::try_from(error_enable).unwrap(),
+                u8::from(error_enable),
             )
         };
         ft_result((), status)
