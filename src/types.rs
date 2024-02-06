@@ -49,7 +49,9 @@ use libftd2xx_ffi::{
 use libftd2xx_ffi::{FT_DRIVER_TYPE_D2XX, FT_DRIVER_TYPE_VCP};
 
 // FT_EEPROM_
-use libftd2xx_ffi::{FT_EEPROM_2232H, FT_EEPROM_232H, FT_EEPROM_4232H, FT_EEPROM_HEADER};
+use libftd2xx_ffi::{
+    FT_EEPROM_2232H, FT_EEPROM_232H, FT_EEPROM_232R, FT_EEPROM_4232H, FT_EEPROM_HEADER,
+};
 
 use super::{EepromStringsError, EepromValueError};
 use crate::util::slice_into_string;
@@ -1084,6 +1086,54 @@ impl Default for Eeprom232h {
             IsFastSer: 0,
             IsFT1248: 0,
             PowerSaveEnable: 0,
+            DriverType: DriverType::D2XX.into(),
+        })
+    }
+}
+
+/// EEPROM structure for the FT232R.
+///
+/// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
+///
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
+#[derive(Debug, Copy, Clone)]
+pub struct Eeprom232r(FT_EEPROM_232R);
+
+impl From<Eeprom232r> for FT_EEPROM_232R {
+    fn from(val: Eeprom232r) -> FT_EEPROM_232R {
+        val.0
+    }
+}
+
+impl From<FT_EEPROM_232R> for Eeprom232r {
+    fn from(val: FT_EEPROM_232R) -> Eeprom232r {
+        Eeprom232r(val)
+    }
+}
+
+impl Default for Eeprom232r {
+    fn default() -> Self {
+        let mut header = EepromHeader::default();
+        header.set_device_type(DeviceType::FT232R);
+        header.set_product_id(0x6001);
+        Self(FT_EEPROM_232R {
+            common: header.0,
+            IsHighCurrent: 0,
+            UseExtOsc: 0,
+            InvertTXD: 0,
+            InvertRXD: 0,
+            InvertRTS: 0,
+            InvertCTS: 0,
+            InvertDTR: 0,
+            InvertDSR: 0,
+            InvertDCD: 0,
+            InvertRI: 0,
+            Cbus0: 0,
+            Cbus1: 0,
+            Cbus2: 0,
+            Cbus3: 0,
+            Cbus4: 0,
             DriverType: DriverType::D2XX.into(),
         })
     }
