@@ -104,8 +104,8 @@ mod types;
 use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
-    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom2232h, Eeprom232h, Eeprom4232h,
-    EepromHeader, EepromStrings, ModemStatus, Parity, Speed, StopBits, Version,
+    DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom2232h, Eeprom232h, Eeprom232r,
+    Eeprom4232h, EepromHeader, EepromStrings, ModemStatus, Parity, Speed, StopBits, Version,
 };
 
 mod util;
@@ -125,9 +125,9 @@ use libftd2xx_ffi::{
     FT_SetBreakOn, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr,
     FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters,
     FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_2232H, FT_EEPROM_232H,
-    FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE,
-    FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION, FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX,
-    FT_PURGE_TX, FT_STATUS,
+    FT_EEPROM_232R, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
+    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
 #[cfg(target_os = "windows")]
@@ -517,6 +517,23 @@ pub struct Ftdi {
 /// ```
 #[derive(Debug)]
 pub struct Ft232h {
+    ftdi: Ftdi,
+}
+
+/// FT232R device.
+///
+/// # Example
+///
+/// Converting from an unknown FTDI device.
+///
+/// ```no_run
+/// use libftd2xx::{Ft232r, Ftdi};
+///
+/// let ft232r: Ft232r = Ftdi::new()?.try_into()?;
+/// # Ok::<(), libftd2xx::DeviceTypeError>(())
+/// ```
+#[derive(Debug)]
+pub struct Ft232r {
     ftdi: Ftdi,
 }
 
@@ -2096,6 +2113,59 @@ impl Ft232h {
     }
 }
 
+impl Ft232r {
+    /// Open a `Ft232r` device and initialize the handle.
+    ///
+    /// # Safety
+    ///
+    /// This is **unchecked** meaning a device type check will not be performed.
+    /// Methods that require this specific device type may fail in unexpected
+    /// ways if the wrong device is used.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232r;
+    ///
+    /// let mut ft = unsafe { Ft232r::with_serial_number_unchecked("AH06S0OE")? };
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft232r, FtStatus> {
+        let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
+        Ok(Ft232r {
+            ftdi: Ftdi { handle },
+        })
+    }
+
+    /// Open a `Ft232r` device and initialize the handle.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232r;
+    ///
+    /// Ft232r::with_serial_number("AH06S0OE")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_serial_number(serial_number: &str) -> Result<Ft232r, DeviceTypeError> {
+        Ftdi::with_serial_number(serial_number)?.try_into()
+    }
+
+    /// Open a `Ft232r` device by its device description.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft232r;
+    ///
+    /// Ft232r::with_description("Hello")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_description(description: &str) -> Result<Ft232r, DeviceTypeError> {
+        Ftdi::with_description(description)?.try_into()
+    }
+}
+
 impl Ft2232h {
     /// Open a `Ft2232h` device and initialize the handle.
     ///
@@ -2278,18 +2348,22 @@ macro_rules! impl_try_from_for {
 }
 
 impl_boilerplate_for!(Ft232h, DeviceType::FT232H);
+impl_boilerplate_for!(Ft232r, DeviceType::FT232R);
 impl_boilerplate_for!(Ft2232h, DeviceType::FT2232H);
 impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
 
 impl_try_from_for!(Ft232h);
+impl_try_from_for!(Ft232r);
 impl_try_from_for!(Ft2232h);
 impl_try_from_for!(Ft4232h);
 
 impl FtdiEeprom<FT_EEPROM_232H, Eeprom232h> for Ft232h {}
+impl FtdiEeprom<FT_EEPROM_232R, Eeprom232r> for Ft232r {}
 impl FtdiEeprom<FT_EEPROM_2232H, Eeprom2232h> for Ft2232h {}
 impl FtdiEeprom<FT_EEPROM_4232H, Eeprom4232h> for Ft4232h {}
 
 impl FtdiMpsse for Ft232h {}
+impl FtdiMpsse for Ft232r {}
 impl FtdiMpsse for Ft2232h {}
 impl FtdiMpsse for Ft4232h {}
 impl Ftx232hMpsse for Ft232h {}
