@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.4] - 2024-03-04
+### Added
+- Added EEPROM implementations for the 232R.
+
 ## [0.32.3] - 2023-10-19
 ### Fixed
 - Allow a value of 0ms for `set_latency_timer`.
@@ -152,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.3...HEAD
+[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.4...HEAD
+[0.32.4]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.3...0.32.4
 [0.32.3]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.2...0.32.3
 [0.32.2]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.1...0.32.2
 [0.32.1]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.0...0.32.1
