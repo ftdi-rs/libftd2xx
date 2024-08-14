@@ -237,7 +237,7 @@ pub enum DeviceType {
 impl DeviceType {
     /// Get a device type with a USB product ID.
     ///
-    /// This is not entirely accurate since soem devices share the same PID.
+    /// This is not entirely accurate since some devices share the same PID.
     ///
     /// # Example
     ///
@@ -254,6 +254,8 @@ impl DeviceType {
             Some(DeviceType::FT2232H)
         } else if pid == 0x6011 {
             Some(DeviceType::FT4232H)
+        } else if pid == 0x6048 {
+            Some(DeviceType::FT4232HA)
         } else if pid == 0x6014 {
             Some(DeviceType::FT232H)
         } else if pid == 0x6015 {
@@ -281,6 +283,7 @@ impl From<u32> for DeviceType {
             DEVICE_232R => DeviceType::FT232R,
             DEVICE_2232H => DeviceType::FT2232H,
             DEVICE_4232H => DeviceType::FT4232H,
+            DEVICE_4232HA => DeviceType::FT4232HA,
             DEVICE_232H => DeviceType::FT232H,
             DEVICE_X_SERIES => DeviceType::FT_X_SERIES,
             DEVICE_4222H_0 => DeviceType::FT4222H_0,
@@ -433,7 +436,7 @@ pub enum BitMode {
     Reset = FT_BITMODE_RESET as u8,
     /// Asynchronous bit bang.
     AsyncBitbang = FT_BITMODE_ASYNC_BITBANG as u8,
-    /// MPSSE (FT2232, FT2232H, FT4232H and FT232H devices only)
+    /// MPSSE (FT2232, FT2232H, FT4232H(A) and FT232H devices only)
     Mpsse = FT_BITMODE_MPSSE as u8,
     /// Synchronous Bit Bang
     /// (FT232R, FT245R,FT2232, FT2232H, FT4232H and FT232H devices only)
@@ -606,6 +609,7 @@ pub struct DeviceInfo {
     /// * `0x6001` FT232AM/FT232BM/FT232R
     /// * `0x6010` FT2232C/FT2232D/FT2232H
     /// * `0x6011` FT4232/FT4232H
+    /// * `0x6048` FT4232HA
     /// * `0x6014` FT232H
     /// * `0x6015` FT230X/FT231X/FT234X
     pub product_id: u16,
