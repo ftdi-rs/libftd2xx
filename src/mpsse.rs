@@ -30,7 +30,7 @@ fn clock_divisor(device: DeviceType, frequency: u32) -> (u32, Option<bool>) {
             check_limits(device, frequency, 6_000_000);
             (6_000_000 / frequency - 1, None)
         }
-        DeviceType::FT2232H | DeviceType::FT4232H | DeviceType::FT232H => {
+        DeviceType::FT2232H | DeviceType::FT4232H | DeviceType::FT4232HA | DeviceType::FT232H => {
             check_limits(device, frequency, 30_000_000);
             if frequency <= 6_000_000 {
                 (6_000_000 / frequency - 1, Some(true))
@@ -80,7 +80,18 @@ mod clock_divisor {
         6_000_001,
         (3, Some(false))
     );
-    pos!(max, DeviceType::FT4232H, 30_000_000, (0, Some(false)));
+    pos!(
+        ft4232h_max,
+        DeviceType::FT4232H,
+        30_000_000,
+        (0, Some(false))
+    );
+    pos!(
+        ft4232ha_max,
+        DeviceType::FT4232HA,
+        30_000_000,
+        (0, Some(false))
+    );
 
     neg!(panic_unknown, DeviceType::Unknown, 1_000);
     neg!(panic_ft232c_min, DeviceType::FT2232C, 91);
@@ -424,7 +435,7 @@ pub trait FtdiMpsse: FtdiCommon {
 }
 
 /// This contains MPSSE commands that are only available on the the FT232H,
-/// FT2232H, and FT4232H devices.
+/// FT2232H, and FT4232H(A) devices.
 ///
 /// For details about the MPSSE read the [FTDI MPSSE Basics].
 ///

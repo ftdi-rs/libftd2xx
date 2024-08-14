@@ -341,7 +341,7 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>, FtStatus> {
 /// Lists FTDI devices using the Linux file system.
 ///
 /// There is a bug in the vendor driver where the `serial_number` and
-/// `description` fields may be blank on the FT4232H and FT2232H when only
+/// `description` fields may be blank on the FT4232H(A) FT2232H when only
 /// some of the ports are unbound from the `ftdi_sio` linux kernel module.
 ///
 /// This will not work if you have a custom VID/PID programmed onto your FTDI
@@ -426,7 +426,7 @@ pub fn list_devices_fs() -> io::Result<Vec<DeviceInfo>> {
 
             let port_letters: Option<&'static [char]> = match device_type {
                 DeviceType::FT2232H => Some(&['A', 'B']),
-                DeviceType::FT4232H => Some(&['A', 'B', 'C', 'D']),
+                DeviceType::FT4232H | DeviceType::FT4232HA => Some(&['A', 'B', 'C', 'D']),
                 _ => None,
             };
 
@@ -546,7 +546,7 @@ pub struct Ft232r {
 /// ```no_run
 /// use libftd2xx::{Ft2232h, Ftdi};
 ///
-/// let ft4232h: Ft2232h = Ftdi::new()?.try_into()?;
+/// let ft2232h: Ft2232h = Ftdi::new()?.try_into()?;
 /// # Ok::<(), libftd2xx::DeviceTypeError>(())
 /// ```
 #[derive(Debug)]
@@ -568,6 +568,23 @@ pub struct Ft2232h {
 /// ```
 #[derive(Debug)]
 pub struct Ft4232h {
+    ftdi: Ftdi,
+}
+
+/// FT4232HA device.
+///
+/// # Example
+///
+/// Converting from an unknown FTDI device.
+///
+/// ```no_run
+/// use libftd2xx::{Ft4232ha, Ftdi};
+///
+/// let ft4232ha: Ft4232ha = Ftdi::new()?.try_into()?;
+/// # Ok::<(), libftd2xx::DeviceTypeError>(())
+/// ```
+#[derive(Debug)]
+pub struct Ft4232ha {
     ftdi: Ftdi,
 }
 
@@ -622,6 +639,7 @@ pub trait FtdiCommon {
                 0x1800 => Ok(DeviceType::FT4222H_0),
                 0x1900 => Ok(DeviceType::FT4222H_1_2),
                 0x2100 => Ok(DeviceType::FT4222_PROG),
+                0x3600 => Ok(DeviceType::FT4232HA),
                 _ => Err(FtStatus::OTHER_ERROR),
             }
         }
@@ -1642,7 +1660,7 @@ pub trait FtdiCommon {
     /// It is the responsibility of the application to close the handle after
     /// successfully calling this method.
     ///
-    /// For FT4232H, FT2232H and FT2232 devices, `cycle_port` will only work
+    /// For FT4232H(A), FT2232H and FT2232 devices, `cycle_port` will only work
     /// under Windows XP and later.
     ///
     /// # Example
@@ -1857,7 +1875,7 @@ pub trait FtdiEeprom<
     ///
     /// # Example
     ///
-    /// This example uses the FT232H.
+    /// This example uses the FT4232H.
     ///
     /// ```no_run
     /// use libftd2xx::{Ft4232h, Ftdi, FtdiEeprom};
@@ -2061,7 +2079,7 @@ impl Ftdi {
 }
 
 impl Ft232h {
-    /// Open a `Ft4232h` device and initialize the handle.
+    /// Open a `Ft232h` device and initialize the handle.
     ///
     /// # Safety
     ///
@@ -2272,6 +2290,59 @@ impl Ft4232h {
     }
 }
 
+impl Ft4232ha {
+    /// Open a `Ft4232ha` device and initialize the handle.
+    ///
+    /// # Safety
+    ///
+    /// This is **unchecked** meaning a device type check will not be performed.
+    /// Methods that require this specific device type may fail in unexpected
+    /// ways if the wrong device is used.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232ha;
+    ///
+    /// let mut ft = unsafe { Ft4232ha::with_serial_number_unchecked("FT4PWSEOA")? };
+    /// # Ok::<(), libftd2xx::FtStatus>(())
+    /// ```
+    pub unsafe fn with_serial_number_unchecked(serial_number: &str) -> Result<Ft4232ha, FtStatus> {
+        let handle = ft_open_ex(serial_number, FT_OPEN_BY_SERIAL_NUMBER)?;
+        Ok(Ft4232ha {
+            ftdi: Ftdi { handle },
+        })
+    }
+
+    /// Open a `Ft4232ha` device and initialize the handle.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232ha;
+    ///
+    /// Ft4232ha::with_serial_number("FT4PWSEOA")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_serial_number(serial_number: &str) -> Result<Ft4232ha, DeviceTypeError> {
+        Ftdi::with_serial_number(serial_number)?.try_into()
+    }
+
+    /// Open a `Ft4232ha` device by its device description.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use libftd2xx::Ft4232ha;
+    ///
+    /// Ft4232ha::with_description("Quad RS232-HS A")?;
+    /// # Ok::<(), libftd2xx::DeviceTypeError>(())
+    /// ```
+    pub fn with_description(description: &str) -> Result<Ft4232ha, DeviceTypeError> {
+        Ftdi::with_description(description)?.try_into()
+    }
+}
+
 impl FtdiCommon for Ftdi {
     const DEVICE_TYPE: DeviceType = DeviceType::Unknown;
 
@@ -2351,11 +2422,13 @@ impl_boilerplate_for!(Ft232h, DeviceType::FT232H);
 impl_boilerplate_for!(Ft232r, DeviceType::FT232R);
 impl_boilerplate_for!(Ft2232h, DeviceType::FT2232H);
 impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
+impl_boilerplate_for!(Ft4232ha, DeviceType::FT4232HA);
 
 impl_try_from_for!(Ft232h);
 impl_try_from_for!(Ft232r);
 impl_try_from_for!(Ft2232h);
 impl_try_from_for!(Ft4232h);
+impl_try_from_for!(Ft4232ha);
 
 impl FtdiEeprom<FT_EEPROM_232H, Eeprom232h> for Ft232h {}
 impl FtdiEeprom<FT_EEPROM_232R, Eeprom232r> for Ft232r {}
@@ -2366,6 +2439,8 @@ impl FtdiMpsse for Ft232h {}
 impl FtdiMpsse for Ft232r {}
 impl FtdiMpsse for Ft2232h {}
 impl FtdiMpsse for Ft4232h {}
+impl FtdiMpsse for Ft4232ha {}
 impl Ftx232hMpsse for Ft232h {}
 impl Ftx232hMpsse for Ft2232h {}
 impl Ftx232hMpsse for Ft4232h {}
+impl Ftx232hMpsse for Ft4232ha {}
