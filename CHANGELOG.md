@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.32.5] - 2024-08-19
 ### Added
 - Added support for the 4232HA
 
@@ -160,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.4...HEAD
+[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.5...HEAD
+[0.32.5]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.4...0.32.5
 [0.32.4]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.3...0.32.4
 [0.32.3]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.2...0.32.3
 [0.32.2]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.1...0.32.2
