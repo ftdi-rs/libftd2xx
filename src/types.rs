@@ -1827,6 +1827,7 @@ impl_driver_type!(Eeprom4232h, A, B, C, D);
 impl_cbus!(EepromXSeries, CbusX, Cbus5, Cbus6,);
 impl_driver_type!(EepromXSeries);
 impl_bus_pins!(EepromXSeries, AC, AD);
+impl_invert_232_signals!(EepromXSeries, TXD, RXD, RTS, CTS, DTR, DSR, DCD, RI);
 
 // These get around an annoyance with bindgen generating different types for
 // preprocessor macros on Linux vs Windows.
