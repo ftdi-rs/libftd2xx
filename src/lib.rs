@@ -98,6 +98,7 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
+use libftd2xx_ffi::FT_EEPROM_X_SERIES;
 pub use mpsse::{FtdiMpsse, Ftx232hMpsse};
 
 mod types;
@@ -105,7 +106,8 @@ use types::{vid_pid_from_id, STRING_LEN};
 pub use types::{
     BitMode, BitsPerWord, ByteOrder, Cbus232h, Cbus232r, CbusX, ClockPolarity, DeviceInfo,
     DeviceStatus, DeviceType, DriveCurrent, DriverType, Eeprom2232h, Eeprom232h, Eeprom232r,
-    Eeprom4232h, EepromHeader, EepromStrings, ModemStatus, Parity, Speed, StopBits, Version,
+    Eeprom4232h, EepromHeader, EepromStrings, EepromXSeries, ModemStatus, Parity, Speed, StopBits,
+    Version,
 };
 
 mod util;
@@ -206,7 +208,7 @@ pub fn num_devices() -> Result<u32, FtStatus> {
 /// assert_eq!(pid, 0x1234);
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
-#[cfg(any(unix, doc))]
+#[cfg(all(any(unix, doc), not(all(windows, doctest))))]
 #[cfg_attr(docsrs, doc(cfg(unix)))]
 pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
     trace!("FT_SetVIDPID({}, {})", vid, pid);
@@ -235,7 +237,7 @@ pub fn set_vid_pid(vid: u16, pid: u16) -> Result<(), FtStatus> {
 /// println!("PID: 0x{:04X}", vid);
 /// # Ok::<(), libftd2xx::FtStatus>(())
 /// ```
-#[cfg(any(unix, doc))]
+#[cfg(all(any(unix, doc), not(all(windows, doctest))))]
 #[cfg_attr(docsrs, doc(cfg(unix)))]
 pub fn vid_pid() -> Result<(u32, u32), FtStatus> {
     let mut vid: u32 = 0;
@@ -585,6 +587,23 @@ pub struct Ft4232h {
 /// ```
 #[derive(Debug)]
 pub struct Ft4232ha {
+    ftdi: Ftdi,
+}
+
+/// FT X Series device.
+///
+/// # Example
+///
+/// Converting from an unknown FTDI device.
+///
+/// ```no_run
+/// use libftd2xx::{FtXSeries, Ftdi};
+///
+/// let ft_x_series: FtXSeries = Ftdi::new()?.try_into()?;
+/// # Ok::<(), libftd2xx::DeviceTypeError>(())
+/// ```
+#[derive(Debug)]
+pub struct FtXSeries {
     ftdi: Ftdi,
 }
 
@@ -2366,7 +2385,7 @@ impl Drop for Ftdi {
 unsafe impl Send for Ftdi {}
 unsafe impl Sync for Ftdi {}
 
-macro_rules! impl_boilerplate_for {
+macro_rules! impl_ftdi_common_for {
     ($DEVICE:ident, $TYPE:expr) => {
         impl FtdiCommon for $DEVICE {
             const DEVICE_TYPE: DeviceType = $TYPE;
@@ -2379,7 +2398,11 @@ macro_rules! impl_boilerplate_for {
                 Ok(Self::DEVICE_TYPE)
             }
         }
+    };
+}
 
+macro_rules! impl_mpsse_cmd_executor_for {
+    ($DEVICE:ident, $TYPE:expr) => {
         impl MpsseCmdExecutor for $DEVICE {
             type Error = TimeoutError;
 
@@ -2418,25 +2441,32 @@ macro_rules! impl_try_from_for {
     };
 }
 
-impl_boilerplate_for!(Ft232h, DeviceType::FT232H);
-impl_boilerplate_for!(Ft232r, DeviceType::FT232R);
-impl_boilerplate_for!(Ft2232h, DeviceType::FT2232H);
-impl_boilerplate_for!(Ft4232h, DeviceType::FT4232H);
-impl_boilerplate_for!(Ft4232ha, DeviceType::FT4232HA);
+impl_ftdi_common_for!(Ft232h, DeviceType::FT232H);
+impl_ftdi_common_for!(Ft232r, DeviceType::FT232R);
+impl_ftdi_common_for!(Ft2232h, DeviceType::FT2232H);
+impl_ftdi_common_for!(Ft4232h, DeviceType::FT4232H);
+impl_ftdi_common_for!(Ft4232ha, DeviceType::FT4232HA);
+impl_ftdi_common_for!(FtXSeries, DeviceType::FT_X_SERIES);
+
+impl_mpsse_cmd_executor_for!(Ft232h, DeviceType::FT232H);
+impl_mpsse_cmd_executor_for!(Ft2232h, DeviceType::FT2232H);
+impl_mpsse_cmd_executor_for!(Ft4232h, DeviceType::FT4232H);
+impl_mpsse_cmd_executor_for!(Ft4232ha, DeviceType::FT4232HA);
 
 impl_try_from_for!(Ft232h);
 impl_try_from_for!(Ft232r);
 impl_try_from_for!(Ft2232h);
 impl_try_from_for!(Ft4232h);
 impl_try_from_for!(Ft4232ha);
+impl_try_from_for!(FtXSeries);
 
 impl FtdiEeprom<FT_EEPROM_232H, Eeprom232h> for Ft232h {}
 impl FtdiEeprom<FT_EEPROM_232R, Eeprom232r> for Ft232r {}
 impl FtdiEeprom<FT_EEPROM_2232H, Eeprom2232h> for Ft2232h {}
 impl FtdiEeprom<FT_EEPROM_4232H, Eeprom4232h> for Ft4232h {}
+impl FtdiEeprom<FT_EEPROM_X_SERIES, EepromXSeries> for FtXSeries {}
 
 impl FtdiMpsse for Ft232h {}
-impl FtdiMpsse for Ft232r {}
 impl FtdiMpsse for Ft2232h {}
 impl FtdiMpsse for Ft4232h {}
 impl FtdiMpsse for Ft4232ha {}
