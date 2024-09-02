@@ -51,6 +51,7 @@ use libftd2xx_ffi::{FT_DRIVER_TYPE_D2XX, FT_DRIVER_TYPE_VCP};
 // FT_EEPROM_
 use libftd2xx_ffi::{
     FT_EEPROM_2232H, FT_EEPROM_232H, FT_EEPROM_232R, FT_EEPROM_4232H, FT_EEPROM_HEADER,
+    FT_EEPROM_X_SERIES,
 };
 
 use super::{EepromStringsError, EepromValueError};
@@ -1272,6 +1273,115 @@ impl Eeprom4232h {
     }
 }
 
+/// EEPROM structure for the FT X series.
+///
+/// This is used by the [`eeprom_read`] and [`eeprom_program`] methods.
+///
+/// [`eeprom_read`]: crate::FtdiEeprom::eeprom_read
+/// [`eeprom_program`]: crate::FtdiEeprom::eeprom_program
+#[derive(Debug, Copy, Clone)]
+pub struct EepromXSeries(FT_EEPROM_X_SERIES);
+
+impl From<EepromXSeries> for FT_EEPROM_X_SERIES {
+    fn from(val: EepromXSeries) -> FT_EEPROM_X_SERIES {
+        val.0
+    }
+}
+
+impl From<FT_EEPROM_X_SERIES> for EepromXSeries {
+    fn from(val: FT_EEPROM_X_SERIES) -> EepromXSeries {
+        EepromXSeries(val)
+    }
+}
+
+impl Default for EepromXSeries {
+    fn default() -> Self {
+        let mut header = EepromHeader::default();
+        header.set_device_type(DeviceType::FT_X_SERIES);
+        header.set_product_id(0x6015);
+        header.set_max_current(90);
+        Self(FT_EEPROM_X_SERIES {
+            common: header.0,
+            ACSlowSlew: 0,
+            ACSchmittInput: 0,
+            ACDriveCurrent: 4,
+            ADSlowSlew: 0,
+            ADSchmittInput: 0,
+            ADDriveCurrent: 4,
+            Cbus0: 0,
+            Cbus1: 0,
+            Cbus2: 0,
+            Cbus3: 0,
+            Cbus4: 0,
+            Cbus5: FT_X_SERIES_CBUS_VBUS_SENSE as u8,
+            Cbus6: FT_X_SERIES_CBUS_KEEP_AWAKE as u8,
+            InvertTXD: 0,
+            InvertRXD: 0,
+            InvertRTS: 0,
+            InvertCTS: 0,
+            InvertDTR: 0,
+            InvertDSR: 0,
+            InvertDCD: 0,
+            InvertRI: 0,
+            BCDEnable: 0,
+            BCDForceCbusPWREN: 0,
+            BCDDisableSleep: 0,
+            I2CSlaveAddress: 0,
+            I2CDeviceId: 0,
+            I2CDisableSchmitt: 0,
+            FT1248Cpol: 0,
+            FT1248Lsb: 0,
+            FT1248FlowControl: 0,
+            RS485EchoSuppress: 0,
+            PowerSaveEnable: 0,
+            DriverType: 0,
+        })
+    }
+}
+
+impl EepromXSeries {
+    /// Get the EEPROM header.
+    pub fn header(&self) -> EepromHeader {
+        EepromHeader((self.0).common)
+    }
+
+    /// Set the EEPROM header.
+    pub fn set_header(&mut self, header: EepromHeader) {
+        (self.0).common = header.into()
+    }
+
+    /// get battery charge enable
+    pub fn battery_charge_enable(&self) -> bool {
+        //assume nonzero
+        self.0.BCDEnable != 0
+    }
+
+    /// set battery charge enable
+    pub fn set_battery_charge_enable(&mut self, val: bool) {
+        self.0.BCDEnable = val.into();
+    }
+
+    /// get battery charge force power enable
+    pub fn battery_charge_force_power_enable(&self) -> bool {
+        self.0.BCDForceCbusPWREN != 0
+    }
+
+    /// set battery charge force power enable
+    pub fn set_battery_charge_force_power_enable(&mut self, val: bool) {
+        self.0.BCDForceCbusPWREN = val.into()
+    }
+
+    /// get battery charge deactivate sleep
+    pub fn battery_charge_deactivate_sleep(&self) -> bool {
+        self.0.BCDDisableSleep != 0
+    }
+
+    /// set battery charge deactivate sleep
+    pub fn set_battery_charge_deactivate_sleep(&mut self, val: bool) {
+        self.0.BCDDisableSleep = val.into()
+    }
+}
+
 /// FTDI EEPROM header common to all FTDI devices.
 #[derive(Debug, Copy, Clone)]
 pub struct EepromHeader(FT_EEPROM_HEADER);
@@ -1644,6 +1754,26 @@ macro_rules! impl_tx_data_enable {
     };
 }
 
+macro_rules! impl_invert_232_signals {
+    ($NAME:ident, $($FIELD:ident),+) => {
+        impl $NAME {
+            $(
+                paste::item! {
+                    #[doc = "Get if " $FIELD " is inverted."]
+                    pub fn [<invert_ $FIELD:lower>](&self) -> bool {
+                        return (self.0).[<Invert $FIELD:upper>] == 1;
+                    }
+
+                    #[doc = "Set whether " $FIELD " is inverted."]
+                    pub fn [<set_invert_ $FIELD:lower>](&mut self, val: bool) {
+                        (self.0).[<Invert $FIELD:upper>] = val as u8;
+                    }
+                }
+            )*
+        }
+    };
+}
+
 macro_rules! impl_cbus {
     (
         $NAME:ident,
@@ -1677,15 +1807,28 @@ macro_rules! impl_cbus {
 }
 
 // this is where most of the boilerplate is implemented
+
+//Ft232h
 impl_bus_pins!(Eeprom232h, AD, AC);
 impl_cbus!(
     Eeprom232h, Cbus232h, Cbus0, Cbus1, Cbus2, Cbus3, Cbus4, Cbus5, Cbus6, Cbus7, Cbus8, Cbus9,
 );
 impl_driver_type!(Eeprom232h);
 
+//Ft232r
+impl_driver_type!(Eeprom232r);
+impl_invert_232_signals!(Eeprom232r, TXD, RXD, RTS, CTS, DTR, DSR, DCD, RI);
+
+//Ft4232h
 impl_bus_pins!(Eeprom4232h, A, B, C, D);
 impl_tx_data_enable!(Eeprom4232h, A, B, C, D);
 impl_driver_type!(Eeprom4232h, A, B, C, D);
+
+//FtXseries
+impl_cbus!(EepromXSeries, CbusX, Cbus5, Cbus6,);
+impl_driver_type!(EepromXSeries);
+impl_bus_pins!(EepromXSeries, AC, AD);
+impl_invert_232_signals!(EepromXSeries, TXD, RXD, RTS, CTS, DTR, DSR, DCD, RI);
 
 // These get around an annoyance with bindgen generating different types for
 // preprocessor macros on Linux vs Windows.
