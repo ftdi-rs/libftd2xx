@@ -98,7 +98,6 @@ mod errors;
 pub use errors::{DeviceTypeError, EepromStringsError, EepromValueError, FtStatus, TimeoutError};
 
 mod mpsse;
-use libftd2xx_ffi::FT_EEPROM_X_SERIES;
 pub use mpsse::{FtdiMpsse, Ftx232hMpsse};
 
 mod types;
@@ -127,8 +126,8 @@ use libftd2xx_ffi::{
     FT_SetBreakOn, FT_SetChars, FT_SetDataCharacteristics, FT_SetDeadmanTimeout, FT_SetDtr,
     FT_SetFlowControl, FT_SetLatencyTimer, FT_SetRts, FT_SetTimeouts, FT_SetUSBParameters,
     FT_Write, FT_WriteEE, FT_DEVICE_LIST_INFO_NODE, FT_EEPROM_2232H, FT_EEPROM_232H,
-    FT_EEPROM_232R, FT_EEPROM_4232H, FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS,
-    FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
+    FT_EEPROM_232R, FT_EEPROM_4232H, FT_EEPROM_X_SERIES, FT_FLOW_DTR_DSR, FT_FLOW_NONE,
+    FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF, FT_HANDLE, FT_LIST_NUMBER_ONLY, FT_OPEN_BY_DESCRIPTION,
     FT_OPEN_BY_SERIAL_NUMBER, FT_PURGE_RX, FT_PURGE_TX, FT_STATUS,
 };
 
