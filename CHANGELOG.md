@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.33.0] - 2024-09-05
 ### Added
 - Added FT240X EEPROM.
 
@@ -167,7 +167,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Prior releases
 A changelog was not kept for prior releases.
 
-[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.5...HEAD
+[Unreleased]: https://github.com/ftdi-rs/libftd2xx/compare/0.33.0...HEAD
+[0.33.0]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.5...0.33.0
 [0.32.5]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.4...0.32.5
 [0.32.4]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.3...0.32.4
 [0.32.3]: https://github.com/ftdi-rs/libftd2xx/compare/0.32.2...0.32.3
