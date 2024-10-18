@@ -33,7 +33,7 @@ jobs:
 
   macos_build:
     name: Mac Build
-    runs-on: macos-12
+    runs-on: macos-15
     env:
       RUSTFLAGS: "-D warnings"
     steps:
@@ -68,7 +68,7 @@ jobs:
 
   macos_test:
     name: Mac Test
-    runs-on: macos-12
+    runs-on: macos-15
     env:
       RUSTFLAGS: "-D warnings"
     steps:
