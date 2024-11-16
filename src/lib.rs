@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies.libftd2xx]
-//! version = "0.33.0"
+//! version = "0.33.1"
 //! # statically link the vendor library, defaults to dynamic if not set
 //! # this will make things "just work" on Linux and Windows
 //! features = ["static"]
@@ -2003,9 +2003,13 @@ pub trait FtdiEeprom<
     }
 }
 
+fn str_to_cstring(s: &str) -> std::ffi::CString {
+    std::ffi::CString::new(s).unwrap_or(std::ffi::CString::from(c""))
+}
+
 fn ft_open_ex(arg: &str, flag: u32) -> Result<FT_HANDLE, FtStatus> {
     let mut handle: FT_HANDLE = std::ptr::null_mut();
-    let cstr_arg = std::ffi::CString::new(arg).unwrap();
+    let cstr_arg = str_to_cstring(arg);
     trace!(r#"FT_OpenEx("{}", {}, _)"#, arg, flag);
     let status: FT_STATUS =
         unsafe { FT_OpenEx(cstr_arg.as_ptr() as *mut c_void, flag, &mut handle) };
@@ -2473,3 +2477,22 @@ impl Ftx232hMpsse for Ft232h {}
 impl Ftx232hMpsse for Ft2232h {}
 impl Ftx232hMpsse for Ft4232h {}
 impl Ftx232hMpsse for Ft4232ha {}
+
+#[cfg(test)]
+mod tests {
+    use super::str_to_cstring;
+
+    #[test]
+    fn str_to_cstr_basic() {
+        assert_eq!(
+            str_to_cstring("Hello, World!"),
+            std::ffi::CString::from(c"Hello, World!")
+        );
+    }
+
+    // https://github.com/ftdi-rs/libftd2xx/issues/83
+    #[test]
+    fn str_to_cstr_interior_null() {
+        str_to_cstring("\0\u{e}.r");
+    }
+}
