@@ -778,7 +778,7 @@ pub trait FtdiCommon {
             "in_transfer_size of {in_transfer_size} exceeds minimum of {MIN}"
         );
         assert!(
-            in_transfer_size % MIN == 0,
+            in_transfer_size.is_multiple_of(MIN),
             "in_transfer_size of {in_transfer_size} not a multiple of {MIN}"
         );
         trace!(
