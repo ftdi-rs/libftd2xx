@@ -1,13 +1,13 @@
 [package]
 name = "libftd2xx"
-version = "0.33.1"
+version = "0.33.2"
 authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2021"
 description = "Rust safe wrapper around the libftd2xx-ffi crate."
 keywords = ["ftdi", "usb"]
 categories = ["api-bindings", "hardware-support"]
 readme = "README.md"
-repository = "https://github.com/ftdi-rs/libftd2xx/"
+repository = "https://github.com/recoord/libftd2xx/"
 documentation = "https://docs.rs/libftd2xx"
 license = "MIT"
 
@@ -15,7 +15,7 @@ license = "MIT"
 static = ["libftd2xx-ffi/static"]
 
 [dependencies]
-libftd2xx-ffi = "~0.8.5"
+libftd2xx-ffi = { git = "https://github.com/recoord/libftd2xx-ffi.git" }
 log = "~0.4.11"
 paste = "^1"
 static_assertions = "^1.1.0"
